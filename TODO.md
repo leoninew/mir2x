@@ -1,98 +1,97 @@
-# Small tasks
-- NPC to disappear, change shape, speak, monster/player shape NPCs
-- Magic attack should report done to server when magic (like fireball, iceball) explodes, not when it is casted.
-- the interactive broken wall in 困魔咒空间
-- Map grid trigger better understanding
-- Monster/Magic configurable and editable interface
-- follow UID magic should vanish when tracking
+<a id="small-tasks"></a>
+# 小任务
+- 支持 NPC 消失、变身、说话，以及怪物或玩家外形的 NPC。
+- 魔法攻击应在火球、冰球等魔法爆炸时向服务端报告完成，而不是施法时。
+- 困魔咒空间中可交互的破墙。
+- 进一步理解地图格子触发器。
+- 怪物和魔法的配置、编辑界面。
+- 跟随 UID 的魔法在追踪时应消失。
 
-# HonChonDo / HonChonMado — the two legendary blade questlines
+<a id="honchondo--honchonmado--the-two-legendary-blade-questlines"></a>
+# HonChonDo / HonChonMado：两条传说之刃任务线
 
-Everything found while surveying `Envir/QuestDiary/HonChonDo` and `Envir/QuestDiary/HonChonMado`
-for conversion. **Nothing is converted.** This is not a transcription job like the 23 `MU_*`
-skill quests were — it needs 6–8 new engine capabilities first, so it is a feature project.
+以下是为转换 `Envir/QuestDiary/HonChonDo` 和 `Envir/QuestDiary/HonChonMado` 所做的调研。**调研时尚未转换任何内容。** 这不像此前 23 个 `MU_*` 技能任务那样只需转写，首先需要 6 至 8 项新的引擎能力，因此是一个功能开发项目。
 
-Written 2026-09-04, against `Envir.utf8` as it stands and the `quest` branch.
+调研写于 2026-09-04，依据当时的 `Envir.utf8` 和 `quest` 分支；其中的实现状态和文件数量在使用前需要重新核对。
 
 ---
 
-## 1. What it is
+<a id="1-what-it-is"></a>
+## 1. 任务概况
 
-Two halves of one story about a legendary sword and its shadow:
+这是关于传说之剑及其影子的故事，分为两部分：
 
-| half | blade | stages | files | bytes |
+| 部分 | 刀剑 | 阶段数 | 文件数 | 大小 |
 |---|---|---|---|---|
-| `HonChonDo` | **寂幻之刃** (the shadow) | 25 | 15 | ~190 KB |
-| `HonChonMado` | **影魅之刃** (the real blade) | 11 | 16 | ~79 KB |
+| `HonChonDo` | **寂幻之刃**（影子） | 25 | 15 | 约 190 KB |
+| `HonChonMado` | **影魅之刃**（真剑） | 11 | 16 | 约 79 KB |
 
-31 files, ~270 KB total — comparable to everything converted in the skill quest pass.
+共 31 个文件，约 270 KB，与此前技能任务转换的全部内容规模相当。
 
-`HonChonDo` is the prerequisite: you win 寂幻之刃 from it, and stage 1-22 says the mad warrior
-lends it **for one week** as a test of whether you are fit to carry 影魅之刃. `HonChonMado` is
-then the hunt for the real blade, ending against the fallen spirit of **诺玛教主**.
+`HonChonDo` 是前置任务：玩家从中获得寂幻之刃；阶段 1-22 说明疯狂勇士将其借出**一周**，以考验玩家是否有资格持有影魅之刃。之后 `HonChonMado` 继续追寻真剑，最后对战堕落的**诺玛教主之魂**。
 
-### HonChonDo stage list (`Convert_Def/QuestDiary/HonChonDo/HelperHonChonDoBook.txt`)
+<a id="honchondo-stage-list-convert_defquestdiaryhonchondohelperhonchondobooktxt"></a>
+### HonChonDo 阶段列表（`Convert_Def/QuestDiary/HonChonDo/HelperHonChonDoBook.txt`）
 
-The in-game quest log; 25 sections `@Convert_HelperHonChonDoBook_0..24`. `_0` is "not started".
+游戏内任务日志共 25 节 `@Convert_HelperHonChonDoBook_0..24`；`_0` 表示“尚未开始”。
 
-| stage | title | required items |
+| 阶段 | 标题和内容 | 所需物品 |
 |---|---|---|
-| 1-1 | 诺玛们的宗教活动 — the 毁灭之印 only surfaces during the Numa ceremony | – |
-| 1-2 | 4条道路 — the ceremony is guarded, only four approach routes | – |
-| 1-3 | 获取宝箱 — got the chest, take it to 夏柯 | – |
-| 1-3 | 开启宝箱 — open it in front of 夏柯 | 宝箱 |
-| 1-4 | 请求调查遗址 4楼 — 夏柯 asks you to survey ruins floor 4 | – |
-| 1-5 | 用尸骨做成的项链 — the bone necklace is a dead Numa warrior's relic; ask 拉贝卡 | 尸骨项链 |
-| 1-6 | 与拉贝卡的见面 — he stayed as the cult leader's man to solve 扎马尔's death; 帕斯卡 knows more | 尸骨项链 |
-| 1-7 | 寻找帕斯卡 — the 地下神女 will only talk after a trial | 尸骨项链 |
-| 1-8 | 击退护身符 — 梅山侠 sends a warding charm to get you through it | 击退护身符 |
-| 1-9 | 与帕斯卡的对话 — she gives you his location | 击退护身符, 尸骨项链 |
-| 1-10 | 与帕斯卡的对话 — 阿龙怪 interrupts | 击退护身符, 尸骨项链 |
-| 1-11 | 勇者的儿子 — 阿龙怪 may be the warrior's son | 击退护身符, 尸骨项链 |
-| 1-12 | 击退护身符 — the charm drives him off but you lose the necklace; report to 夏柯 | – |
-| 1-13 | 夏柯的新请求 — go back to 帕斯卡 for more | – |
-| 1-14 | 地下神女的安排 — she arranges the second meeting | – |
-| 1-15 | 重新出现 — 阿龙怪 returns, 帕斯卡 fails to talk him down | – |
-| 1-16 | 与帕斯卡的对话 — resume once he leaves | – |
-| 1-17 | 听到秘密 — you hear the secret | – |
+| 1-1 | 诺玛们的宗教活动：毁灭之印只在诺玛仪式期间出现 | – |
+| 1-2 | 4条道路：仪式受到守卫，只有四条接近路线 | – |
+| 1-3 | 获取宝箱：拿到宝箱后交给夏柯 | – |
+| 1-3 | 开启宝箱：在夏柯面前打开宝箱 | 宝箱 |
+| 1-4 | 请求调查遗址 4楼：夏柯请求调查遗址四层 | – |
+| 1-5 | 用尸骨做成的项链：尸骨项链是已故诺玛勇士的遗物，向拉贝卡询问 | 尸骨项链 |
+| 1-6 | 与拉贝卡的见面：他留在教主身边调查扎马尔之死，帕斯卡知道更多 | 尸骨项链 |
+| 1-7 | 寻找帕斯卡：地下神女只在试炼后交谈 | 尸骨项链 |
+| 1-8 | 击退护身符：梅山侠送来护身符帮助通过试炼 | 击退护身符 |
+| 1-9 | 与帕斯卡的对话：她告知其位置 | 击退护身符、尸骨项链 |
+| 1-10 | 与帕斯卡的对话：阿龙怪打断对话 | 击退护身符、尸骨项链 |
+| 1-11 | 勇者的儿子：阿龙怪可能是勇士的儿子 | 击退护身符、尸骨项链 |
+| 1-12 | 击退护身符：护身符将其驱走，但项链遗失；向夏柯报告 | – |
+| 1-13 | 夏柯的新请求：回去向帕斯卡了解更多情况 | – |
+| 1-14 | 地下神女的安排：她安排第二次会面 | – |
+| 1-15 | 重新出现：阿龙怪返回，帕斯卡未能说服他 | – |
+| 1-16 | 与帕斯卡的对话：等他离开后继续 | – |
+| 1-17 | 听到秘密：得知秘密 | – |
 | 1-18 | 报告夏柯 | – |
-| 1-19 | 诺玛圣地 — infiltrate the Numa holy ground for the 毁灭之印 | – |
-| 1-20 | 永远的平行线 — you and 阿龙怪 will never cooperate | – |
-| 1-21 | 发疯的诺玛勇士之魂 — speak with the warrior bound to 寂幻之刃 | 寂幻之刃 |
-| 1-22 | 魔剑的影子 — he lends 寂幻之刃 **for one week** as the test | – |
-| 1-23 | 寂幻之刃 — four eyes missing, only a shadow of 影魅之刃, still a powerful weapon | – |
+| 1-19 | 诺玛圣地：潜入诺玛圣地寻找毁灭之印 | – |
+| 1-20 | 永远的平行线：玩家与阿龙怪无法合作 | – |
+| 1-21 | 发疯的诺玛勇士之魂：与绑定在寂幻之刃上的勇士交谈 | 寂幻之刃 |
+| 1-22 | 魔剑的影子：勇士将寂幻之刃借出**一周**作为考验 | – |
+| 1-23 | 寂幻之刃：缺少四只眼睛，只是影魅之刃的影子，但仍是强力武器 | – |
 
-### HonChonMado stage list (`Convert_Def/QuestDiary/HonChonMado/HelperHonChonMaDoBook.txt`)
+<a id="honchonmado-stage-list-convert_defquestdiaryhonchonmadohelperhonchonmadobooktxt"></a>
+### HonChonMado 阶段列表（`Convert_Def/QuestDiary/HonChonMado/HelperHonChonMaDoBook.txt`）
 
-11 sections `@Convert_HelperHonChonMaDoBook_0..10`.
+共 11 节 `@Convert_HelperHonChonMaDoBook_0..10`。
 
-| stage | title |
+| 阶段 | 标题和内容 |
 |---|---|
-| 1-1 | 影魅之刃的诱惑 — collect the necklaces that become the sword's eyes |
-| 1-2 | 艰难的出发 — 万里碧海 is lost and the journey stalls at the start |
-| 1-3 | 魔达的帮助 — 魔达 explains it: break the mechanisms, get the tokens |
-| 1-4 | 其他的动向 — unsigned letters hint at rivals |
-| 1-5 | 神秘之印 — 紫霞神女 gives the seal, which opens the third guardian's gate |
-| 1-6 | 守护石和守护者 — old secrets and bad omens as the blade nears completion |
-| 1-7 | 怪人的人情 — got 大脚将的角笛 from the strange man; on to the 祭祀长 domain |
-| 1-8 | 魔达的凶计 — 魔达 finally shows his true face at the last gate |
-| 1-9 | 疯了的诺玛教主的灵魂 — beat the cult leader's fallen spirit; the trial ends |
+| 1-1 | 影魅之刃的诱惑：收集成为剑之眼的项链 |
+| 1-2 | 艰难的出发：万里碧海遗失，旅程刚开始就受阻 |
+| 1-3 | 魔达的帮助：魔达解释如何破坏机关并获得信物 |
+| 1-4 | 其他的动向：匿名信暗示有竞争对手 |
+| 1-5 | 神秘之印：紫霞神女交出打开第三守护者大门的印记 |
+| 1-6 | 守护石和守护者：随着剑接近完成，旧秘密和不祥预兆出现 |
+| 1-7 | 怪人的人情：从怪人处获得大脚将的角笛，前往祭祀长领地 |
+| 1-8 | 魔达的凶计：魔达在最后一道门前露出真面目 |
+| 1-9 | 疯了的诺玛教主的灵魂：击败教主堕落之魂，试炼结束 |
 
-### Cast
+<a id="cast"></a>
+### 登场人物
 
-`夏柯` (Sahaka), `巴斯卡/帕斯卡` (Baska), `扎马尔/자하` (Jaha), `拉贝卡`, `玄` (Hyun),
-`魔达` (Mado, the traitor), `紫霞神女`, `地下神女`, `梅山侠`, `诺玛大法老1..4`, `阿龙怪1..4`,
-`诺玛教主` (final boss), `诺玛司令`.
+`夏柯`（Sahaka）、`巴斯卡/帕斯卡`（Baska）、`扎马尔/자하`（Jaha）、`拉贝卡`、`玄`（Hyun）、`魔达`（Mado，叛徒）、`紫霞神女`、`地下神女`、`梅山侠`、`诺玛大法老1..4`、`阿龙怪1..4`、`诺玛教主`（最终首领）、`诺玛司令`。
 
 ---
 
-## 2. It is a scheduled world event, not a player-driven quest
+<a id="2-it-is-a-scheduled-world-event-not-a-player-driven-quest"></a>
+## 2. 这是定时世界事件，不是玩家驱动的任务
 
-This is the single biggest structural difference from the skill quests, and the reason it cannot
-be converted the same way.
+这是它与技能任务最大的结构性差异，也是不能照搬技能任务转换方式的原因。
 
-`HonChonDo/HonMainControl.txt` reschedules itself forever and branches on the **real-world
-calendar**:
+`HonChonDo/HonMainControl.txt` 持续重复调度，并根据**现实日历**选择分支：
 
 ```
 [@MainHonChonRootin]
@@ -106,27 +105,23 @@ DAYOFWEEK FRI  -> @fridayHonQuest
 DAYOFWEEK SAT  -> @saturdayHonQuest
 ```
 
-38 `DAYOFWEEK` checks and 144 `HOUR`/`MIN` windows across the two directories. Concrete schedule
-from `HonMainControl.txt`:
+两个目录中共有 38 次 `DAYOFWEEK` 检查和 144 个 `HOUR`/`MIN` 时间窗口。`HonMainControl.txt` 中的具体时间安排：
 
-- **Tue 23:01–23:05** — `@tuesdayMonGen`, the Numa ceremony spawns
-- **Wed** — `@tuesdayMonGen` again at 01/03/05/07/09/11/13/15/17/19 :01–:05, then
-  `@wednesdayMonGen` at 22:01 and 23:01
-- **Thu** — `@wednesdayMonGen` at 03/08/14/19 :01–:05; `@wednesdayMonClear` at 20:55–20:59;
-  `@thursdayMonGen` 22:00–23:50; `@thursdayMonClear` 23:50–23:59
-- **Fri 00:01–00:05** — pharaohs move **out** of the pen into the ruins
-- **Fri 20:55–20:59** — pharaohs move **back** to the pen
-- **Fri 21:01–21:05** — 阿龙怪 ×4 move from the ruins to the pen
-- **Fri 23:01–23:05** — pharaohs move to `D1604`
-- **Sat 22:55–22:59** — pharaohs return to the pen
+- **周二 23:01–23:05**：`@tuesdayMonGen`，生成诺玛仪式。
+- **周三**：01/03/05/07/09/11/13/15/17/19 点的 :01–:05 再次执行 `@tuesdayMonGen`；22:01 和 23:01 执行 `@wednesdayMonGen`。
+- **周四**：03/08/14/19 点的 :01–:05 执行 `@wednesdayMonGen`；20:55–20:59 执行 `@wednesdayMonClear`；22:00–23:50 执行 `@thursdayMonGen`；23:50–23:59 执行 `@thursdayMonClear`。
+- **周五 00:01–00:05**：法老从候场区移入遗址。
+- **周五 20:55–20:59**：法老移回候场区。
+- **周五 21:01–21:05**：4 个阿龙怪从遗址移入候场区。
+- **周五 23:01–23:05**：法老移到 `D1604`。
+- **周六 22:55–22:59**：法老返回候场区。
 
-> The in-game day/night clock added in `b82f2bee` (`isDayTime`/`isNightTime`, 1 h day + 1 h night
-> off `uptime()`) does **not** help here. That is a 2-hour game cycle; this needs real weekdays
-> and real hours. Two different clocks — do not conflate them.
+> `b82f2bee` 中添加的游戏内昼夜时钟（`isDayTime`/`isNightTime`，依据 `uptime()`，白天和黑夜各 1 小时）**不能**满足这里的需求。那是 2 小时游戏周期，而这里需要现实中的星期和时刻；不要混淆两种时钟。
 
-### NPC relocation
+<a id="npc-relocation"></a>
+### NPC 跨地图移动
 
-39 `Movenpc` calls shuttle NPCs between a holding pen and the dungeon:
+39 次 `Movenpc` 调用在候场区和地牢之间移动 NPC：
 
 ```
 Movenpc "npcroom1,10,7,诺玛大法老1"  D16031 61 354
@@ -136,8 +131,7 @@ Movenpc "npcroom1,10,10,诺玛大法老4" D16034 30 30
 Movenpc "D16031,61,355,阿龙怪1"      npcroom1 9 7
 ```
 
-**mir2x already ships the 8 placeholders at exactly these coordinates** — someone carried the
-holding-pen design across deliberately and never wired it:
+**mir2x 已经在完全相同的坐标放置了 8 个占位脚本**，候场区设计已被带入，但尚未接通：
 
 ```
 NPC屋_NPCROOM1.诺玛大法老_1.GLOC_10_7_0.LOOK_86.lua   <->  "npcroom1,10,7,诺玛大法老1"
@@ -150,27 +144,23 @@ NPC屋_NPCROOM1.阿龙怪_3.GLOC_9_9_0.LOOK_90.lua        <->  "npcroom1,9,9,阿
 NPC屋_NPCROOM1.阿龙怪_4.GLOC_9_10_0.LOOK_90.lua       <->  "npcroom1,9,10,阿龙怪4"
 ```
 
-All 8 are **empty files** (they are among the 191 empty NPC placeholders in the repo — the same
-class of file that let the U+F00D filename bug hide in `24a16db5`, so watch for that).
+这 8 个都是**空文件**，属于当时仓库中 191 个空 NPC 占位文件的一部分；同类文件曾使 `24a16db5` 中的 U+F00D 文件名问题难以察觉，需要留意。
 
-`ServerMap::loadNPChar` spawns NPCs from filenames at map load. There is no move-NPC-across-maps
-operation, so either that gets built, or the pen design is dropped and each NPC gets a script that
-answers only inside its schedule window.
+`ServerMap::loadNPChar` 在加载地图时根据文件名生成 NPC。当时没有跨地图移动 NPC 的操作，因此要么实现该操作，要么放弃候场区设计，为每个 NPC 编写只在规定时间窗口响应的脚本。
 
 ---
 
-## 3. World state and the unique blade
+<a id="3-world-state-and-the-unique-blade"></a>
+## 3. 世界状态与唯一的剑
 
-`TBL_HonChonMadoSeverFlag` (legacy's own typo — "Sever", not "Server") is keyed on a **single
-named row**, not on a player:
+`TBL_HonChonMadoSeverFlag` 的键是**单条具名记录**，不是玩家。`Sever` 而非 `Server` 是原始资料自身的拼写错误：
 
 ```
 FormatStr "FLD_MADOQUEST='%s'" "HonChon"
 ReadValueSql "TBL_HonChonMadoSeverFlag" %A9 "FLD_MADOHAVE" [@callback]
 ```
 
-`FLD_MADOHAVE=1` means **somebody in the world already holds 寂幻之刃**. From
-`HonChondonpc.txt`, handing the blade over does:
+`FLD_MADOHAVE=1` 表示**游戏世界中已有玩家持有寂幻之刃**。根据 `HonChondonpc.txt`，交付剑时执行：
 
 ```
 TAKE 毁灭之印 1
@@ -183,71 +173,58 @@ set [205] 0
 Eventmsg grobal %A7 2000                               -- announce it to the whole server
 ```
 
-So the blade is **world-unique with a one-week loan** (stage 1-22). Anyone arriving while
-`FLD_MADOHAVE=1` gets the `@HonChondo_Questnpc_1_have` branch instead.
+因此这把剑**全服唯一，借期一周**（阶段 1-22）。当 `FLD_MADOHAVE=1` 时到达的其他玩家会进入 `@HonChondo_Questnpc_1_have` 分支。
 
-This is what the per-player `fld_*` quest model cannot express. It needs shared quest state plus
-a real-time expiry.
+仅按玩家保存的 `fld_*` 任务模型无法表达这一点，需要共享任务状态和基于现实时间的到期机制。
 
 ---
 
-## 4. The four SQL tables
+<a id="4-the-four-sql-tables"></a>
+## 4. 四张 SQL 表
 
-**No schema ships with the data** — `grep -i "create table"` across all of `Envir` finds nothing.
-The legacy server or an admin created these out of band, so column types are only inferable from
-call sites.
+**原始数据没有附带表结构**：在整个 `Envir` 中执行 `grep -i "create table"` 没有结果。这些表由原版服务器或管理员另外创建，因此只能从调用位置推测列类型。
 
-`TBL_*` with `ReadValueSql` / `UpdateValueSql` is a **general legacy facility**, not something
-these questlines invented — `QuestDiary/CastleWar/` uses `TBL_SnakeVallyWar` the same way. So the
-mir2x gap is "no script-level SQL at all", and one binding pair plus an async-callback convention
-serves every legacy questline that uses it.
+使用 `ReadValueSql` / `UpdateValueSql` 操作 `TBL_*` 是**原版通用能力**，不是这两条任务线独有；`QuestDiary/CastleWar/` 也以相同方式使用 `TBL_SnakeVallyWar`。因此调研时认为 mir2x 的缺口是“完全没有脚本级 SQL”，一组读写绑定和异步回调约定可服务于所有使用该机制的原版任务线。
 
-### `TBL_HonChonMadoQuest` — per-player, HonChonDo half
+<a id="tbl_honchonmadoquest--per-player-honchondo-half"></a>
+### `TBL_HonChonMadoQuest`：按玩家保存 HonChonDo 进度
 
-Key `FLD_MADOUSER='<username>'`. Three-level progress: `FLD_MADOMAIN` (chapter) /
-`FLD_MADOCONTENT` (stage) / `FLD_MADOQUESTCHECK` (substage).
+键为 `FLD_MADOUSER='<username>'`。进度分三级：`FLD_MADOMAIN`（章节）、`FLD_MADOCONTENT`（阶段）、`FLD_MADOQUESTCHECK`（子阶段）。
 
-| column | notes |
+| 列 | 说明 |
 |---|---|
-| `FLD_MADOUSER` | username, the key |
-| `FLD_MADOMAIN` | chapter, seen set to 7 and 8 |
-| `FLD_MADOCONTENT` | stage |
-| `FLD_MADOQUESTCHECK` | substage |
-| `FLD_MADOPATTERN` | in the insert column list — **check whether anything reads it** |
-| `FLD_MADOTEMPQUEST` | in the insert column list — **check whether anything reads it** |
+| `FLD_MADOUSER` | 用户名，作为键 |
+| `FLD_MADOMAIN` | 章节，曾观察到设置为 7 和 8 |
+| `FLD_MADOCONTENT` | 阶段 |
+| `FLD_MADOQUESTCHECK` | 子阶段 |
+| `FLD_MADOPATTERN` | 出现在插入列列表中；**需检查是否有读取方** |
+| `FLD_MADOTEMPQUEST` | 出现在插入列列表中；**需检查是否有读取方** |
 
-Row created once, `HonChonDo/MadoNpcSahaka.txt:37`. 323 references across 11
-`QuestDiary/HonChonDo/*.txt`, heaviest in `Mon_extinction.txt` (61), `MadoNpcSahaka.txt` (57),
-`MadoNpcBaska.txt` (51), `MadoNpcJaha.txt` (47). Also 5 references outside the directory:
-`QuestDiary/NpcQuest_Def/17baska1-npcroom1.txt` … `17baska4-npcroom1.txt` and
-`17Zaha_Numa-41.txt` — **do not miss these, they are the pen-side NPC scripts.**
+记录在 `HonChonDo/MadoNpcSahaka.txt:37` 创建一次。11 个 `QuestDiary/HonChonDo/*.txt` 文件中共有 323 处引用，最多的是 `Mon_extinction.txt`（61）、`MadoNpcSahaka.txt`（57）、`MadoNpcBaska.txt`（51）、`MadoNpcJaha.txt`（47）。目录外还有 5 处引用：`QuestDiary/NpcQuest_Def/17baska1-npcroom1.txt` 至 `17baska4-npcroom1.txt` 和 `17Zaha_Numa-41.txt`；**不要遗漏这些候场区 NPC 脚本。**
 
-### `TBL_MadoHaveUserQuest` — per-player, HonChonMado half
+<a id="tbl_madohaveuserquest--per-player-honchonmado-half"></a>
+### `TBL_MadoHaveUserQuest`：按玩家保存 HonChonMado 进度
 
-Key `FLD_MADOHAVEUSER='<username>'`. Columns `FLD_MADOUSERCONTENT` (stage 1..13+),
-`FLD_MADOUSERCHECK` (substage), `FLD_MADOUSERPATTERN`.
+键为 `FLD_MADOHAVEUSER='<username>'`。列包括 `FLD_MADOUSERCONTENT`（阶段 1..13 及以上）、`FLD_MADOUSERCHECK`（子阶段）、`FLD_MADOUSERPATTERN`。
 
-Rows created at `HonChonMado/MadoNpc.txt:37` and `SahakaNpc.txt:28`. 165 references across all 16
-`QuestDiary/HonChonMado/*.txt`, heaviest in `Mon_MadoHave.txt` (46), `MonsterNpc1.txt` (27),
-`MadoNpc.txt` (21).
+记录在 `HonChonMado/MadoNpc.txt:37` 和 `SahakaNpc.txt:28` 创建。全部 16 个 `QuestDiary/HonChonMado/*.txt` 文件中共有 165 处引用，最多的是 `Mon_MadoHave.txt`（46）、`MonsterNpc1.txt`（27）、`MadoNpc.txt`（21）。
 
-The Helper book branches on `FLD_MADOUSERCONTENT` with `Equal D0 n` / `Large D0 n` / `Small D0 n`,
-reaching `Large D0 13` — so the stage counter runs past 13 even though the log only has 11 entries.
+Helper 任务书通过 `Equal D0 n` / `Large D0 n` / `Small D0 n` 按 `FLD_MADOUSERCONTENT` 分支，最高到 `Large D0 13`；因此虽然日志只有 11 项，阶段计数仍会超过 13。
 
-### `TBL_HonChonMadoSeverFlag` — server-wide singleton
+<a id="tbl_honchonmadoseverflag--server-wide-singleton"></a>
+### `TBL_HonChonMadoSeverFlag`：全服单例
 
-Key `FLD_MADOQUEST='HonChon'`. Columns `FLD_MADOHAVE`, `FLD_MADOMAPEVENT`, `FLD_MADOQUESTSET`.
-29 references: `MadoNpcJaha.txt` (10), `extinctionQuestEvent.txt` (9), `MadoNpcBaska.txt` (8),
-`HonChondonpc.txt` (2).
+键为 `FLD_MADOQUEST='HonChon'`。列包括 `FLD_MADOHAVE`、`FLD_MADOMAPEVENT`、`FLD_MADOQUESTSET`。共有 29 处引用：`MadoNpcJaha.txt`（10）、`extinctionQuestEvent.txt`（9）、`MadoNpcBaska.txt`（8）、`HonChondonpc.txt`（2）。
 
-### `TBL_HonChonMadoServer` — one reference
+<a id="tbl_honchonmadoserver--one-reference"></a>
+### `TBL_HonChonMadoServer`：一处引用
 
-`HonChonDo/MadoextinctionNpc.txt`, single column `FLD_PASSWORDNAME`. Purpose unclear; possibly a
-GM/admin gate. Investigate before building anything for it.
+位于 `HonChonDo/MadoextinctionNpc.txt`，只有 `FLD_PASSWORDNAME` 一列。用途尚不清楚，可能是 GM 或管理员权限门槛；实现前应先调查。
 
-### Access pattern
+<a id="access-pattern"></a>
+### 访问方式
 
-Always string-built SQL, and reads are **asynchronous with a callback label**:
+SQL 均通过字符串拼接生成，读取操作**异步执行并使用回调标签**：
 
 ```
 FormatStr "FLD_MADOHAVEUSER='%s'" %USERNAME
@@ -259,76 +236,73 @@ mov D2 %ARG(2)
 mov D3 %ARG(3)
 ```
 
-mir2x's coroutine lua (`bindCoop` + `LuaCoopResumer`) suits this well — a blocking-looking
-`dbQuestRead(...)` that yields would read far better than the callback labels.
+mir2x 的 Lua 协程（`bindCoop` + `LuaCoopResumer`）适合表达这一流程：让出执行权的 `dbQuestRead(...)` 看似同步，比回调标签更易读。
 
-Verb totals across both directories: **119 `ReadValueSql`, 3 `WriteValueSql` (row insert),
-401 `UpdateValueSql`**.
+两个目录中的命令总数：**119 次 `ReadValueSql`、3 次 `WriteValueSql`（插入记录）、401 次 `UpdateValueSql`**。
 
 ---
 
-## 5. Complete legacy verb inventory
+<a id="5-complete-legacy-verb-inventory"></a>
+## 5. 原版命令清单
 
-Every line-initial verb in the two directories, with what mir2x has. Counted with
-`cat HonChonDo/*.txt HonChonMado/*.txt | grep -oE "^[A-Za-z_]+" | sort | uniq -c`.
+下表列出两个目录中每行开头的命令及调研时 mir2x 的支持情况。统计命令为 `cat HonChonDo/*.txt HonChonMado/*.txt | grep -oE "^[A-Za-z_]+" | sort | uniq -c`。
 
-| verb | n | mir2x | note |
+| 命令 | 次数 | mir2x | 说明 |
 |---|---|---|---|
-| `Equal` / `Small` / `Large` | 812/16/14 | ✅ | plain lua comparison |
-| `break` / `goto` | 742/581 | ✅ | control flow, becomes lua structure |
-| `UpdateValueSql` | 401 | ❌ | **no script SQL** |
+| `Equal` / `Small` / `Large` | 812/16/14 | ✅ | 普通 Lua 比较 |
+| `break` / `goto` | 742/581 | ✅ | 控制流，转换为 Lua 结构 |
+| `UpdateValueSql` | 401 | ❌ | **无脚本级 SQL** |
 | `FormatStr` | 308 | ✅ | `string.format` |
-| `LoadValue` | 288 | ✅ | string externalisation — inline the prose instead |
-| `Eventmsg` | 270 | ❌ | broadcast; `Eventmsg grobal <msg> <ms>` is server-wide |
-| `Delaygoto` / `DelayGoto` | 231/10 | ✅ | `runQuestThread` + `pause`, cancellable |
-| `mov` / `Mov` / `movr` / `inc` / `AddStr` | 277/7/27/28/3 | ✅ | lua locals; `movr` is `math.random` |
+| `LoadValue` | 288 | ✅ | 外置字符串；转换时将文本内联 |
+| `Eventmsg` | 270 | ❌ | 广播；`Eventmsg grobal <msg> <ms>` 面向全服 |
+| `Delaygoto` / `DelayGoto` | 231/10 | ✅ | `runQuestThread` + `pause`，可取消 |
+| `mov` / `Mov` / `movr` / `inc` / `AddStr` | 277/7/27/28/3 | ✅ | Lua 局部变量；`movr` 对应 `math.random` |
 | `Checkitemw` / `Checkitem` / `checkitem` | 155/49/88 | ✅ | `getWLItem`, `hasItem` |
-| `HOUR` / `min` / `MIN` / `Min` | 144/23/6/2 | ❌ | **real wall-clock hour/minute** |
-| `ReadValueSql` | 118 | ❌ | **no script SQL** |
-| `set` | 66 | ✅ | quest flags |
+| `HOUR` / `min` / `MIN` / `Min` | 144/23/6/2 | ❌ | **现实时间的小时和分钟** |
+| `ReadValueSql` | 118 | ❌ | **无脚本级 SQL** |
+| `set` | 66 | ✅ | 任务标记 |
 | `take` / `Take` / `takew` | 47/2/1 | ✅ | `removeItem`, `removeWearItem` |
-| `Mongenp` | 46 | ⚠️ | `addMonster` exists but **no per-spawn drop-table override** |
-| `Movenpc` | 39 | ❌ | **move an NPC to another map** |
-| `ApplyMonEx` | 38 | ❌ | **monster faction/title tag** (`[Monsterside]`) |
-| `DAYOFWEEK` | 35 | ❌ | **real weekday** |
-| `monclear` / `MonClear` | 35/22 | ✅ | `clearMonster()`, added `b82f2bee` |
-| `give` / `Give` / `givew` | 35/5/1 | ⚠️ | `addItem` yes; `Givew <slot> <item>` (straight into a wear slot) has no binding — `Player::setWLItem` exists in C++ at `player.cpp:2146` but is unbound |
-| `linemsg` / `Linemsg` | 11/6 | ❌ | broadcast to one map |
+| `Mongenp` | 46 | ⚠️ | 已有 `addMonster`，但**不能覆盖单次刷怪的掉落表** |
+| `Movenpc` | 39 | ❌ | **将 NPC 移至另一张地图** |
+| `ApplyMonEx` | 38 | ❌ | **怪物阵营或称号标记**（`[Monsterside]`） |
+| `DAYOFWEEK` | 35 | ❌ | **现实星期** |
+| `monclear` / `MonClear` | 35/22 | ✅ | `clearMonster()`，由 `b82f2bee` 添加 |
+| `give` / `Give` / `givew` | 35/5/1 | ⚠️ | 有 `addItem`；`Givew <slot> <item>` 直接放入装备槽的操作没有绑定，C++ 的 `Player::setWLItem` 当时位于 `player.cpp:2146` |
+| `linemsg` / `Linemsg` | 11/6 | ❌ | 向单张地图广播 |
 | `Checkmonmap` / `checkmonmap` | 11/6 | ✅ | `getMonsterCount()` |
-| `Enter_fail` | 10 | ✅ | `setupMapGridTrigger` / `setupMapUIDGridTrigger`, return `false` |
-| `close` | 9 | ✅ | `close="1"` on an event |
-| `mapting` | 8 | ❓ | `mapting D1606 41 148 84` — **4 args, purpose unknown**, investigate |
-| `mapmove` / `MAPMOVE` / `map` | 5/3/5 | ✅ | `spaceMove`, takes a name, id or uid since `b82f2bee` |
+| `Enter_fail` | 10 | ✅ | `setupMapGridTrigger` / `setupMapUIDGridTrigger`，返回 `false` |
+| `close` | 9 | ✅ | 事件中的 `close="1"` |
+| `mapting` | 8 | ❓ | `mapting D1606 41 148 84`：**4 个参数，用途未知**，需调查 |
+| `mapmove` / `MAPMOVE` / `map` | 5/3/5 | ✅ | `spaceMove` 自 `b82f2bee` 起接受名称、ID 或 UID |
 | `return` | 4 | ✅ | |
-| `GiveExp` | 4 | ⚠️ | `Player::gainExp` exists at `player.cpp:1822`, **unbound** |
-| `gender` | 3 | ✅ | `getGender()` (was a broken `getGener`, fixed) |
-| `WriteValueSql` | 3 | ❌ | **no script SQL** |
-| `GroupMove` | 3 | ❌ | move the whole party: `GroupMove "D16062,37,48" %USERNAME` |
-| `mapspell` | 2 | ⚠️ | `mapspell [firewall] "D16061,22,33,40,47, +d0, +t10, +r50, +h"` — `ServerMap::MapGrid::fireWallList` exists (`servermap.hpp:87`) with no lua binding |
+| `GiveExp` | 4 | ⚠️ | `Player::gainExp` 当时位于 `player.cpp:1822`，**未绑定** |
+| `gender` | 3 | ✅ | `getGender()`，已修复原来错误的 `getGener` |
+| `WriteValueSql` | 3 | ❌ | **无脚本级 SQL** |
+| `GroupMove` | 3 | ❌ | 移动整个队伍：`GroupMove "D16062,37,48" %USERNAME` |
+| `mapspell` | 2 | ⚠️ | `mapspell [firewall] "D16061,22,33,40,47, +d0, +t10, +r50, +h"`；已有 `ServerMap::MapGrid::fireWallList`（当时位于 `servermap.hpp:87`），但没有 Lua 绑定 |
 | `checkjob` / `checkgold` / `Checkhum` / `Check` | 2/2/2/2 | ✅ | |
-| `Checkweaponlevel` | – | ❌ | `!Checkweaponlevel 1` in `HonChondonpc.txt` |
+| `Checkweaponlevel` | – | ❌ | `HonChondonpc.txt` 中的 `!Checkweaponlevel 1` |
 
-### Summary of what must be built
+<a id="summary-of-what-must-be-built"></a>
+### 所需能力汇总
 
-1. **Real-time scheduler** — weekday + hour + minute windows, and a server-wide repeating tick
-   (legacy: `DelayGoto [Grobal] 180`). Separate from the in-game day/night clock.
-2. **Script-level SQL** — read/insert/update with a coroutine-style read. Benefits CastleWar too.
-3. **Shared (non-player) quest state** — the `Sever`Flag singleton, plus real-time expiry for the
-   one-week blade loan.
-4. **`Movenpc`** — relocate an NPC between maps at runtime.
-5. **Broadcast** — `Eventmsg grobal` (server-wide, with a duration) and `linemsg` (per-map).
-6. **`Mongenp`** — spawn with a per-spawn drop-table override.
-7. **`ApplyMonEx [Monsterside]`** — monster faction/title so event monsters read as a side.
-8. **`GroupMove`** — party-wide teleport.
-9. Small bindings for things already in C++: `gainExp`, `setWLItem` (`Givew`), a firewall
-   binding for `mapspell`, and `Checkweaponlevel`.
-10. Work out what `mapting` does.
+1. **现实时间调度器**：星期、小时和分钟窗口，以及全服重复计时（原版为 `DelayGoto [Grobal] 180`）；与游戏内昼夜时钟分开。
+2. **脚本级 SQL**：读取、插入、更新，其中读取使用协程形式；攻城战也可受益。
+3. **共享的非玩家任务状态**：`Sever`Flag 单例，以及剑借出一周的现实时间到期机制。
+4. **`Movenpc`**：运行时将 NPC 移到另一张地图。
+5. **广播**：`Eventmsg grobal` 为有持续时间的全服广播，`linemsg` 为单地图广播。
+6. **`Mongenp`**：刷怪时覆盖该次生成的掉落表。
+7. **`ApplyMonEx [Monsterside]`**：怪物阵营或称号，使事件怪物体现所属阵营。
+8. **`GroupMove`**：传送整个队伍。
+9. 为已有 C++ 能力补充绑定：`gainExp`、`setWLItem`（`Givew`）、供 `mapspell` 使用的火墙绑定，以及 `Checkweaponlevel`。
+10. 查明 `mapting` 的用途。
 
 ---
 
-## 6. Maps
+<a id="6-maps"></a>
+## 6. 地图
 
-| legacy | mir2x | id |
+| 原版 | mir2x | ID |
 |---|---|---|
 | `D1604` | 诺玛遗址4层_D1604 | 293 |
 | `D16031` | 诺玛遗址3层_D16031 | 289 |
@@ -336,23 +310,22 @@ Every line-initial verb in the two directories, with what mir2x has. Counted wit
 | `D16033` | 诺玛遗址3层_D16033 | 291 |
 | `D16034` | 诺玛遗址3层_D16034 | 292 |
 | `D1606` | 诺玛勇士墓穴_D1606 | 295 |
-| `D16061` | **MISSING** | – |
-| `D16062` | **MISSING** | – |
+| `D16061` | **缺失** | – |
+| `D16062` | **缺失** | – |
 | `D16063` | 怪人屋_D16063 | 296 |
 | `D16064` | 祭祀长领地_D16064 | 297 |
 | `npcroom1` | NPC屋_NPCROOM1 | – |
 
-`D16061` and `D16062` have no `maprecord.inc` entry. `D16061` is used 43 times (it is where the
-`mapspell [firewall]` traps go and a `GroupMove` target); `D16062` 3 times. Check whether map data
-exists for them before assuming they can be added.
+`D16061` 和 `D16062` 没有 `maprecord.inc` 条目。`D16061` 被使用 43 次，是 `mapspell [firewall]` 陷阱所在地图，也是 `GroupMove` 的目标；`D16062` 被使用 3 次。在认定可以添加之前，应检查对应地图数据是否存在。
 
-Also referenced: `D16062 41 148 84` via `mapting`, and `mapting D1606 4 174 139`.
+其他引用包括通过 `mapting` 使用的 `D16062 41 148 84`，以及 `mapting D1606 4 174 139`。
 
-## 7. Items
+<a id="7-items"></a>
+## 7. 物品
 
-21 named by `give` / `take` / `checkitem`. **15 are missing from `itemrecord.inc`.**
+`give` / `take` / `checkitem` 共指定 21 种物品。**其中 15 种在 `itemrecord.inc` 中缺失。**
 
-| item | in DB |
+| 物品 | 数据库中存在 |
 |---|---|
 | 影魅之刃 | ✅ |
 | 寂幻之刃 | ✅ |
@@ -376,26 +349,23 @@ Also referenced: `D16062 41 148 84` via `mapting`, and `mapting D1606 4 174 139`
 | 藏宝箱 | ❌ |
 | 青空石 | ❌ |
 
-The blades themselves exist; every quest token and the five element stones
-(大地石/太阳石/心石/活石/青空石) do not. Note the log also mentions `宝箱` (exists) alongside
-`藏宝箱` (missing) — check whether legacy means one item or two.
+两把剑本身都存在；所有任务信物和五种元素石（大地石/太阳石/心石/活石/青空石）都不存在。日志同时提到 `宝箱`（存在）和 `藏宝箱`（缺失），需确认原版指的是一个物品还是两个。
 
-**Appending to `itemrecord.inc` is ID-safe** (IDs are positional, `s_itemRecordAssertor` enforces
-name uniqueness at startup). Deleting or inserting is not.
+**在 `itemrecord.inc` 末尾追加不会改变已有 ID**：ID 取决于位置，`s_itemRecordAssertor` 在启动时检查名称唯一性。删除或在中间插入则不具备这一保证。
 
-## 8. Monsters
+<a id="8-monsters"></a>
+## 8. 怪物
 
-| monster | record | NPC placeholder |
+| 怪物 | 记录 | NPC 占位 |
 |---|---|---|
 | 诺玛司令 | ✅ | – |
 | 诺玛教主 | ✅ | – |
-| 诺玛大法老 | ✅ | 4 (empty) |
-| 阿龙怪 | ❌ | 4 (empty) |
+| 诺玛大法老 | ✅ | 4 个空文件 |
+| 阿龙怪 | ❌ | 4 个空文件 |
 
-`阿龙怪` is both an NPC (in the pen) **and** a monster (`Mongenp "D16031,33,44,10" 阿龙怪 1`), so
-it needs a monster record as well as its NPC scripts.
+`阿龙怪` 既是候场区的 NPC，**也是**怪物（`Mongenp "D16031,33,44,10" 阿龙怪 1`），因此除 NPC 脚本外还需要怪物记录。
 
-Spawn shape, from `extinctionMongen.txt`:
+`extinctionMongen.txt` 中的生成示例：
 
 ```
 Mongenp   "D16031,33,44,10" 诺玛司令 20 "noitem,金创药（特）,魔法药（特）"
@@ -404,123 +374,111 @@ Mongenp   "D16031,33,44,10" 阿龙怪  1  "noitem,金币,5000,金创药（特）
 ApplyMonEx "D16031,33,44,30" 阿龙怪  [Monsterside] "???"
 ```
 
-`"noitem,..."` overrides the drop table for that spawn only. `ApplyMonEx [Monsterside] "<title>"`
-tags them — `毁灭之印大师` is the title on the 诺玛司令 that carry the seal.
+`"noitem,..."` 只覆盖该次生成的掉落表。`ApplyMonEx [Monsterside] "<title>"` 为怪物添加标记；携带印记的诺玛司令使用 `毁灭之印大师` 称号。
 
-## 9. Flags
+<a id="9-flags"></a>
+## 9. 标记
 
-- `[205]` — HonChonDo active. Set 0 when the blade is handed over.
-- `[207]` — HonChonMado active. Gates the Helper book.
-- `[208]` — set 0 alongside `[207]` at `MadoNpc.txt`.
+- `[205]`：HonChonDo 已激活；交付剑时设为 0。
+- `[207]`：HonChonMado 已激活；控制 Helper 任务书的访问。
+- `[208]`：在 `MadoNpc.txt` 中与 `[207]` 一起设为 0。
 
-Progress itself lives in SQL, not flags — the flags are only "is this questline open".
+具体进度保存在 SQL 中，不保存在这些标记里；标记只表示“任务线是否开放”。
 
-## 10. File map
+<a id="10-file-map"></a>
+## 10. 文件地图
 
-### `QuestDiary/HonChonDo` (15 files)
+<a id="questdiaryhonchondo-15-files"></a>
+### `QuestDiary/HonChonDo`（15 个文件）
 
-| file | bytes | what |
+| 文件 | 字节数 | 内容 |
 |---|---|---|
-| `extinctionQuestEvent.txt` | 43536 | biggest; 29 `TBL_HonChonMadoQuest` + 9 `SeverFlag` refs, 38 `UpdateValueSql` |
-| `MadoNpcBaska.txt` | 35981 | 帕斯卡/巴斯卡 dialogue, 51 + 8 refs |
-| `MadoNpcSahaka.txt` | 20055 | 夏柯; **creates the `TBL_HonChonMadoQuest` row** (line 37) |
-| `Mon_extinction.txt` | 15087 | monster-death hooks, 61 refs, 39 updates |
-| `MadoNpcJaha.txt` | 13279 | 扎马尔/자하, 47 + 10 refs |
-| `MadoNumaNpc.txt` | 11852 | Numa NPCs, 24 refs |
-| `MadoextinctionNpc.txt` | 9149 | 25 refs; the only `TBL_HonChonMadoServer` user |
-| `extinctionMongen.txt` | 8586 | the scheduled spawns (`@tuesdayMonGen` etc.) |
-| `HelperHonChonDoBook.txt` | 7988 | the 25-stage quest log reader |
-| `HelperHonChonDoBook.txt.utf8` | 8000 | **duplicate, all on one line**; nothing references it — ignore, it breaks greps |
-| `HonMainControl.txt` | 4635 | the weekly scheduler |
-| `HonChondonpc.txt` | 4352 | the entry NPC; hands over 寂幻之刃 |
+| `extinctionQuestEvent.txt` | 43536 | 最大的文件；29 处 `TBL_HonChonMadoQuest`、9 处 `SeverFlag` 引用，38 次 `UpdateValueSql` |
+| `MadoNpcBaska.txt` | 35981 | 帕斯卡/巴斯卡对话，51 + 8 处引用 |
+| `MadoNpcSahaka.txt` | 20055 | 夏柯；**创建 `TBL_HonChonMadoQuest` 记录**（第 37 行） |
+| `Mon_extinction.txt` | 15087 | 怪物死亡钩子，61 处引用、39 次更新 |
+| `MadoNpcJaha.txt` | 13279 | 扎马尔/자하，47 + 10 处引用 |
+| `MadoNumaNpc.txt` | 11852 | 诺玛 NPC，24 处引用 |
+| `MadoextinctionNpc.txt` | 9149 | 25 处引用；唯一使用 `TBL_HonChonMadoServer` 的文件 |
+| `extinctionMongen.txt` | 8586 | 定时刷怪（`@tuesdayMonGen` 等） |
+| `HelperHonChonDoBook.txt` | 7988 | 25 阶段任务日志读取器 |
+| `HelperHonChonDoBook.txt.utf8` | 8000 | **重复文件，全部位于一行**；无引用，应忽略，否则会干扰搜索 |
+| `HonMainControl.txt` | 4635 | 每周调度器 |
+| `HonChondonpc.txt` | 4352 | 入口 NPC，交付寂幻之刃 |
 | `MadoNpcHyun.txt` | 3012 | 玄 |
-| `Map_extinctionRoom.txt` | 1976 | map script, 10 refs |
-| `Map_honchonmadoRoom.txt` | 1901 | map script |
+| `Map_extinctionRoom.txt` | 1976 | 地图脚本，10 处引用 |
+| `Map_honchonmadoRoom.txt` | 1901 | 地图脚本 |
 
-### `QuestDiary/HonChonMado` (16 files)
+<a id="questdiaryhonchonmado-16-files"></a>
+### `QuestDiary/HonChonMado`（16 个文件）
 
-| file | bytes | what |
+| 文件 | 字节数 | 内容 |
 |---|---|---|
-| `Mon_MadoHave.txt` | 18085 | monster hooks, 46 refs, 40 updates |
-| `MadoNpc.txt` | 10987 | 魔达; **creates the `TBL_MadoHaveUserQuest` row** (line 37) |
-| `MonsterNpc1.txt` | 8758 | 27 refs |
-| `QuestMadoEvent.txt` | 6029 | event glue |
-| `StoneNpc3.txt` | 4783 | guardian stone 3 |
+| `Mon_MadoHave.txt` | 18085 | 怪物钩子，46 处引用、40 次更新 |
+| `MadoNpc.txt` | 10987 | 魔达；**创建 `TBL_MadoHaveUserQuest` 记录**（第 37 行） |
+| `MonsterNpc1.txt` | 8758 | 27 处引用 |
+| `QuestMadoEvent.txt` | 6029 | 事件衔接逻辑 |
+| `StoneNpc3.txt` | 4783 | 守护石 3 |
 | `MadoHaveJaha.txt` | 4678 | |
-| `StoneNpc4.txt` | 4503 | guardian stone 4 |
-| `SahakaNpc.txt` | 3851 | also creates the row (line 28) |
+| `StoneNpc4.txt` | 4503 | 守护石 4 |
+| `SahakaNpc.txt` | 3851 | 也会创建记录（第 28 行） |
 | `NumaNpcMagda.txt` | 3463 | |
 | `NumaNpcMagda1.txt` | 2776 | |
 | `StoneNpc2.txt` | 2535 | |
 | `StoneNpc1.txt` | 2406 | |
 | `StoneNpc5.txt` | 2263 | |
-| `HelperHonChonMaDoBook.txt` | 1955 | the 11-stage quest log reader |
+| `HelperHonChonMaDoBook.txt` | 1955 | 11 阶段任务日志读取器 |
 | `StoneNpcbox1.txt` | 1726 | |
 | `ItemQuestMado.txt` | 957 | |
 
-### Prose lives elsewhere
+<a id="prose-lives-elsewhere"></a>
+### 对话文本位于其他文件
 
-Every `#SAY` is `#INCLUDE [Convert_Def/QuestDiary/<dir>/<same-filename>] @Convert_<label>_n`.
-So each of the above has a **paired file** in `Convert_Def/QuestDiary/HonChonDo/` (14 files —
-no pair for the `.utf8` duplicate) and `Convert_Def/QuestDiary/HonChonMado/` (16 files, one each)
-holding the actual text. 288 `LoadValue` calls
-pull short strings the same way. When converting, inline the prose into the `.lua` the way the
-skill quests do — do not reproduce the indirection.
+每个 `#SAY` 都使用 `#INCLUDE [Convert_Def/QuestDiary/<dir>/<same-filename>] @Convert_<label>_n`。因此上面的文件各有保存实际文本的**配对文件**，位于 `Convert_Def/QuestDiary/HonChonDo/`（14 个，重复的 `.utf8` 文件没有配对）和 `Convert_Def/QuestDiary/HonChonMado/`（16 个，一一对应）。288 次 `LoadValue` 调用也以同样方式读取短字符串。转换时应像技能任务一样把文本内联到 `.lua` 中，不要复制这层间接引用。
 
-### Outside the two directories
+<a id="outside-the-two-directories"></a>
+### 两个目录之外的文件
 
-- `QuestDiary/NpcQuest_Def/17baska1-npcroom1.txt` … `17baska4-npcroom1.txt` — pen-side scripts,
-  1 `TBL_HonChonMadoQuest` ref each
-- `QuestDiary/NpcQuest_Def/17Zaha_Numa-41.txt` — 1 ref
+- `QuestDiary/NpcQuest_Def/17baska1-npcroom1.txt` 至 `17baska4-npcroom1.txt`：候场区脚本，各有一处 `TBL_HonChonMadoQuest` 引用。
+- `QuestDiary/NpcQuest_Def/17Zaha_Numa-41.txt`：一处引用。
 
-## 11. Legacy data quirks to expect
+<a id="11-legacy-data-quirks-to-expect"></a>
+## 11. 原版数据中需要留意的问题
 
-Consistent with the rest of `Envir` (see the `legacy-data-is-buggy` note): expect unreachable
-labels, self-referencing gotos, unsatisfiable checks and drifting NPC names. Already spotted:
+与 `Envir` 其他部分一样（参见 `legacy-data-is-buggy` 说明），可能存在不可达标签、自引用 goto、无法满足的检查和不一致的 NPC 名称。已发现的问题：
 
-- `TBL_HonChonMadoSeverFlag` — misspelled in the data itself. Keep the typo or the SQL will not
-  match; do not "fix" it silently.
-- `HelperHonChonDoBook.txt.utf8` — a one-line duplicate of the `.txt`, ~identical size. Not read
-  by anything; it wrecks any `grep -n` that touches it.
-- The HonChonDo log has **two stages both labelled 1-3** (获取宝箱 and 开启宝箱).
-- Stage 1-23 is tagged `{FCOLOR/13}` where every other stage uses `{FCOLOR/10}`.
-- `HelperHonChonDoBook` reaches `Large D0 13` while the log only defines 11 HonChonMado stages —
-  the counter overruns the log.
-- Several stage descriptions have literal `(???:???)` placeholders where coordinates should be,
-  and one `ApplyMonEx ... "???"` title. Legacy shipped them unfilled.
-- `FLD_MADOPATTERN` / `FLD_MADOTEMPQUEST` appear only in the insert column list — confirm anything
-  reads them before designing a schema around them.
+- `TBL_HonChonMadoSeverFlag`：原始数据本身拼写错误。必须保留该拼写，否则 SQL 无法匹配；不要悄悄“修正”。
+- `HelperHonChonDoBook.txt.utf8`：`.txt` 的单行重复文件，大小接近，没有任何读取方；会干扰涉及该文件的 `grep -n`。
+- HonChonDo 日志中**两个阶段都标为 1-3**，分别是获取宝箱和开启宝箱。
+- 阶段 1-23 使用 `{FCOLOR/13}`，其他阶段均使用 `{FCOLOR/10}`。
+- `HelperHonChonDoBook` 到达 `Large D0 13`，但日志只定义了 11 个 HonChonMado 阶段；计数器超出日志范围。
+- 几个阶段描述在本应出现坐标的位置直接使用 `(???:???)` 占位符，还有一个 `ApplyMonEx ... "???"` 称号；原版本就没有填写。
+- `FLD_MADOPATTERN` / `FLD_MADOTEMPQUEST` 只出现在插入列列表；围绕它们设计表结构前应确认是否有读取方。
 
-## 12. Suggested order
+<a id="12-suggested-order"></a>
+## 12. 建议实施顺序
 
-1. Script-level SQL (or decide on a different persistence model for multi-level + shared state).
-   This unblocks CastleWar as well.
-2. Real-time scheduler: weekday/hour/minute + a global repeating tick.
-3. `Movenpc`, or decide the pen is dropped and NPCs self-gate on the schedule.
-4. Broadcast (`Eventmsg grobal`, `linemsg`).
-5. The 15 item records, the 阿龙怪 monster record, and `D16061`/`D16062` if map data exists.
-6. `Mongenp` drop override + `ApplyMonEx` faction, then the spawn schedule.
-7. Only then start transcribing dialogue — HonChonDo first, since 寂幻之刃 gates HonChonMado.
+1. 实现脚本级 SQL，或为多级进度和共享状态选择其他持久化模型；这也能解除攻城战的相关限制。
+2. 实现现实时间调度器：星期、小时、分钟及全局重复计时。
+3. 实现 `Movenpc`，或决定放弃候场区，由 NPC 自行按时间控制响应。
+4. 实现广播（`Eventmsg grobal`、`linemsg`）。
+5. 补充 15 条物品记录、阿龙怪怪物记录；若地图数据存在，再添加 `D16061` / `D16062`。
+6. 实现 `Mongenp` 掉落覆盖和 `ApplyMonEx` 阵营，再实现刷怪时间表。
+7. 最后才开始转写对话；先完成 HonChonDo，因为寂幻之刃是进入 HonChonMado 的前提。
 
-## 13. How to verify a conversion
+<a id="13-how-to-verify-a-conversion"></a>
+## 13. 如何验证转换
 
-The tooling built for the skill quests applies directly, and lives in the session scratchpad
-(copy it somewhere permanent before relying on it):
+为技能任务编写的工具可直接使用；调研时它们位于会话临时目录，依赖之前需要将其保存在持久位置：
 
-- `questharness.lua <file>` — runs a quest plugin under stubbed globals, `load()`s every embedded
-  code string, walks every FSM state and NPC handler, renders every layout and checks XML balance
-- `npcharness.lua <file> <include-dir>` — the same for an NPC script. **The include dir is a
-  required second argument**; without it `require` silently returns `{}`
-- `coverage.lua <legacy-src.txt> <converted.lua>` — greps every legacy dialogue line against the
-  converted file and reports what is missing. Format-substituted lines (`%s`) show as false
-  misses; `goto`/`MonGen`/`give` command lines are noise
+- `questharness.lua <file>`：使用模拟全局对象运行任务插件，用 `load()` 加载每段内嵌代码字符串，遍历每个 FSM 状态和 NPC 处理器，渲染全部布局并检查 XML 标签配对。
+- `npcharness.lua <file> <include-dir>`：对 NPC 脚本执行同类检查。**include 目录是必需的第二个参数**；缺少时 `require` 会静默返回 `{}`。
+- `coverage.lua <legacy-src.txt> <converted.lua>`：在转换后文件中搜索每条原版对话并报告缺失。带格式替换（`%s`）的行可能被误报为缺失；`goto` / `MonGen` / `give` 命令行属于干扰项。
 
-`luac -p` for syntax, but **copy to an ASCII temp name first** — `luac` cannot open CJK paths on
-Windows. And after generating any file with a CJK name, scan for mangled filenames:
+使用 `luac -p` 检查语法时，**先复制为 ASCII 临时文件名**：调研时的 Windows `luac` 无法打开中日韩字符路径。生成中日韩字符文件名后，还应扫描乱码文件名：
 
 ```
 git ls-files -z | python -c "import sys;[print(repr(p)) for p in sys.stdin.buffer.read().decode().split(chr(0)) if any(0xE000<=ord(c)<=0xF8FF or ord(c)<0x20 for c in p)]"
 ```
 
-That check is what caught 11 skill-teacher files named with a trailing U+F00D that the server
-never loaded (`24a16db5`).
+该检查曾发现 11 个技能导师文件名尾部带有 U+F00D，导致服务端从未加载这些文件（`24a16db5`）。

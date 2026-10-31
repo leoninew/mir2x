@@ -1,111 +1,74 @@
-# Merchant scripts
+<a id="merchant-scripts"></a>
+# 商人脚本
 
-Each module owns its NPC menu, event handlers and services. There is no generic
-merchant builder. Do not turn these modules back into wrappers around one, or
-move service selection and event registration into a shared helper.
+每个模块各自负责 NPC 菜单、事件处理器和服务，不存在通用的商人构建器。不要把这些模块改回通用构建器的包装，也不要把服务选择和事件注册移入共享辅助模块。
 
-| Module | Responsibilities |
+| 模块 | 职责 |
 | --- | --- |
-| `smith` | Weapon/mineral trading, ordinary and special repair, preliminary repair pages, weapon advice, bound-sword removal |
-| `outfitter` | Clothing, helmet and shoe trading and ordinary repair, including preliminary repair pages |
-| `jeweler` | Accessory trading, ordinary repair and the Numa rusty-accessory restoration service |
-| `apothecary` | Potion/scroll trading and the two scripted special-potion sales, never equipment repair |
-| `bookseller` | Skill-book trading and the bookseller's own class/book explanation pages |
-| `grocer` | General-store trading; ordinary mending only when explicitly offered |
-| `butcher` | Meat buying, optional stock and meat-gathering instructions |
-| `buyer` | Material buying, without a stock or repair counter |
-| `repairer` | Repair services, without trading |
+| `smith` | 武器和矿石交易、普通与特殊修理、修理前说明页面、武器建议、卸下绑定剑 |
+| `outfitter` | 衣服、头盔、鞋子交易及普通修理，包括修理前说明页面 |
+| `jeweler` | 首饰交易、普通修理和 Numa 生锈首饰修复服务 |
+| `apothecary` | 药水和卷轴交易、两种脚本化特殊药水销售，不提供装备修理 |
+| `bookseller` | 技能书交易，以及书商自己的职业和书籍说明页面 |
+| `grocer` | 杂货交易；仅在明确提供时支持普通修理 |
+| `butcher` | 收购肉类、可选销售库存、采肉说明 |
+| `buyer` | 收购材料，不提供销售或修理柜台 |
+| `repairer` | 修理服务，不提供交易 |
 
-`npc.include.invop` implements low-level inventory transactions.
-`include.dialog` only formats dialog/links and guards individual
-callbacks against red-name access. Neither chooses a merchant's services,
-creates its menu or registers its handlers.
+`npc.include.invop` 实现底层背包交易。`include.dialog` 只负责格式化对话和链接，并在各个回调中限制红名玩家访问。这两个模块都不选择商人服务、不创建商人菜单，也不注册商人的处理器。
 
-`dialog.link(id, label, opts)` accepts optional `prefix`, `suffix` and `close`
-fields. If `close` is omitted, only `SYS_EXIT` closes the dialog; `true` or
-`false` explicitly overrides that default.
+`dialog.link(id, label, opts)` 接受可选字段 `prefix`、`suffix` 和 `close`。省略 `close` 时，只有 `SYS_EXIT` 会关闭对话；显式指定 `true` 或 `false` 可覆盖默认行为。
 
-## Converting a merchant
+<a id="converting-a-merchant"></a>
+## 转换商人脚本
 
-Read both `Envir/Market_Def/<name>.txt` (control flow, item categories and stock)
-and its `Envir/Convert_Def/Market_Def/<name>.txt` includes (dialog). Follow the
-reachable branches, not just the list of section names.
+同时阅读 `Envir/Market_Def/<name>.txt` 中的控制流程、物品类别和库存，以及它在 `Envir/Convert_Def/Market_Def/<name>.txt` 中包含的对话。要追踪实际可达的分支，不能只看章节名称列表。
 
-Keep the provenance comment, stock, greetings, prompts, completion lines,
-navigation labels and special conversations in the NPC script. Resolve
-`#INCLUDE` stock lists and use the exact item names/types from `itemrecord.inc`.
-Do not replace distinct source paragraphs with a summary or an invented answer.
-The apothecary and material buyer also check `TRADE_ITEMS` against the legacy
-`Stdmode` values in `King_StdItems.csv`, because the inventory type `道具` alone
-would accept unrelated items. Keep those lists in sync when updating item data;
-an NPC with a different source category can supply its own `tradeItems`.
+在 NPC 脚本中保留来源注释、库存、问候语、提示、完成语、导航标签和特殊对话。解析 `#INCLUDE` 库存列表，使用 `itemrecord.inc` 中准确的物品名称和类型。不要用摘要或编造的回答替代原文中不同的段落。
 
-Choose the matching type, then retain that NPC's exceptions explicitly. In
-particular, ordinary repair and special repair are separate services; `false`
-disables a type's default service, and a missing `goods` list means no stock
-counter. Potion shops and material buyers do not acquire repair services from
-unrelated fields.
+药商和材料收购商还会将 `TRADE_ITEMS` 与 `King_StdItems.csv` 中原版 `Stdmode` 值核对，因为仅使用背包类型 `道具` 会接受不相关物品。更新物品数据时应同步这些列表；源类别不同的 NPC 可以提供自己的 `tradeItems`。
 
-Menus can override their type's operation labels/suffixes and exit/back labels.
-Only NPCs with a reachable daily-task menu set `today`; it is the original
-no-task fallback, not an implementation of the legacy daily-quest scheduler.
-Use `preRepairText` separately from `repairText` where the source has both.
-`repairDoneBack` preserves the completion-page caption; `false` omits that link.
-Use a greeting function when text depends on live state instead of evaluating
-that state when the script loads. Book help can retain NPC-specific prose in
-`bookHelp`, rather than forcing every bookseller to say the same thing.
+选择匹配的商人类型后，应明确保留该 NPC 的例外行为。特别注意：普通修理和特殊修理是独立服务；`false` 会禁用类型的默认服务，缺少 `goods` 列表表示没有销售柜台。药店和材料收购商不会因为其他无关字段而获得修理服务。
 
-If a merchant cannot be expressed faithfully by its type, add a type-specific
-branch or write its script directly. Do not weaken all other merchant types to
-accommodate the exception. Quest state machines remain in the quest scripts;
-an empty placeholder conversation is not a replacement for one.
+菜单可以覆盖所属类型的操作标签、后缀、退出标签和返回标签。只有存在可达日常任务菜单的 NPC 才设置 `today`；它是原版无任务时的回退内容，不是原版日常任务调度器的实现。原文同时提供修理前文本和修理文本时，分别使用 `preRepairText` 和 `repairText`。`repairDoneBack` 保留完成页面的按钮文字；设为 `false` 则不显示该链接。
 
-For scripted exchanges, perform profession selection, material removal,
-payment and rewards together in one player-side call. Return only serializable
-results, not native containers with metatables. Closing a conversation
-can cancel the NPC coroutine while an already-sent player operation still runs;
-separate removal and reward calls can therefore lose the player's materials.
+如果问候语依赖实时状态，应使用问候函数，而不是在脚本加载时计算该状态。书籍帮助可在 `bookHelp` 中保留 NPC 特有文本，不应强制所有书商使用相同说明。
 
-## Engine and source-data boundaries
+如果现有类型不能忠实表达某个商人，可增加该类型专用分支或直接编写该 NPC 脚本。不要为适配个别例外而削弱其他所有商人类型的规则。任务状态机仍放在任务脚本中，空的占位对话不能替代任务实现。
 
-The existing inventory operations still use mir2x pricing/durability rules,
-not the legacy percentage price multipliers or Volume/Hour replenishment.
-Do not infer buyback categories from the shop's stock.
+对于脚本化兑换，应在同一次玩家侧调用中完成职业选择、材料扣除、付款和奖励发放；只返回可序列化结果，不返回带元表的原生容器。关闭对话可能取消 NPC 协程，但已经发送的玩家操作仍可能执行；如果把扣除和奖励拆成多次调用，玩家可能损失材料。
 
-The server does not expose castle-war state and `getSubukGuildName()` is still
-a server-side placeholder. Sabuk merchants therefore use their original
-peacetime dialog, evaluated on entry, rather than claiming a perpetual siege.
+<a id="engine-and-source-data-boundaries"></a>
+## 引擎与原始数据边界
 
-The Pan Ye smith's item-gated conversation, profession-specific rewards and
-exchange checks are retained locally. The current item database lacks
-`潘夜天灵`, so that branch cannot be activated yet: it logs the missing record
-and refuses exchange attempts without removing or granting anything. Do not
-substitute another quest item or invent its missing item data.
+现有背包操作仍使用 mir2x 的价格和耐久规则，不使用原版百分比价格倍率或 Volume/Hour 补货规则。不要根据商店库存推断其收购类别。
 
-The Oasis cursed-potion sale charges 5,000,000 gold; the RedZone rebirth-potion
-sale charges 1,500,000. These are explicit script prices, independent of the
-normal shop's price multiplier. Numa restoration charges 1,000,000 and preserves
-the original nine-item priority and seven element choices. Checks, debits and
-grants run together in a player-side call.
+服务端没有暴露攻城战状态，`getSubukGuildName()` 仍是服务端占位实现。因此 Sabuk 商人进入时使用原版和平时期对话，而不是假定攻城战一直进行。
 
-The 4,000,000-gold element-change option is commented out in the legacy script,
-so it is not offered. The dark-element Shizun bracelet restoration branch uses
-garbled inline source text with no close link instead of the clean, unused
-dialog include; that discrepancy is deliberately retained.
+潘夜铁匠受物品限制的对话、按职业发放的奖励及兑换检查均保留在本地。当前物品数据库缺少 `潘夜天灵`，因此该分支暂时无法启用：代码会记录缺失的条目并拒绝兑换，不会扣除或发放任何物品。不要用其他任务物品替代，也不要编造缺失的物品数据。
 
-## Regression coverage
+Oasis 的诅咒药水售价为 5,000,000 金币，RedZone 的重生药水售价为 1,500,000 金币。这些是脚本明确指定的价格，与普通商店的价格倍率无关。Numa 修复服务收费 1,000,000 金币，并保留原版九种物品的优先顺序和七种元素选择。检查、扣款和发放在同一次玩家侧调用中完成。
 
-From the repository root, with Lua 5.4:
+原版脚本中 4,000,000 金币的更换元素选项已被注释，因此不提供该选项。暗元素 Shizun 手镯修复分支使用原始内联文本中的乱码，且没有关闭链接，而不是使用内容正常但未被引用的对话 include；这一差异被有意保留。
+
+<a id="regression-coverage"></a>
+## 回归测试覆盖
+
+`questscripts` CTest 套件通过项目内嵌的 Lua 库运行该测试程序，不需要另装 Lua 可执行文件。完成构建配置后，可在仓库根目录执行：
+
+```sh
+cmake --build build --target test_questscripts --parallel 8
+ctest --test-dir build -R '^questscripts/' --output-on-failure
+```
+
+如果只需直接运行商人测试，也可以使用单独安装的 Lua 5.4 解释器和支持展开 NPC 文件名通配符的终端：
 
 ```sh
 lua server/test/merchant.lua server/script/npc/*.lua
 ```
 
-The harness uses the NPC dispatcher and the real inventory helper with a mocked
-game world. It exercises type-specific services, navigation, stock/type names,
-repair callbacks, red-name policy and converted NPC handlers. Scripted exchange
-coverage includes stale requests, profession priority and cancellation before
-the player-side reply arrives. It also loads the Wild Rush quest's real merchant
-registrations and checks NPC entry through `server.player.hasJob()`, including
-multiple professions, level requirements and completed quests. NPC clicks run
-quest eligibility checks before entering the merchant's own dialog.
+测试程序使用 NPC 分派器和真实背包辅助模块，并模拟游戏世界。覆盖内容包括各类型服务、导航、库存和类型名称、修理回调、红名限制及已转换的 NPC 处理器。脚本兑换测试包括过期请求、职业优先级，以及玩家侧回复到达前取消对话的情况。
+
+测试还会加载 Wild Rush 任务中真实的商人注册，通过 `server.player.hasJob()` 检查 NPC 入口，包括多职业、等级要求和任务完成状态。玩家点击 NPC 后，会先检查任务资格，再进入商人自己的对话。
+
+可用测试套件和仍需在游戏内验证的内容，参见[开发与测试指南](../../../../../readme/development/workflow-and-testing.md)。

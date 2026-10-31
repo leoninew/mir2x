@@ -1,11 +1,11 @@
-# Tests
+<a id="tests"></a>
+# 测试
 
-C++ suites use Catch2 v3 from the project's vcpkg registry baseline. CMake's
-`catch_discover_tests()` registers individual cases with CTest, prefixed by their
-suite name. Tests assert behavior directly; there are no stdout gold files or
-Python comparison wrapper.
+代码地图、Windows 命令和按改动类型选择测试的方法，参见[开发与测试指南](../readme/development/workflow-and-testing.md)。
 
-Build the project using the supported out-of-tree configuration:
+C++ 测试套件使用项目 vcpkg 注册表基线中的 Catch2 v3。CMake 的 `catch_discover_tests()` 将各个用例注册到 CTest，并以套件名称作为前缀。测试直接断言行为，不使用标准输出基准文件或 Python 比对包装器。
+
+使用支持的仓库外构建配置编译项目，例如：
 
 ```bash
 /home/anhong/mir2x/build.py \
@@ -18,30 +18,17 @@ Build the project using the supported out-of-tree configuration:
     --no-ccache
 ```
 
-Test executables are excluded from the normal build. Append `--run-test` to the
-`build.py` command above to build all test executables and run the CMake `check`
-target, which invokes CTest.
+测试可执行文件不包含在普通构建中。在上述 `build.py` 命令中追加 `--run-test`，即可编译全部测试并运行调用 CTest 的 CMake `check` 目标。
 
-Rerun all cases, or select one suite:
+重新运行全部用例，或选择一个套件：
 
 ```bash
 ctest --test-dir /home/anhong/b_mir2x_vcpkg/build --output-on-failure
 ctest --test-dir /home/anhong/b_mir2x_vcpkg/build -R '^queststate/' --output-on-failure
 ```
 
-Lua quest regression scripts run inside a Catch2 executable using the vcpkg Lua
-library; a separate system Lua executable is not needed. The Lua assertions and
-mock fixtures remain in `server/test/unit/test_*quests.lua` and
-`test_questscripts.lua`. A failed script reports its Lua error through Catch2.
-The same executable also runs `server/test/merchant.lua` against all NPC scripts.
+Lua 任务回归脚本在 Catch2 可执行文件中使用 vcpkg 的 Lua 库运行，不需要另装系统 Lua 可执行文件。Lua 断言和模拟环境位于 `server/test/unit/test_*quests.lua` 和 `test_questscripts.lua`。脚本失败时，Lua 错误通过 Catch2 报告。同一个可执行文件还使用 `server/test/merchant.lua` 检查全部 NPC 脚本。
 
-Server Lua-runner suites load scripts from the installed server directory.
-The client geometry suite requires installed font/emoji resources and a working
-SDL video backend. The `build.py` command above installs the build before running
-the tests; do not use `--no-install` when the installed scripts or resources
-need refreshing.
+服务端 Lua runner 套件从已安装的服务端目录加载脚本。客户端几何测试套件需要已安装的字体和 emoji 资源，以及可正常工作的 SDL 视频后端。上述 `build.py` 命令会在运行测试前执行安装；当已安装的脚本或资源需要更新时，不要使用 `--no-install`。
 
-`MIR2X_TEST_RES_DIR` can override the client suite's installed resource directory.
-Catch2 owns executable arguments, so positional resource-path arguments are not
-used. External-command integration tests, when added, run directly under CTest
-with a timeout and their process exit status.
+`MIR2X_TEST_RES_DIR` 可覆盖客户端套件使用的已安装资源目录。可执行文件参数由 Catch2 管理，因此不使用位置参数传递资源路径。将来新增外部命令集成测试时，CTest 会直接运行这些测试，并根据超时和进程退出状态判断结果。

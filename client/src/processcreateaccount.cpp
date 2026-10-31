@@ -127,6 +127,7 @@ ProcessCreateAccount::ProcessCreateAccount()
 
           .texIDList
           {
+              .off  = 0X0800000B,
               .on   = 0X0800000B,
               .down = 0X0800000C,
           },
@@ -135,8 +136,6 @@ ProcessCreateAccount::ProcessCreateAccount()
           {
               doPostAccount();
           },
-
-          .radioMode = true,
       }}
 
     , m_quit
@@ -146,6 +145,7 @@ ProcessCreateAccount::ProcessCreateAccount()
 
           .texIDList
           {
+              .off  = 0X0000001C,
               .on   = 0X0000001C,
               .down = 0X0000001D,
           },
@@ -154,8 +154,6 @@ ProcessCreateAccount::ProcessCreateAccount()
           {
               doExit();
           },
-
-          .radioMode = true,
       }}
 
     , m_infoStr
