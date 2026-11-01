@@ -1,0 +1,299 @@
+[
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "invalid_argument",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "unauthorized",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "version_mismatch",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "ambiguous_instance",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "not_in_game",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "paused",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "stale_context",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "stale_target",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "stale_cursor",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "busy",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "policy_denied",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "budget_exceeded",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "duplicate_conflict",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "ledger_full",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "unreachable",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "stalled",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "timeout",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "transport_lost",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "unsupported_item_type",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "unsupported_skill",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "economic_uncertain",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "out_of_bounds",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "need_move",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "target_lost",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "operation_not_found",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "unavailable",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  },
+  {
+    "v": 1,
+    "id": "example",
+    "ok": false,
+    "error": {
+      "code": "server_rejected",
+      "message": "操作未完成，请按错误码处理",
+      "details": {}
+    },
+    "context": null
+  }
+]

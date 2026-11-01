@@ -1,0 +1,79 @@
+{
+  "说明": "仅为脱敏契约示例；实际动作必须使用当前会话context和新逻辑动作UUID。accepted不代表完成，unknown不能自动重试。",
+  "查询工具": {
+    "name": "game_get_session",
+    "arguments": {}
+  },
+  "动作工具": {
+    "name": "game_move_to",
+    "arguments": {
+      "x": 0,
+      "y": 0,
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  "接收结果": {
+    "isError": false,
+    "structuredContent": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    }
+  },
+  "业务失败": {
+    "isError": true,
+    "structuredContent": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    }
+  },
+  "未知结果": {
+    "isError": false,
+    "structuredContent": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "method": "game_move_to",
+        "state": "unknown",
+        "context": {
+          "instance_id": "00000000000000000000000000000000",
+          "session_id": "00000000000000000000000000000000",
+          "world_epoch": "0",
+          "control_epoch": "0"
+        },
+        "started_at": "0",
+        "deadline_at": "0",
+        "completion_scope": null,
+        "evidence": [],
+        "error": null,
+        "cancel_requested": false,
+        "side_effects_possible": true,
+        "late_resolution": null,
+        "result": null
+      },
+      "context": null
+    }
+  }
+}

@@ -352,6 +352,11 @@ class XMLTypeset // means XMLParagraph typeset
             return m_paragraph->leaf(leafID).hasEvent();
         }
 
+        const char *leafText(int leafID) const
+        {
+            return m_paragraph->leaf(leafID).utf8Text();
+        }
+
         const auto leafSingleClick(int leafID) const
         {
             return m_paragraph->leaf(leafID).singleClick();

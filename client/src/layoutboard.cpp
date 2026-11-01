@@ -922,6 +922,65 @@ const char * LayoutBoard::findAttrValue(const std::unordered_map<std::string, st
     return valDefault;
 }
 
+std::vector<LayoutBoard::TextEvent> LayoutBoard::textEvents(size_t limit) const
+{
+    std::vector<TextEvent> result;
+    size_t scanned = 0;
+    int paragraph = 0;
+    for(const auto &node: m_parNodeList){
+        for(int leaf = 0; leaf < node.tpset->leafCount(); ++leaf){
+            if(++scanned > 8192){ throw std::length_error("Layout observation limit"); }
+            const auto attrs = node.tpset->leafEvent(leaf);
+            if(!attrs || !attrs->contains("id")){ continue; }
+            if(node.tpset->leafSingleClick(leaf) && node.tpset->leafEventCount(leaf, BEVENT_RELEASE) > 0){ continue; }
+            if(result.size() >= limit){ throw std::length_error("Layout event limit"); }
+            const auto text = node.tpset->leafText(leaf);
+            size_t bytes = text ? std::strlen(text) : 0;
+            for(const auto &[key, value]: *attrs){ bytes += key.size() + value.size(); }
+            if(bytes > 32768){ throw std::length_error("Layout event byte limit"); }
+            result.push_back({paragraph, leaf, text ? text : "", *attrs});
+        }
+        ++paragraph;
+    }
+    return result;
+}
+
+std::string LayoutBoard::getTextBounded(size_t maxBytes) const
+{
+    size_t scanned = 0;
+    size_t bytes = m_parNodeList.empty() ? 0 : m_parNodeList.size() - 1;
+    if(bytes > maxBytes){ throw std::length_error("Layout text byte limit"); }
+    for(const auto &node: m_parNodeList){
+        for(int leaf = 0; leaf < node.tpset->leafCount(); ++leaf){
+            if(++scanned > 8192){ throw std::length_error("Layout observation limit"); }
+            if(const auto text = node.tpset->leafText(leaf)){
+                const auto length = std::strlen(text);
+                if(length > maxBytes - bytes){ throw std::length_error("Layout text byte limit"); }
+                bytes += length;
+            }
+        }
+    }
+    auto text = getText();
+    if(text.size() > maxBytes){ throw std::length_error("Layout text byte limit"); }
+    return text;
+}
+
+bool LayoutBoard::activateTextEvent(int paragraph, int leaf)
+{
+    if(paragraph < 0 || paragraph >= parCount() || !m_eventCB){ return false; }
+    auto &typeset = *ithParIterator(paragraph)->tpset;
+    if(!typeset.leafValid(leaf)){ return false; }
+    const auto attrs = typeset.leafEvent(leaf);
+    if(!attrs || !attrs->contains("id")){ return false; }
+    if(typeset.leafSingleClick(leaf) && typeset.leafEventCount(leaf, BEVENT_RELEASE) > 0){ return false; }
+    // Keep the same leaf event counters and callback as a real GUI click.
+    const auto copied = *attrs;
+    typeset.transitLeafState(leaf, BEVENT_DOWN);
+    typeset.transitLeafState(leaf, BEVENT_ON);
+    m_eventCB(copied, BEVENT_RELEASE);
+    return true;
+}
+
 std::tuple<int, int> LayoutBoard::getCursorOff() const
 {
     if(!cursorLocValid(m_cursorLoc)){

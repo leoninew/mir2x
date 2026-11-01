@@ -5,6 +5,7 @@
 #include "layoutboard.hpp"
 #include "tritexbutton.hpp"
 #include "npcchatframe.hpp"
+#include "aibridge/npcmodel.hpp"
 
 class ProcessRun;
 class NPCChatBoard: public Widget
@@ -15,6 +16,7 @@ class NPCChatBoard: public Widget
     private:
         uint64_t m_npcUID = 0;
         std::string m_eventPath;
+        uint64_t m_revision = 0;
 
     private:
         ProcessRun *m_processRun;
@@ -40,6 +42,11 @@ class NPCChatBoard: public Widget
 
     public:
         void loadXML(uint64_t, const char *, const char *);
+        aibridge::NpcDialogue dialogue(std::string npcHandle) const;
+        bool choose(uint64_t revision, int paragraph, int leaf);
+        void closeDialogue();
+        uint64_t npcUid() const noexcept { return m_npcUID; }
+        uint64_t revision() const noexcept { return m_revision; }
 
     private:
         void onClickEvent(const char *, const char *, const char *, bool);

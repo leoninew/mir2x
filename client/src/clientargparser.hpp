@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <utility>
 #include <optional>
+#include <filesystem>
 #include "fflerror.hpp"
 #include "argf.hpp"
 
@@ -38,6 +39,9 @@ struct ClientArgParser
 
     const std::string resPath;             // "--res-path"
     const std::string inputScript;         // "--input-script"
+    const bool enableAiBridge;
+    const std::string aiBridgeDir;
+    const std::string aiPolicy;
 
     const std::optional<std::pair<std::string, std::string>> autoLogin; // "--auto-login"
 
@@ -73,6 +77,9 @@ struct ClientArgParser
 
         , resPath    (parseString(parser, "--res-path",     argf::OPT).value_or("res"))
         , inputScript(parseString(parser, "--input-script", argf::OPT).value_or(std::string{}))
+        , enableAiBridge(argf::parseInteger<bool>(parseString(parser, "--enable-ai-bridge", argf::OPT, true), "enable-ai-bridge", argf::checkPass<bool>, false, true).first)
+        , aiBridgeDir(parseString(parser, "--ai-bridge-dir", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{}))
+        , aiPolicy(parseString(parser, "--ai-policy", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{}))
 
         , autoLogin([&parser]() -> std::optional<std::pair<std::string, std::string>>
           {
@@ -87,7 +94,11 @@ struct ClientArgParser
               }
               return std::nullopt;
           }())
-    {}
+    {
+        if(enableAiBridge && (!std::filesystem::path(aiBridgeDir).is_absolute() || !std::filesystem::path(aiPolicy).is_absolute())){
+            throw fflpanic("--ai-bridge-dir and --ai-policy must be absolute paths");
+        }
+    }
 
     static int checkScreenMode(const char *, int screenMode)
     {

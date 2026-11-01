@@ -12,10 +12,30 @@
 #include "gfxshapeboard.hpp"
 #include "gfxresizeboard.hpp"
 #include "friendchatboardconst.hpp"
+#include "aibridge/economy.hpp"
+#include <map>
 
 class ProcessRun;
 class FriendChatBoard: public Widget
 {
+    public:
+        struct DeliveryEntry
+        {
+            std::string text;
+            std::shared_ptr<aibridge::EconomicRequest> request;
+        };
+    private:
+        std::map<std::string, DeliveryEntry> m_deliveries;
+        bool m_deliveryOverflow = false;
+        uint64_t m_deliveryRevision = 0;
+        std::vector<std::shared_ptr<aibridge::EconomicRequest>> m_deliveryNotices;
+        void observeDeliveryMessage(const SDChatMessage &);
+    public:
+        const auto &deliveries() const noexcept { return m_deliveries; }
+        bool deliveryOverflow() const noexcept { return m_deliveryOverflow; }
+        uint64_t deliveryRevision() const noexcept { return m_deliveryRevision; }
+        std::shared_ptr<aibridge::EconomicRequest> submitDelivery(const std::string &record);
+        void updateDefault(double) override;
     private:
         friend struct ChatItem;
         friend struct ChatItemContainer;

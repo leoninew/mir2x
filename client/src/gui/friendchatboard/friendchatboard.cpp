@@ -1,3 +1,4 @@
+#include "aibridge/economyrequest.hpp"
 #include <initializer_list>
 #include "sdldevice.hpp"
 #include "client.hpp"
@@ -1057,13 +1058,14 @@ void FriendChatBoard::queryChatMessage(uint64_t argMsgID, std::function<void(con
         std::memset(&cmQCM, 0, sizeof(cmQCM));
 
         cmQCM.msgid = argMsgID;
-        g_client->send({CM_QUERYCHATMESSAGE, cmQCM}, [argMsgID, argOp = std::move(argOp), this](uint8_t headCode, const uint8_t *data, size_t size)
+        g_client->sendScoped({CM_QUERYCHATMESSAGE, cmQCM}, 30000, [argMsgID, argOp = std::move(argOp), this](uint8_t headCode, const uint8_t *data, size_t size)
         {
             if(headCode == SM_QUERYCHATMESSAGEOK){
                 const auto sdCM = cerealf::deserialize<SDChatMessage>(data, size);
                 fflassert(sdCM.seq.has_value());
                 fflassert(sdCM.seq.value().id == argMsgID);
 
+                observeDeliveryMessage(sdCM);
                 auto iter = m_cachedChatMessageList.emplace(argMsgID, sdCM);
                 if(argOp){
                     argOp(std::addressof(iter.first->second), true);
@@ -1127,6 +1129,7 @@ void FriendChatBoard::queryChatPeer(const SDChatPeerID &sdCPID, std::function<vo
 
 void FriendChatBoard::addMessage(std::optional<uint64_t> localPendingID, const SDChatMessage &sdCM)
 {
+    observeDeliveryMessage(sdCM);
     fflassert(sdCM.seq.has_value());
     const auto peerCPID = [&sdCM, this]
     {
@@ -1340,38 +1343,25 @@ const FriendChatBoard *FriendChatBoard::getParentBoard(const Widget *widget)
 
 void FriendChatBoard::requestClaimDelivery(const std::string &record)
 {
-    if(record.size() != SYS_DELIVERYRECORDSIZE){
-        m_processRun->addCBLog(CBLOG_ERR, u8"无效的投递记录");
-        return;
+    try{ submitDelivery(record); }
+    catch(const aibridge::ProtocolError &){ m_processRun->addCBLog(CBLOG_ERR,u8"投递来源无效、已领取或结果待核对，不能重复提交"); }
+}
+
+std::shared_ptr<aibridge::EconomicRequest> FriendChatBoard::submitDelivery(const std::string &record)
+{
+    const auto found=m_deliveries.find(record);
+    if(record.size()!=SYS_DELIVERYRECORDSIZE || found==m_deliveries.end()){
+        throw aibridge::ProtocolError("stale_target","Delivery is not from a received system message");
     }
-
-    CMClaimDelivery cmCD {};
-    cmCD.record.assign(record);
-
-    g_client->send({CM_CLAIMDELIVERY, cmCD}, [this](uint8_t headCode, const uint8_t *buf, size_t bufSize)
-    {
-        switch(headCode){
-            case SM_OK:
-                {
-                    m_processRun->addCBLog(CBLOG_SYS, u8"投递奖励已领取");
-                    break;
-                }
-            case SM_CLAIMDELIVERYERROR:
-                {
-                    switch(ServerMsg::conv<SMClaimDeliveryError>(buf, bufSize).error){
-                        case CDERR_INVALID_RECORD: m_processRun->addCBLog(CBLOG_ERR, u8"找不到相关奖励"          ); break;
-                        case CDERR_INVALID_CLAIM : m_processRun->addCBLog(CBLOG_ERR, u8"奖励不存在或者已经被领取"); break;
-                        default                  : m_processRun->addCBLog(CBLOG_ERR, u8"未知错误"                ); break;
-                    }
-                    break;
-                }
-            default:
-                {
-                    m_processRun->addCBLog(CBLOG_ERR, u8"未知错误");
-                    break;
-                }
-        }
-    });
+    auto &entry=found->second;
+    if(entry.request){ throw aibridge::ProtocolError("busy","Delivery has already been submitted; inspect result"); }
+    if(m_deliveryNotices.size()>=100){ throw aibridge::ProtocolError("busy","Too many pending delivery claims"); }
+    CMClaimDelivery message{}; message.record.assign(record);
+    entry.request=aibridge::sendEconomic<SMClaimDeliveryError>(*g_client,{CM_CLAIMDELIVERY,message},SM_CLAIMDELIVERYERROR);
+    m_deliveryNotices.push_back(entry.request);
+    ++m_deliveryRevision;
+    m_processRun->addCBLog(CBLOG_SYS,u8"已提交系统投递领取；请查看物品、金币及服务器结果");
+    return entry.request;
 }
 
 void FriendChatBoard::requestAddFriend(const SDChatPeer &argCP, bool switchToChatPreview)
@@ -1558,4 +1548,35 @@ std::optional<int> FriendChatBoard::getEdgeDragIndex(int eventDX, int eventDY) c
     else if(mathf::pointInRectangle<int>(eventDX, eventDY, x1, y2, w1, h2)) return 6;
     else if(mathf::pointInRectangle<int>(eventDX, eventDY, x2, y2, w2, h2)) return 7;
     else                                                                  return std::nullopt;
+}
+
+void FriendChatBoard::observeDeliveryMessage(const SDChatMessage &sdCM)
+{
+    if(sdCM.from == SDChatPeerID(CPR_SPECIAL,SYS_CHATDBID_SYSTEM)){
+        try{
+            const auto xml=cerealf::deserialize<std::string>(sdCM.message);
+            for(const auto &delivery:aibridge::systemDeliveries(true,xml)){
+                if(m_deliveries.contains(delivery.record)){ continue; }
+                if(m_deliveries.size()>=8192){ m_deliveryOverflow=true; break; }
+                m_deliveries.emplace(delivery.record,DeliveryEntry{delivery.text,{}});
+                ++m_deliveryRevision;
+            }
+        }
+        catch(const aibridge::ProtocolError &){ m_deliveryOverflow=true; }
+    }
+
+}
+
+void FriendChatBoard::updateDefault(double ms)
+{
+    Widget::updateDefault(ms);
+    for(auto it=m_deliveryNotices.begin();it!=m_deliveryNotices.end();){
+        const auto &request=**it;
+        if(request.receipt==aibridge::EconomicReceipt::Pending){ ++it; continue; }
+        ++m_deliveryRevision;
+        if(request.receipt==aibridge::EconomicReceipt::Ok){ m_processRun->addCBLog(CBLOG_SYS,u8"服务器已确认投递领取"); }
+        else if(request.receipt==aibridge::EconomicReceipt::Rejected){ m_processRun->addCBLog(CBLOG_ERR,u8"服务器拒绝领取投递，错误码：%u",request.error); }
+        else{ m_processRun->addCBLog(CBLOG_ERR,u8"投递领取结果未知，请人工核对，不会自动再次领取"); }
+        it=m_deliveryNotices.erase(it);
+    }
 }

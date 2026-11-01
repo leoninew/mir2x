@@ -7,17 +7,28 @@
 
 #pragma once
 #include <string>
+#include <optional>
 #include "widget.hpp"
 #include "texslider.hpp"
 #include "labelboard.hpp"
 #include "textboard.hpp"
 #include "wmdaniboard.hpp"
 #include "tritexbutton.hpp"
+#include "aibridge/shopmodel.hpp"
+#include "serdesmsg.hpp"
 
 class ProcessRun;
+class InvPack;
+struct PackBin;
 class InventoryBoard: public Widget
 {
-    private:
+    public:
+        struct ShopAccess
+        {
+            std::function<const InvPack *()> inventory;
+            std::function<void(uint64_t, const std::string &, const std::string &)> event;
+            std::function<uint64_t()> now;
+        };
         struct InitArgs final
         {
             int x = 0;
@@ -25,6 +36,7 @@ class InventoryBoard: public Widget
 
             ProcessRun *runProc {};
             Widget::WADPair parent{};
+            std::optional<ShopAccess> shopAccess;
         };
 
     private:
@@ -41,9 +53,15 @@ class InventoryBoard: public Widget
 
     private:
         ProcessRun *m_processRun;
+        ShopAccess m_shopAccess;
 
     private:
         SDStartInvOp m_sdInvOp;
+        uint64_t m_invOpRevision = 0, m_quoteRevision = 0, m_quoteReceivedAt = 0;
+        uint32_t m_quoteCount = 0;
+        SDItem m_quoteItem;
+        std::optional<uint32_t> m_quoteCost;
+        aibridge::ShopQuery m_quoteQuery;
 
     private:
         WMDAniBoard m_wmdAniBoard;
@@ -96,6 +114,16 @@ class InventoryBoard: public Widget
 
     public:
         void clearInvOp();
+        void invalidateQuote();
+        const SDStartInvOp &aiInvOp() const noexcept { return m_sdInvOp; }
+        uint64_t invOpRevision() const noexcept { return m_invOpRevision; }
+        uint64_t quoteRevision() const noexcept { return m_quoteRevision; }
+        const auto &quoteQuery() const noexcept { return m_quoteQuery; }
+        std::optional<uint32_t> quotedCost() const noexcept { return m_quoteCost; }
+        uint32_t quotedCount() const noexcept { return m_quoteCount; }
+        uint64_t quoteReceivedAt() const noexcept { return m_quoteReceivedAt; }
+        aibridge::ShopQuery::Start queryInvOp(uint32_t itemId, uint32_t seqId);
+        bool submitInvOp(uint32_t itemId, uint32_t seqId);
         void startInvOp(SDStartInvOp);
         void setInvOpCost(int, uint32_t, uint32_t, size_t);
 

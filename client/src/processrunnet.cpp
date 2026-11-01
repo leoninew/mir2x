@@ -18,6 +18,10 @@
 #include "raiitimer.hpp"
 #include "sdldevice.hpp"
 #include "processrun.hpp"
+#include "aibridge/runtime.hpp"
+#include "aibridge/npcadapter.hpp"
+#include "aibridge/gameadapter.hpp"
+#include "aibridge/tradeadapter.hpp"
 #include "cerealf.hpp"
 #include "imeboard.hpp"
 #include "minimapboard.hpp"
@@ -54,9 +58,13 @@ void ProcessRun::on_SM_STARTGAMESCENE(const uint8_t *buf, size_t bufSize)
     getMyHero()->setViewRange(sdSGS.viewRange);
     getMyHero()->setName(to_cstr(sdSGS.name), sdSGS.nameColor);
     getMyHero()->setWLDesp(std::move(sdSGS.desp));
+    m_aiServerPosition = std::pair<int, int>{sdSGS.x, sdSGS.y};
+    ++m_aiServerRevision;
 
     centerMyHero();
     getMyHero()->pullGold();
+    m_aiSceneReady = true;
+    g_client->observeAi(aiState());
 
     if(!g_clientArgParser->inputScript.empty()){
         std::vector<std::string> error;
@@ -127,6 +135,8 @@ void ProcessRun::on_SM_LEARNEDMAGICLIST(const uint8_t *buf, size_t bufSize)
     for(const auto &magic: sdLML.magicList){
         dynamic_cast<SkillBoard *>(getWidget("SkillBoard"))->getConfig().setMagicLevel(magic.magicID, 1);
     }
+    m_aiSkillsKnown = true;
+    if(auto bridge=g_client->aiRuntime(); bridge && bridge->game()){ bridge->game()->markChanged(); }
 }
 
 void ProcessRun::on_SM_SELLITEMLIST(const uint8_t *buf, size_t bufSize)
@@ -141,13 +151,17 @@ void ProcessRun::on_SM_AUCTIONITEMLIST(const uint8_t *buf, size_t bufSize)
     auto itemList = cerealf::deserialize<SDAuctionItemList>(buf, bufSize);
     auto auctionBoard = dynamic_cast<AuctionBoard *>(getWidget("AuctionBoard"));
     auctionBoard->setItemList(std::move(itemList));
-    auctionBoard->setShow(true);
 }
 
 void ProcessRun::on_SM_ACTION(const uint8_t *bufPtr, size_t)
 {
     SMAction smA;
     std::memcpy(&smA, bufPtr, sizeof(smA));
+
+    if(smA.UID == getMyHeroUID()){
+        if(smA.action.type == ACTION_DIE){ aiMarkDead(); }
+        aiMapChanging(smA.mapUID);
+    }
 
     if(smA.mapUID != mapUID()){
         if(smA.UID != getMyHero()->UID()){
@@ -164,8 +178,12 @@ void ProcessRun::on_SM_ACTION(const uint8_t *bufPtr, size_t)
         getMyHero()->flushForcedMotion();
         relocateMyHero(smA.mapUID, smA.action.x, smA.action.y, getMyHero()->currMotion()->direction);
         getMyHero()->parseAction(smA.action);
+        m_aiServerPosition = std::pair<int, int>{smA.action.x, smA.action.y};
+        ++m_aiServerRevision;
         return;
     }
+
+    if(smA.action.type==ACTION_DIE){ rememberAiDeath(smA.UID); }
 
     // map doesn't change
     // action from an existing charobject for current processrun
@@ -183,6 +201,8 @@ void ProcessRun::on_SM_ACTION(const uint8_t *bufPtr, size_t)
         // this helps to avoid the motion run back and forth
         if(smA.UID == getMyHeroUID()){
             getMyHero()->clearActionQueue();
+            m_aiServerPosition = std::pair<int, int>{smA.action.x, smA.action.y};
+            ++m_aiServerRevision;
         }
 
         coPtr->parseAction(smA.action);
@@ -280,6 +300,13 @@ void ProcessRun::on_SM_CORECORD(const uint8_t *bufPtr, size_t)
     }
 
     if(auto p = m_coList.find(smCOR.UID); p != m_coList.end()){
+        if(smCOR.action.type==ACTION_DIE){ rememberAiDeath(smCOR.UID); }
+        if(smCOR.UID == m_myHeroUID){
+            if(smCOR.action.type == ACTION_DIE){ aiMarkDead(); }
+            dynamic_cast<MyHero *>(p->second.get())->aiServerCorrection();
+            m_aiServerPosition = std::pair<int, int>{smCOR.action.x, smCOR.action.y};
+            ++m_aiServerRevision;
+        }
         p->second->parseAction(smCOR.action);
         return;
     }
@@ -330,9 +357,12 @@ void ProcessRun::on_SM_CORECORD(const uint8_t *bufPtr, size_t)
 void ProcessRun::on_SM_HEALTH(const uint8_t *buf, size_t bufSize)
 {
     auto sdH = cerealf::deserialize<SDHealth>(buf, bufSize);
+    if(sdH.dead()){ rememberAiDeath(sdH.uid); }
+    if(sdH.uid == getMyHeroUID() && sdH.dead()){ aiMarkDead(); }
     if(auto p = findUID(sdH.uid)){
         p->updateHealth(std::move(sdH));
     }
+    g_client->observeAi(aiState());
 }
 
 void ProcessRun::on_SM_BUFFIDLIST(const uint8_t *buf, size_t bufSize)
@@ -352,6 +382,8 @@ void ProcessRun::on_SM_NOTIFYDEAD(const uint8_t *bufPtr, size_t)
 {
     SMNotifyDead stSMND;
     std::memcpy(&stSMND, bufPtr, sizeof(stSMND));
+    rememberAiDeath(stSMND.UID);
+    if(stSMND.UID == getMyHeroUID()){ aiMarkDead(); }
 
     if(auto p = findUID(stSMND.UID)){
         p->parseAction(ActionDie
@@ -437,12 +469,14 @@ void ProcessRun::on_SM_BUYERROR(const uint8_t *buf, size_t bufSize)
                 break;
             }
     }
+    if(auto bridge=g_client->aiRuntime()){ bridge->shopBuyResult(smBE.npcUID,smBE.itemID,smBE.seqID,smBE.error); }
 }
 
 void ProcessRun::on_SM_BUYSUCCEED(const uint8_t *buf, size_t)
 {
     const auto smBS = ServerMsg::conv<SMBuySucceed>(buf);
     dynamic_cast<PurchaseBoard *>(getWidget("PurchaseBoard"))->onBuySucceed(smBS.npcUID, smBS.itemID, smBS.seqID);
+    if(auto bridge=g_client->aiRuntime()){ bridge->shopBuyResult(smBS.npcUID,smBS.itemID,smBS.seqID,0); }
 }
 
 void ProcessRun::on_SM_GROUNDITEMIDLIST(const uint8_t *buf, size_t bufSize)
@@ -610,6 +644,11 @@ void ProcessRun::on_SM_OFFLINE(const uint8_t *bufPtr, size_t)
 {
     const auto smO = ServerMsg::conv<SMOffline>(bufPtr);
     if(smO.mapUID == mapUID()){
+        if(smO.UID == getMyHeroUID()){
+            g_client->observeAi({.phase="disconnected"});
+            m_aiSceneReady = false;
+            g_client->requestProcess(PROCESSID_CONNECTIONERROR);
+        }
         m_coList.erase(smO.UID);
         // if(auto coPtr = findUID(smO.UID)){
         //     coPtr->addAttachMagic(std::unique_ptr<AttachMagic>(new AttachMagic(u8"瞬息移动", u8"启动")));
@@ -625,18 +664,25 @@ void ProcessRun::on_SM_REVIVE(const uint8_t *bufPtr, size_t)
 
     const auto smR = ServerMsg::conv<SMRevive>(bufPtr);
 
+    aiMarkDead();
+    aiMapChanging(smR.mapUID);
+
     dynamic_cast<MyHero *>(m_coList.at(m_myHeroUID).get())->clearActionQueue();
     relocateMyHero(smR.mapUID, smR.x, smR.y, smR.direction);
+    m_aiDeathKnown = false;
 }
 
 void ProcessRun::on_SM_LOGOUTOK(const uint8_t *, size_t)
 {
+    g_client->logoutAi();
     g_client->requestProcess(PROCESSID_SELECTCHAR);
 }
 
 void ProcessRun::on_SM_PICKUPERROR(const uint8_t *buf, size_t)
 {
     const auto smPUE = ServerMsg::conv<SMPickUpError>(buf);
+    ++m_aiPickupErrorSequence;
+    m_aiPickupFailedItem = smPUE.failedItemID;
     if(smPUE.failedItemID){
         if(const auto &ir = DBCOM_ITEMRECORD(smPUE.failedItemID)){
             addCBLog(CBLOG_SYS, u8"无法捡起%s", to_cstr(ir.name));
@@ -658,7 +704,11 @@ void ProcessRun::on_SM_STARTINVOP(const uint8_t *buf, size_t size)
 
     invBoardPtr->setShow(true);
     invBoardPtr->moveAt(DIR_UPRIGHT, g_sdlDevice->getWindowLogicalWidth() - 1, 0);
-    invBoardPtr->startInvOp(cerealf::deserialize<SDStartInvOp>(buf, size));
+    const auto invOp = cerealf::deserialize<SDStartInvOp>(buf, size);
+    invBoardPtr->startInvOp(invOp);
+    if(auto bridge=g_client->aiRuntime(); bridge && bridge->npc()){
+        bridge->npcServerPanel(aibridge::NpcPanelKind::InvOp,invOp.uid);
+    }
 }
 
 void ProcessRun::on_SM_GOLD(const uint8_t *buf, size_t)
@@ -688,6 +738,9 @@ void ProcessRun::on_SM_NPCXMLLAYOUT(const uint8_t *buf, size_t bufSize)
     npcChatBoardPtr->loadXML(sdNPCXMLL.npcUID, sdNPCXMLL.eventPath.c_str(), sdNPCXMLL.xmlLayout.c_str());
     npcChatBoardPtr->setShow(true);
     purchaseBoardPtr->setShow(false);
+    if(auto bridge=g_client->aiRuntime(); bridge && bridge->npc()){
+        bridge->npcServerPanel(aibridge::NpcPanelKind::Dialogue,sdNPCXMLL.npcUID);
+    }
 }
 
 void ProcessRun::on_SM_NPCSELL(const uint8_t *buf, size_t bufSize)
@@ -706,6 +759,9 @@ void ProcessRun::on_SM_NPCSELL(const uint8_t *buf, size_t bufSize)
 
     purchaseBoardPtr->loadSell(sdNPCS.npcUID, std::move(sdNPCS.itemList));
     purchaseBoardPtr->setShow(true);
+    if(auto bridge=g_client->aiRuntime(); bridge && bridge->npc()){
+        bridge->npcServerPanel(aibridge::NpcPanelKind::Shop,sdNPCS.npcUID);
+    }
 }
 
 void ProcessRun::on_SM_TEXT(const uint8_t *buf, size_t bufSize)
@@ -792,6 +848,7 @@ void ProcessRun::on_SM_REMOVESECUREDITEM(const uint8_t *buf, size_t)
 void ProcessRun::on_SM_INVENTORY(const uint8_t *buf, size_t bufSize)
 {
     getMyHero()->getInvPack().setInventory(cerealf::deserialize<SDInventory>(buf, bufSize));
+    getMyHero()->markInventoryKnown();
 }
 
 void ProcessRun::on_SM_BELT(const uint8_t *buf, size_t bufSize)
@@ -976,7 +1033,11 @@ void ProcessRun::on_SM_STARTINPUT(const uint8_t *buf, size_t bufSize)
         {
             sendNPCEvent(uid, {}, commitTag, to_cstr(input));
         },
+        .npcUid = sdSI.uid,
     });
+    if(auto bridge=g_client->aiRuntime(); bridge && bridge->npc()){
+        bridge->npcServerPanel(aibridge::NpcPanelKind::Input,sdSI.uid);
+    }
 }
 
 void ProcessRun::on_SM_SHOWSECUREDITEMLIST(const uint8_t *buf, size_t bufSize)
@@ -1038,7 +1099,7 @@ void ProcessRun::on_SM_RANKINGLIST(const uint8_t *buf, size_t bufSize)
 void ProcessRun::on_SM_REQUESTDIRECTTRADE(const uint8_t *buf, size_t)
 {
     const auto smDTR = ServerMsg::conv<SMRequestDirectTrade>(buf);
-    dynamic_cast<InputStringBoard *>(getWidget("InputStringBoard"))->waitChoice(to_u8rawstr(str_printf("<layout><par><t color='red'>%s</t>请求与你交易，是否接受？</par></layout>", smDTR.name.as_rawcstr())), false,
+    dynamic_cast<InputStringBoard *>(getWidget("InputStringBoard"))->waitTradeChoice(smDTR.uid,to_u8rawstr(str_printf("<layout><par><t color='red'>%s</t>请求与你交易，是否接受？</par></layout>", smDTR.name.as_rawcstr())),
     [uid = smDTR.uid, this]
     {
         respondDirectTrade(uid, true);
@@ -1048,6 +1109,10 @@ void ProcessRun::on_SM_REQUESTDIRECTTRADE(const uint8_t *buf, size_t)
     {
         respondDirectTrade(uid, false);
     });
+    if(auto bridge=g_client->aiRuntime()){
+        bridge->tradeServerEvent(aibridge::TradeEvent::Invitation,smDTR.uid,0,
+            dynamic_cast<InputStringBoard *>(getWidget("InputStringBoard"))->revision());
+    }
 }
 
 void ProcessRun::on_SM_STARTDIRECTTRADE(const uint8_t *buf, size_t)
@@ -1056,6 +1121,10 @@ void ProcessRun::on_SM_STARTDIRECTTRADE(const uint8_t *buf, size_t)
 
     dynamic_cast<HeroStateBoard *>(getWidget("HeroStateBoard"))->close();
     dynamic_cast<DirectTradeBoard *>(getWidget("DirectTradeBoard"))->beginTrade(smSDT.uid, smSDT.name.as_rawcstr());
+    if(auto bridge=g_client->aiRuntime()){
+        bridge->tradeServerEvent(aibridge::TradeEvent::Started,smSDT.uid,0,
+            dynamic_cast<DirectTradeBoard *>(getWidget("DirectTradeBoard"))->generation());
+    }
 }
 
 // SM_UPDATEDIRECTTRADE is used both as the acknowledgement for this client's
@@ -1068,9 +1137,11 @@ void ProcessRun::on_SM_UPDATEDIRECTTRADE(const uint8_t *buf, size_t bufSize)
 
     if(offer.uid == tradeBoard->peerUID()){
         tradeBoard->setPeerOffer(offer);
+        if(auto bridge=g_client->aiRuntime()){ bridge->tradeServerEvent(aibridge::TradeEvent::PeerOffer,tradeBoard->peerUID(),0,tradeBoard->generation()); }
     }
     else if(const auto hero = getMyHero(); hero && offer.uid == hero->UID()){
         tradeBoard->applyLocalOfferAck(offer);
+        if(auto bridge=g_client->aiRuntime()){ bridge->tradeServerEvent(aibridge::TradeEvent::LocalOffer,tradeBoard->peerUID(),0,tradeBoard->generation()); }
     }
 }
 
@@ -1079,7 +1150,9 @@ void ProcessRun::on_SM_COMPLETEDIRECTTRADE(const uint8_t *buf, size_t)
     const auto smCDT = ServerMsg::conv<SMCompleteDirectTrade>(buf);
     auto tradeBoard = dynamic_cast<DirectTradeBoard *>(getWidget("DirectTradeBoard"));
     if(tradeBoard->peerUID() == smCDT.uid){
+        const auto generation=tradeBoard->generation();
         tradeBoard->completeTrade();
+        if(auto bridge=g_client->aiRuntime()){ bridge->tradeServerEvent(aibridge::TradeEvent::Completed,smCDT.uid,0,generation); }
     }
 }
 
@@ -1088,7 +1161,9 @@ void ProcessRun::on_SM_CLOSEDIRECTTRADE(const uint8_t *buf, size_t)
     const auto smCDT = ServerMsg::conv<SMCloseDirectTrade>(buf);
     auto tradeBoard = dynamic_cast<DirectTradeBoard *>(getWidget("DirectTradeBoard"));
     if(tradeBoard->peerUID() == smCDT.uid){
+        const auto generation=tradeBoard->generation();
         tradeBoard->closeTrade(false);
+        if(auto bridge=g_client->aiRuntime()){ bridge->tradeServerEvent(aibridge::TradeEvent::Closed,smCDT.uid,0,generation); }
     }
 }
 
@@ -1123,6 +1198,10 @@ void ProcessRun::on_SM_DIRECTTRADEERROR(const uint8_t *buf, size_t)
         dynamic_cast<DirectTradeBoard *>(getWidget("DirectTradeBoard"))->rejectLocalOffer();
     }
     addCBLog(CBLOG_ERR, u8"%s", to_cstr(message));
+    if(auto bridge=g_client->aiRuntime()){
+        bridge->tradeServerEvent(aibridge::TradeEvent::Error,0,error,
+            dynamic_cast<DirectTradeBoard *>(getWidget("DirectTradeBoard"))->generation());
+    }
 }
 
 void ProcessRun::on_SM_NPCERROR(const uint8_t *buf, size_t)

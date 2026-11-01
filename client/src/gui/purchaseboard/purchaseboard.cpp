@@ -6,13 +6,14 @@
 #include "textboard.hpp"
 #include "purchaseboard.hpp"
 #include "inputstringboard.hpp"
+#include <limits>
 
 extern Client *g_client;
 extern PNGTexDB *g_itemDB;
 extern PNGTexDB *g_progUseDB;
 extern SDLDevice *g_sdlDevice;
 
-PurchaseBoard::PurchaseBoard(ProcessRun *argProc, Widget *argParent, bool argAutoDelete)
+PurchaseBoard::PurchaseBoard(ProcessRun *argProc, Widget *argParent, bool argAutoDelete, std::optional<Access> access)
     : Widget
       {{
           .parent
@@ -23,6 +24,14 @@ PurchaseBoard::PurchaseBoard(ProcessRun *argProc, Widget *argParent, bool argAut
       }}
 
     , m_processRun(argProc)
+    , m_access(access.value_or(Access{
+          .query = [](uint64_t npc, uint32_t item){
+              CMQuerySellItemList request{}; request.npcUID=npc; request.itemID=item;
+              g_client->send({CM_QUERYSELLITEMLIST,request});
+          },
+          .buy = [this](uint64_t npc,uint32_t item,uint32_t seq,uint32_t count){ m_processRun->requestBuy(npc,item,seq,count); },
+          .now = []{ return SDL_GetTicks(); },
+      }))
     , m_bg
       {{
           .texLoadFunc = [this]{ return g_progUseDB->retrieve(0X08000000 + extendedBoardGfxID()); },
@@ -123,7 +132,7 @@ PurchaseBoard::PurchaseBoard(ProcessRun *argProc, Widget *argParent, bool argAut
           {
               const auto [itemID, seqID] = getExtSelectedItemSeqID();
               if(itemID){
-                  m_processRun->requestBuy(m_npcUID, itemID, seqID, 1);
+                  submitBuy(m_npcUID, itemID, seqID, 1);
               }
           },
 
@@ -213,7 +222,7 @@ PurchaseBoard::PurchaseBoard(ProcessRun *argProc, Widget *argParent, bool argAut
                       }
 
                       if(ir && count > 0){
-                          m_processRun->requestBuy(npcUID, itemID, 0, count);
+                          submitBuy(npcUID, itemID, 0, count);
                       }
                   },
                   .validate = [](const std::string &currentInput, const std::string &newInput)
@@ -421,6 +430,14 @@ bool PurchaseBoard::processEventDefault(const SDL_Event &event, bool valid, Widg
 
 void PurchaseBoard::loadSell(uint64_t npcUID, std::vector<uint32_t> itemList)
 {
+    ++m_catalogRevision;
+    ++m_detailsRevision;
+    m_detailQuery.abandon();
+    m_detailCache.clear();
+    m_sdSellItemList.clear();
+    m_ext1PageGridSelected = -1;
+    m_ext1Page = 0;
+    m_selected = 0;
     m_npcUID = npcUID;
     m_itemList = std::move(itemList);
 }
@@ -445,26 +462,88 @@ void PurchaseBoard::setExtendedItemID(uint32_t itemID)
 {
     m_ext1PageGridSelected = -1;
     if(itemID){
-        CMQuerySellItemList cmQSIL;
-        std::memset(&cmQSIL, 0, sizeof(cmQSIL));
-        cmQSIL.npcUID = m_npcUID;
-        cmQSIL.itemID =   itemID;
-        g_client->send({CM_QUERYSELLITEMLIST, cmQSIL});
+        queryDetails(itemID);
     }
     else{
-        m_sdSellItemList.clear();
+        invalidateDetails();
     }
 }
 
 void PurchaseBoard::setSellItemList(SDSellItemList sdSIL)
 {
-    if(m_npcUID == sdSIL.npcUID){
-        m_sdSellItemList = std::move(sdSIL);
-    }
-    else{
-        m_sdSellItemList.clear();
-    }
+    const auto key = m_detailQuery.key();
+    if(sdSIL.list.size() > 8192){ return; }
+    if(sdSIL.npcUID != key.npcUid || std::any_of(sdSIL.list.begin(), sdSIL.list.end(),
+        [&](const auto &row){ return row.item.itemID != key.itemId; })){ return; }
+    const auto reply = m_detailQuery.receive(key.itemId, 0, 0, m_access.now());
+    if(reply != aibridge::ShopQuery::Reply::Accepted || key.npcUid != m_npcUID || key.panelRevision != m_catalogRevision || !show()){ return; }
+    if(!m_detailCache.contains(key.itemId) && m_detailCache.size() >= 256){ return; }
+    size_t total=sdSIL.list.size();
+    for(const auto &[id,cached]:m_detailCache){ if(id!=key.itemId){ total+=cached.value.list.size(); } }
+    if(total>8192){ return; }
+    m_detailCache[key.itemId] = {sdSIL, m_access.now()};
+    m_sdSellItemList = std::move(sdSIL);
+    ++m_detailsRevision;
     m_ext1Page = 0;
+}
+
+aibridge::ShopQuery::Start PurchaseBoard::queryDetails(uint32_t itemId)
+{
+    if(m_itemList.size() > 256){ return aibridge::ShopQuery::Start::Busy; }
+    const auto p = std::find(m_itemList.begin(), m_itemList.end(), itemId);
+    if(!show() || !itemId || p == m_itemList.end()){ return aibridge::ShopQuery::Start::Busy; }
+    const auto state = m_detailQuery.begin({m_npcUID, m_catalogRevision, itemId}, m_access.now());
+    if(state == aibridge::ShopQuery::Start::Sent){
+        m_selected = static_cast<int>(p - m_itemList.begin());
+        m_ext1PageGridSelected = -1;
+        m_sdSellItemList.clear();
+        m_detailCache.erase(itemId);
+        ++m_detailsRevision;
+        m_access.query(m_npcUID,itemId);
+    }
+    return state;
+}
+
+bool PurchaseBoard::submitBuy(uint64_t npcUid, uint32_t itemId, uint32_t seqId, uint32_t count)
+{
+    if(!show() || npcUid != m_npcUID || !count
+        || count > static_cast<uint32_t>(std::numeric_limits<int>::max())){ return false; }
+    const auto cached = m_detailCache.find(itemId);
+    if(cached == m_detailCache.end() || cached->second.value.npcUID != npcUid){ return false; }
+    if(m_access.now()<cached->second.receivedAt || m_access.now()-cached->second.receivedAt>=30000){ return false; }
+    m_sdSellItemList = cached->second.value;
+    const auto p = std::find_if(m_sdSellItemList.list.begin(), m_sdSellItemList.list.end(),
+        [&](const auto &row){ return row.item.itemID == itemId && row.item.seqID == seqId; });
+    if(p == m_sdSellItemList.list.end() || (!DBCOM_ITEMRECORD(itemId).packable() && count != 1)){ return false; }
+    m_ext1PageGridSelected = static_cast<int>(p - m_sdSellItemList.list.begin());
+    m_ext1Page = m_ext1PageGridSelected / 12;
+    const auto selected = std::find(m_itemList.begin(), m_itemList.end(), itemId);
+    if(selected == m_itemList.end()){ return false; }
+    m_selected = static_cast<int>(selected - m_itemList.begin());
+    const auto key = std::tuple{npcUid, itemId, seqId};
+    if(const auto attempt = m_buyAttempts.find(key); attempt != m_buyAttempts.end()){
+        // Only a unique first send can claim an unnumbered purchase receipt.
+        attempt->second = 2;
+    }
+    else if(m_buyAttempts.size() < 8192){
+        m_buyAttempts.emplace(key, 1);
+    }
+    m_access.buy(npcUid, itemId, seqId, count);
+    return true;
+}
+
+uint64_t PurchaseBoard::buyAttempts(uint64_t npcUid, uint32_t itemId, uint32_t seqId) const
+{
+    const auto p = m_buyAttempts.find({npcUid, itemId, seqId});
+    return p != m_buyAttempts.end() ? p->second : m_buyAttempts.size() >= 8192 ? UINT64_MAX : 0;
+}
+
+void PurchaseBoard::invalidateDetails()
+{
+    m_detailQuery.abandon();
+    m_detailCache.clear();
+    m_sdSellItemList.clear();
+    ++m_detailsRevision;
 }
 
 int PurchaseBoard::extendedBoardGfxID() const
@@ -720,6 +799,12 @@ void PurchaseBoard::onBuySucceed(uint64_t npcUID, uint32_t itemID, uint32_t seqI
         return;
     }
 
+    if(auto cached = m_detailCache.find(itemID); cached != m_detailCache.end()){
+        auto &rows = cached->second.value.list;
+        std::erase_if(rows, [&](const auto &row){ return row.item.itemID == itemID && row.item.seqID == seqID; });
+        ++m_detailsRevision;
+    }
+
     if(npcUID != m_sdSellItemList.npcUID){
         return;
     }
@@ -731,6 +816,7 @@ void PurchaseBoard::onBuySucceed(uint64_t npcUID, uint32_t itemID, uint32_t seqI
     for(auto p = m_sdSellItemList.list.begin(); p != m_sdSellItemList.list.end(); ++p){
         if(p->item.itemID == itemID && p->item.seqID == seqID){
             m_sdSellItemList.list.erase(p);
+            ++m_detailsRevision;
             return;
         }
     }

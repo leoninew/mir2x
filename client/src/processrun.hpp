@@ -4,6 +4,7 @@
 #include <list>
 #include <tuple>
 #include <memory>
+#include <deque>
 #include <cstdint>
 #include <algorithm>
 
@@ -13,6 +14,7 @@
 #include "process.hpp"
 #include "message.hpp"
 #include "focustype.hpp"
+#include "aibridge/controller.hpp"
 #include "ascendstr.hpp"
 #include "guimanager.hpp"
 #include "wilanitimer.hpp"
@@ -66,10 +68,33 @@ class ProcessRun: public Process
 
     private:
         uint64_t m_mapUID = 0;
+        bool m_aiSceneReady = false;
+        bool m_aiDeathKnown = false;
         Mir2xMapData m_mir2xMapData;
 
     private:
         LocHashTable<std::vector<uint32_t>> m_groundItemIDList;
+        LocHashTable<uint64_t> m_aiGroundRevision;
+        uint64_t m_aiGroundSequence = 0;
+        std::optional<std::pair<int, int>> m_aiServerPosition;
+        uint64_t m_aiServerRevision = 0;
+        uint64_t m_aiPickupSendSequence = 0;
+        uint64_t m_aiConsumeSendSequence = 0;
+        uint64_t m_aiPickupErrorSequence = 0;
+        uint32_t m_aiPickupFailedItem = 0;
+        bool m_aiSkillsKnown = false;
+        struct AiDeathObservation { uint64_t uid,incarnation,sequence; };
+        std::deque<AiDeathObservation> m_aiObservedDeaths;
+        uint64_t m_aiDeathSequence=0;
+        void rememberAiDeath(uint64_t uid)
+        {
+            const auto co=findUID(uid,true);
+            const auto hero=dynamic_cast<MyHero *>(findUID(m_myHeroUID,false));
+            if(!co || !hero || !hero->inViewRange(co)){ return; }
+            std::erase_if(m_aiObservedDeaths,[&](const auto &value){ return value.uid==uid && value.incarnation==co->incarnation(); });
+            if(m_aiObservedDeaths.size()==512){ m_aiObservedDeaths.pop_front(); }
+            m_aiObservedDeaths.push_back({uid,co->incarnation(),++m_aiDeathSequence});
+        }
 
     private:
         DelayCommandQueue m_delayCmdQ;
@@ -159,8 +184,32 @@ class ProcessRun: public Process
     private:
         void loadMap(uint64_t, int, int);
         void relocateMyHero(uint64_t, int, int, int);
+        void aiMapChanging(uint64_t);
+        void aiMarkDead();
 
     public:
+        aibridge::RuntimeState aiState() const;
+        bool aiDeathKnown() const noexcept { return m_aiDeathKnown; }
+        const auto &aiServerPosition() const noexcept { return m_aiServerPosition; }
+        uint64_t aiServerRevision() const noexcept { return m_aiServerRevision; }
+        uint64_t aiPickupSendSequence() const noexcept { return m_aiPickupSendSequence; }
+        uint64_t aiConsumeSendSequence() const noexcept { return m_aiConsumeSendSequence; }
+        uint64_t aiPickupErrorSequence() const noexcept { return m_aiPickupErrorSequence; }
+        uint32_t aiPickupFailedItem() const noexcept { return m_aiPickupFailedItem; }
+        bool aiSkillsKnown() const noexcept { return m_aiSkillsKnown; }
+        uint64_t aiDeathSequence() const noexcept { return m_aiDeathSequence; }
+        bool aiObservedDeath(uint64_t uid,uint64_t incarnation,uint64_t after) const
+        {
+            return std::any_of(m_aiObservedDeaths.begin(),m_aiObservedDeaths.end(),[&](const auto &value){
+                return value.uid==uid && value.incarnation==incarnation && value.sequence>after;
+            });
+        }
+        uint64_t aiGroundSequence() const noexcept { return m_aiGroundSequence; }
+        uint64_t aiGroundRevision(int x, int y) const
+        {
+            const auto p = m_aiGroundRevision.find({x, y});
+            return p == m_aiGroundRevision.end() ? 0 : p->second;
+        }
         int id() const override
         {
             return PROCESSID_RUN;
@@ -372,6 +421,7 @@ class ProcessRun: public Process
 
         void clearGroundItemIDList(int x, int y)
         {
+            m_aiGroundRevision[{x, y}] = ++m_aiGroundSequence;
             m_groundItemIDList.erase({x, y});
         }
 
@@ -429,6 +479,10 @@ class ProcessRun: public Process
 
     private:
         void checkMagicSpell(const SDL_Event &);
+    public:
+        enum class MagicCastType { Unsupported, Target, Ground, Self, Toggle };
+        static MagicCastType supportedMagicCastType(uint32_t);
+        bool castMagic(uint32_t magicID, uint64_t aimUID, int aimX, int aimY);
 
     public:
         std::tuple<int, int> getACNum(const std::string &) const;
@@ -489,7 +543,7 @@ class ProcessRun: public Process
         void requestRemoveSecuredItem(uint32_t, uint32_t);
         void requestJoinTeam(uint64_t);
         void requestLeaveTeam(uint64_t);
-        void requestDirectTrade(uint64_t);
+        bool requestDirectTrade(uint64_t, const std::function<bool()> &canSend = {});
         void respondDirectTrade(uint64_t, bool);
         bool updateDirectTradeOffer(uint64_t, uint32_t, bool, const std::vector<SDItem> &);
         void commitDirectTrade(uint64_t);

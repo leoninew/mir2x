@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include "log.hpp"
 #include "client.hpp"
 #include "pngtexdb.hpp"
@@ -81,6 +82,8 @@ int main(int argc, char *argv[])
         g_bgmDB        = new BGMusicDB(5);
         g_seffDB       = new SoundEffectDB(128);
         g_client       = new Client();       // loads fontex resource
+        // Lua exit/os.exit also use std::exit; the global Client is intentionally not deleted.
+        std::atexit(+[]{ if(g_client){ g_client->shutdown(); } });
         g_imeBoard     = new IMEBoard{{}};
         g_notifyBoard  = new MessageStackBoard
         {{
@@ -100,9 +103,11 @@ int main(int argc, char *argv[])
         g_client->mainLoop();
     }
     catch(const std::exception &e){
+        if(g_client){ g_client->shutdown(); }
         g_mir2xLog->addLog(LOGTYPE_FATAL, "Caught exception: %s", e.what());
     }
     catch(...){
+        if(g_client){ g_client->shutdown(); }
         g_mir2xLog->addLog(LOGTYPE_FATAL, "Caught unknown exception");
     }
     return 0;

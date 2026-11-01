@@ -38,6 +38,7 @@ class Hero: public CreatureMovable
 
     protected:
         SDWLDesp m_sdWLDesp;
+        bool m_wearKnown = false;
 
     protected:
         MessageStackBoard m_playerSayBoard;
@@ -72,6 +73,9 @@ class Hero: public CreatureMovable
 
     public:
         bool parseAction(const ActionNode &) override;
+
+    protected:
+        virtual std::function<bool()> continuationGuard(const ActionNode &) const { return []{ return true; }; }
 
     public:
         uint8_t horse() const
@@ -153,7 +157,10 @@ class Hero: public CreatureMovable
         void setWLDesp(SDWLDesp desp)
         {
             m_sdWLDesp = std::move(desp);
+            m_wearKnown = true;
         }
+
+        bool wearKnown() const noexcept { return m_wearKnown; }
 
         void setName(const char *name, uint32_t nameColor)
         {
@@ -174,6 +181,7 @@ class Hero: public CreatureMovable
         }
 
     public:
+        const std::string &knownName() const noexcept { return m_name; }
         std::string getName() const
         {
             if(m_name.empty() && !m_nameQueried){

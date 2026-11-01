@@ -23,12 +23,16 @@ class ClientNPC: public ClientCreature
 {
     private:
         bool m_nameQueried = false;
+        std::string m_knownName;
 
     public:
         void setName(const std::string &name)
         {
+            m_knownName = name;
             m_nameBoard.setText(u8"%s", name.c_str());
         }
+
+        const std::string &knownName() const noexcept { return m_knownName; }
 
     public:
         ClientNPC(uint64_t, ProcessRun *, const ActionNode &);

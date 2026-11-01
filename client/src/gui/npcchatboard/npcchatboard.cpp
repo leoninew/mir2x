@@ -138,7 +138,7 @@ NPCChatBoard::NPCChatBoard(
 
           .onTrigger = [this](Widget *, int)
           {
-              setShow(false);
+              closeDialogue();
           },
 
           .parent{this},
@@ -181,6 +181,7 @@ void NPCChatBoard::loadXML(uint64_t uid, const char *eventPath, const char *xmlS
 
     m_npcUID = uid;
     m_eventPath = eventPath;
+    ++m_revision;
 
     m_chatBoard.clear();
 
@@ -204,9 +205,37 @@ void NPCChatBoard::onClickEvent(const char *path, const char *id, const char *ar
     }
 
     fflassert(str_haschar(id));
+    ++m_revision;
     m_processRun->sendNPCEvent(m_npcUID, path, id, args ? std::make_optional<std::string>(args) : std::nullopt);
 
     if(autoClose){
-        setShow(false);
+        closeDialogue();
     }
+}
+
+aibridge::NpcDialogue NPCChatBoard::dialogue(std::string npcHandle) const
+{
+    aibridge::NpcDialogue result{.revision=m_revision, .npcUid=m_npcUID, .npcHandle=std::move(npcHandle)};
+    // Read the actual rendered leaves: inherited formatting cannot invent an option.
+    for(const auto &event: m_chatBoard.textEvents()){
+        const auto path = LayoutBoard::findAttrValue(event.attributes, "path", m_eventPath.c_str());
+        const auto id = LayoutBoard::findAttrValue(event.attributes, "id", nullptr);
+        const auto args = LayoutBoard::findAttrValue(event.attributes, "args", nullptr);
+        const auto close = LayoutBoard::findAttrValue(event.attributes, "close", nullptr);
+        result.options.push_back({event.paragraph, event.leaf, event.text, path, id,
+            args ? std::make_optional<std::string>(args) : std::nullopt, close ? to_parsedbool(close) : false});
+    }
+    result.text = m_chatBoard.getTextBounded(32768);
+    return result;
+}
+
+bool NPCChatBoard::choose(uint64_t revision, int paragraph, int leaf)
+{
+    return show() && revision == m_revision && m_chatBoard.activateTextEvent(paragraph, leaf);
+}
+
+void NPCChatBoard::closeDialogue()
+{
+    ++m_revision;
+    setShow(false);
 }

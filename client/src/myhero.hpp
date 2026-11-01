@@ -4,12 +4,19 @@
 #include "invpack.hpp"
 #include "combatnode.hpp"
 #include "actionnode.hpp"
+#include "aibridge/runtime.intent.hpp"
 
 class MyHero: public Hero
 {
     private:
         size_t m_exp = 0;
         int m_viewRange = SYS_PLY_VIEWR;
+        bool m_expKnown = false;
+        bool m_goldKnown = false;
+        bool m_inventoryKnown = false;
+        bool m_beltKnown = false;
+        uint64_t m_actionSendSequence = 0;
+        std::unordered_map<int, uint64_t> m_actionTypeSendSequence;
 
     private:
         std::unordered_map<uint32_t, uint64_t> m_lastCastTime;
@@ -23,6 +30,38 @@ class MyHero: public Hero
 
     private:
         bool m_nextStrike = false;
+        aibridge::IntentOwnership m_aiIntent;
+        bool m_parsingLocalAction = false;
+        std::optional<ActionNode> m_latestLocalAction;
+        std::optional<std::tuple<int,int,uint64_t>> m_aiPickupGround;
+        std::function<bool()> m_aiActionGuard;
+        bool m_aiActionRejected=false;
+
+    protected:
+        std::function<bool()> continuationGuard(const ActionNode &) const override;
+
+    public:
+        void beginAiIntent();
+        void setAiPickupGround(int x,int y,uint64_t revision) { m_aiPickupGround=std::tuple{x,y,revision}; }
+        void setAiActionGuard(std::function<bool()> guard) { m_aiActionGuard=std::move(guard); }
+        bool aiActionRejected() const noexcept { return m_aiActionRejected; }
+        bool cancelAiIntent();
+        bool aiMotionStopped() const;
+        bool aiCanStartMove() const;
+        std::vector<pathf::PathNode> aiPlanMove(int, int);
+        void aiServerCorrection() { if(m_aiIntent.owned()){ clearActionQueue(); } }
+        uint64_t actionSendSequence() const noexcept { return m_actionSendSequence; }
+        uint64_t actionTypeSendSequence(int type) const noexcept
+        {
+            const auto p=m_actionTypeSendSequence.find(type);
+            return p==m_actionTypeSendSequence.end() ? 0 : p->second;
+        }
+        int viewRange() const noexcept { return m_viewRange; }
+        bool expKnown() const noexcept { return m_expKnown; }
+        bool goldKnown() const noexcept { return m_goldKnown; }
+        bool inventoryKnown() const noexcept { return m_inventoryKnown; }
+        bool beltKnown() const noexcept { return m_beltKnown; }
+        void markInventoryKnown() noexcept { m_inventoryKnown = true; }
 
     public:
         MyHero(uint64_t, bool, int, ProcessRun *, const ActionNode &);
@@ -96,6 +135,7 @@ class MyHero: public Hero
         void setExp(size_t exp)
         {
             m_exp = exp;
+            m_expKnown = true;
         }
 
         uint32_t getGold() const
@@ -105,7 +145,8 @@ class MyHero: public Hero
 
         void setGold(int gold)
         {
-            return m_invPack.setGold(gold);
+            m_invPack.setGold(gold);
+            m_goldKnown = true;
         }
 
     public:
@@ -173,6 +214,7 @@ class MyHero: public Hero
     public:
         void setMagicCastTime(uint32_t);
         int getMagicCoolDownAngle(uint32_t) const;
+        uint64_t magicCooldownRemaining(uint32_t) const;
 
     public:
         bool getNextStrike() const

@@ -7,6 +7,7 @@
 #include "layoutboard.hpp"
 #include "tritexbutton.hpp"
 #include "gfxshapeboard.hpp"
+#include "aibridge/npcmodel.hpp"
 
 class InputStringBoard: public Widget
 {
@@ -20,6 +21,7 @@ class InputStringBoard: public Widget
             std::function<void(std::u8string)>            onAccept = nullptr;
             std::function<void()>                         onReject = nullptr;
             std::function<bool(std::string, std::string)> validate = nullptr;
+            uint64_t npcUid = 0; // Only SM_STARTINPUT supplies an NPC source.
         };
 
     private:
@@ -28,6 +30,10 @@ class InputStringBoard: public Widget
 
     private:
         bool m_modal = false;
+        uint64_t m_revision = 0;
+        uint64_t m_npcUid = 0;
+        uint64_t m_tradePeerUid = 0;
+        bool m_sensitive = false;
 
     private:
         ImageBoard m_bg;
@@ -56,6 +62,7 @@ class InputStringBoard: public Widget
 
     private:
         void acceptInput();
+        void rejectInput();
 
     public:
         void clear()
@@ -72,4 +79,10 @@ class InputStringBoard: public Widget
     public:
         void waitInput(InputStringBoard::WaitInputArgs);
         void waitChoice(std::u8string, bool, std::function<void()>, std::function<void()> = {});
+        std::optional<aibridge::NpcInput> npcInput() const;
+        bool submitNpcInput(uint64_t revision, const std::string &text);
+        uint64_t revision() const noexcept { return m_revision; }
+        void waitTradeChoice(uint64_t peerUid, std::u8string, std::function<void()>, std::function<void()>);
+        uint64_t tradePeerUid() const noexcept { return show() ? m_tradePeerUid : 0; }
+        bool respondTradeChoice(uint64_t revision, uint64_t peerUid, bool accept, const std::function<bool()> &canSend = {});
 };

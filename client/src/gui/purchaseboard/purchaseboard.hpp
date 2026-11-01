@@ -1,14 +1,23 @@
 #pragma once
 #include <vector>
+#include <map>
 #include <cstdint>
 #include "widget.hpp"
 #include "serdesmsg.hpp"
 #include "texslider.hpp"
 #include "tritexbutton.hpp"
+#include "aibridge/shopmodel.hpp"
 
 class ProcessRun;
 class PurchaseBoard: public Widget
 {
+    public:
+        struct Access
+        {
+            std::function<void(uint64_t, uint32_t)> query;
+            std::function<void(uint64_t, uint32_t, uint32_t, uint32_t)> buy;
+            std::function<uint64_t()> now;
+        };
     // NPC sell items in the small box
     // +----------------------------
     // | (19, 15)                (252, 15)
@@ -63,9 +72,15 @@ class PurchaseBoard: public Widget
 
     private:
         ProcessRun *m_processRun;
+        Access m_access;
 
     private:
         uint64_t m_npcUID = 0;
+        uint64_t m_catalogRevision = 0, m_detailsRevision = 0;
+        aibridge::ShopQuery m_detailQuery;
+        struct CachedDetails { SDSellItemList value; uint64_t receivedAt = 0; };
+        std::map<uint32_t, CachedDetails> m_detailCache;
+        std::map<std::tuple<uint64_t, uint32_t, uint32_t>, uint64_t> m_buyAttempts;
 
     private:
         int m_ext1Page = 0;
@@ -99,7 +114,7 @@ class PurchaseBoard: public Widget
         TexSlider m_slider;
 
     public:
-        PurchaseBoard(ProcessRun *, Widget * = nullptr, bool = false);
+        PurchaseBoard(ProcessRun *, Widget * = nullptr, bool = false, std::optional<Access> = {});
 
     public:
         void drawDefault(Widget::ROIMap) const override;
@@ -109,6 +124,17 @@ class PurchaseBoard: public Widget
 
     public:
         void loadSell(uint64_t, std::vector<uint32_t>);
+        uint64_t npcUid() const noexcept { return m_npcUID; }
+        uint64_t catalogRevision() const noexcept { return m_catalogRevision; }
+        uint64_t detailsRevision() const noexcept { return m_detailsRevision; }
+        const auto &catalog() const noexcept { return m_itemList; }
+        const auto &details() const noexcept { return m_sdSellItemList; }
+        const auto &detailQuery() const noexcept { return m_detailQuery; }
+        const auto &detailCache() const noexcept { return m_detailCache; }
+        void invalidateDetails();
+        uint64_t buyAttempts(uint64_t npcUid, uint32_t itemId, uint32_t seqId) const;
+        aibridge::ShopQuery::Start queryDetails(uint32_t);
+        bool submitBuy(uint64_t npcUid, uint32_t itemId, uint32_t seqId, uint32_t count);
 
     private:
         size_t getStartIndex() const;

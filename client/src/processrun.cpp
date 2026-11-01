@@ -560,6 +560,7 @@ void ProcessRun::draw() const
     if(getRuntimeConfig<RTCFG_SHOWFPS>()){
         drawFPS();
     }
+    g_client->drawAiPanel();
 }
 
 void ProcessRun::processEvent(const SDL_Event &event)
@@ -776,7 +777,7 @@ void ProcessRun::processEvent(const SDL_Event &event)
                                 switch(SDLDeviceHelper::getKeyChar(event, false)){
                                     case 'e':
                                         {
-                                            std::exit(0);
+                                            g_client->requestQuit();
                                             break;
                                         }
                                     case 'f':
@@ -831,6 +832,36 @@ void ProcessRun::preloadMapBin(uint64_t newMapUID)
     }
 }
 
+aibridge::RuntimeState ProcessRun::aiState() const
+{
+    aibridge::RuntimeState state;
+    state.phase = m_aiSceneReady ? "run" : "loading";
+    if(m_aiSceneReady){
+        if(auto h = dynamic_cast<MyHero *>(findUID(m_myHeroUID, false))){
+            state.roleUid = h->UID();
+            state.mapUid = mapUID();
+            state.alive = !m_aiDeathKnown && !h->dead().value_or(true);
+        }
+        else { state.phase = "disconnected"; }
+    }
+    return state;
+}
+
+void ProcessRun::aiMapChanging(uint64_t newMapUID)
+{
+    if(newMapUID != mapUID() && g_client->getProcess<ProcessRun>() == this){
+        auto state = aiState();
+        state.mapUid = newMapUID;
+        g_client->observeAi(state);
+    }
+}
+
+void ProcessRun::aiMarkDead()
+{
+    m_aiDeathKnown = true;
+    g_client->observeAi(aiState());
+}
+
 void ProcessRun::loadMap(uint64_t newMapUID, int centerGX, int centerGY)
 {
     fflassert(uidf::isMap(newMapUID));
@@ -865,6 +896,8 @@ void ProcessRun::loadMap(uint64_t newMapUID, int centerGX, int centerGY)
         }
 
         m_groundItemIDList.clear();
+        m_aiGroundRevision.clear();
+        m_aiServerPosition.reset();
         fnUpdateLoadRatio(40);
 
         const int winW = 1200;
@@ -923,6 +956,7 @@ void ProcessRun::loadMap(uint64_t newMapUID, int centerGX, int centerGY)
 
 void ProcessRun::relocateMyHero(uint64_t newMapUID, int x, int y, int direction)
 {
+    aiMapChanging(newMapUID);
     // directly assign a stand motion to myhero and skip all location validation
     // caller should flush or drop myhero's pending motions before calling
 
@@ -940,6 +974,8 @@ void ProcessRun::relocateMyHero(uint64_t newMapUID, int x, int y, int direction)
     }
 
     dynamic_cast<Hero *>(m_coList.at(m_myHeroUID).get())->jumpLoc(x, y, direction); // don't use getMyHero(), dead myhero may be invisible
+    m_aiServerPosition = std::pair{x, y};
+    ++m_aiServerRevision;
     m_actionBlocker.clear();
 
     centerMyHero();
@@ -1041,7 +1077,11 @@ std::optional<double> ProcessRun::oneStepCost(const ClientPathFinder *finder, bo
 
     for(int stepSize = 1; stepSize <= hopSize; ++stepSize){
         const auto [currX, currY] = pathf::getFrontGLoc(srcX, srcY, hopDir, stepSize);
-        switch(const auto pfGrid = finder ? finder->getGrid(currX, currY) : this->checkPathGrid(currX, currY)){
+        // Static-only searches do not need to scan every creature for each expanded grid.
+        const auto pfGrid = checkCreature == 0
+            ? (!validC(currX,currY) ? PF_NONE : groundValid(currX,currY) ? PF_FREE : PF_OBSTACLE)
+            : finder ? finder->getGrid(currX,currY) : checkPathGrid(currX,currY);
+        switch(pfGrid){
             case PF_FREE:
                 {
                     break;
@@ -1878,20 +1918,22 @@ void ProcessRun::requestLeaveTeam(uint64_t uid)
     g_client->send({CM_REQUESTLEAVETEAM, cmRLT});
 }
 
-void ProcessRun::requestDirectTrade(uint64_t uid)
+bool ProcessRun::requestDirectTrade(uint64_t uid, const std::function<bool()> &canSend)
 {
     fflassert(uidf::isPlayer(uid));
 
     if(!getRuntimeConfig<RTCFG_允许交易>()){
         addCBLog(CBLOG_ERR, u8"请先在系统设置中勾选允许交易");
-        return;
+        return false;
     }
 
     CMRequestDirectTrade cmRDT;
     std::memset(&cmRDT, 0, sizeof(cmRDT));
 
     cmRDT.uid = uid;
+    if(canSend && !canSend()){ return false; }
     g_client->send({CM_REQUESTDIRECTTRADE, cmRDT});
+    return true;
 }
 
 void ProcessRun::respondDirectTrade(uint64_t uid, bool accept)
@@ -2417,16 +2459,58 @@ void ProcessRun::checkMagicSpell(const SDL_Event &event)
         }
     }
 
+    const auto [aimX, aimY] = getMouseGLoc();
+    castMagic(magicID, getFocusUID(FOCUS_MAGIC), aimX, aimY);
+}
+
+ProcessRun::MagicCastType ProcessRun::supportedMagicCastType(uint32_t magicID)
+{
+    // Normal keyboard routing plus implemented Player::onCMActionSpell / swing paths.
+    switch(magicID){
+        case DBCOM_MAGICID(u8"烈火剑法"):
+        case DBCOM_MAGICID(u8"翔空剑法"):
+        case DBCOM_MAGICID(u8"莲月剑法"):
+        case DBCOM_MAGICID(u8"半月弯刀"):
+        case DBCOM_MAGICID(u8"十方斩"):
+            return MagicCastType::Toggle;
+        case DBCOM_MAGICID(u8"治愈术"):
+        case DBCOM_MAGICID(u8"施毒术"):
+        case DBCOM_MAGICID(u8"幽灵盾"):
+        case DBCOM_MAGICID(u8"神圣战甲术"):
+        case DBCOM_MAGICID(u8"火球术"):
+        case DBCOM_MAGICID(u8"大火球"):
+        case DBCOM_MAGICID(u8"灵魂火符"):
+        case DBCOM_MAGICID(u8"冰月神掌"):
+        case DBCOM_MAGICID(u8"冰月震天"):
+        case DBCOM_MAGICID(u8"雷电术"):
+            return MagicCastType::Target;
+        case DBCOM_MAGICID(u8"火墙"):
+        case DBCOM_MAGICID(u8"地狱火"):
+        case DBCOM_MAGICID(u8"冰沙掌"):
+        case DBCOM_MAGICID(u8"疾光电影"):
+            return MagicCastType::Ground;
+        case DBCOM_MAGICID(u8"魔法盾"):
+        case DBCOM_MAGICID(u8"阴阳法环"):
+        case DBCOM_MAGICID(u8"召唤骷髅"):
+        case DBCOM_MAGICID(u8"超强召唤骷髅"):
+        case DBCOM_MAGICID(u8"召唤神兽"):
+            return MagicCastType::Self;
+        default: return MagicCastType::Unsupported;
+    }
+}
+
+bool ProcessRun::castMagic(uint32_t magicID, uint64_t aimUID, int aimX, int aimY)
+{
     if(getMyHero()->getMagicCoolDownAngle(magicID) < 360){
         addCBLog(CBLOG_ERR, u8"%s尚未冷却", to_cstr(DBCOM_MAGICRECORD(magicID).name));
-        return;
+        return false;
     }
 
     switch(magicID){
         case DBCOM_MAGICID(u8"空拳刀法"):
             {
                 getMyHero()->brakeMove();
-                if(const auto uid = getFocusUID(FOCUS_MAGIC)){
+                if(const auto uid = aimUID){
                     getMyHero()->emplaceAction(ActionSpinKick
                     {
                         .x = getMyHero()->currMotion()->endX,
@@ -2438,7 +2522,6 @@ void ProcessRun::checkMagicSpell(const SDL_Event &event)
                     // even there is no target UID
                     // we still cast the magic to show gfx
 
-                    const auto [aimX, aimY] = getMouseGLoc();
                     getMyHero()->emplaceAction(ActionSpinKick
                     {
                         .x = getMyHero()->currMotion()->endX,
@@ -2492,7 +2575,7 @@ void ProcessRun::checkMagicSpell(const SDL_Event &event)
         case DBCOM_MAGICID(u8"诱惑之光"):
             {
                 getMyHero()->brakeMove();
-                if(const auto uid = getFocusUID(FOCUS_MAGIC)){
+                if(const auto uid = aimUID){
                     getMyHero()->emplaceAction(ActionSpell
                     {
                         .x = getMyHero()->currMotion()->endX,
@@ -2508,7 +2591,6 @@ void ProcessRun::checkMagicSpell(const SDL_Event &event)
                     // even there is no target UID
                     // we still cast the magic to show gfx
 
-                    const auto [aimX, aimY] = getMouseGLoc();
                     getMyHero()->emplaceAction(ActionSpell
                     {
                         .x = getMyHero()->currMotion()->endX,
@@ -2533,7 +2615,6 @@ void ProcessRun::checkMagicSpell(const SDL_Event &event)
         case DBCOM_MAGICID(u8"瞬息移动"):
         case DBCOM_MAGICID(u8"异形换位"):
             {
-                const auto [aimX, aimY] = getMouseGLoc();
                 getMyHero()->brakeMove();
                 getMyHero()->emplaceAction(ActionSpell
                 {
@@ -2575,9 +2656,10 @@ void ProcessRun::checkMagicSpell(const SDL_Event &event)
             }
         default:
             {
-                break;
+                return false;
             }
     }
+    return true;
 }
 
 void ProcessRun::requestPickUp()
@@ -2595,6 +2677,7 @@ void ProcessRun::requestPickUp()
     cmPU.y = y;
     cmPU.mapUID = mapUID();
     g_client->send({CM_PICKUP, cmPU});
+    ++m_aiPickupSendSequence;
 }
 
 void ProcessRun::requestMagicDamage(int magicID, uint64_t aimUID)
@@ -2705,6 +2788,7 @@ void ProcessRun::requestConsumeItem(uint32_t itemID, uint32_t seqID, size_t coun
     cmCI.seqID  =  seqID;
     cmCI.count  =  count;
     g_client->send({CM_CONSUMEITEM, cmCI});
+    ++m_aiConsumeSendSequence;
 }
 
 void ProcessRun::requestMakeItem(uint32_t itemID, size_t count)
@@ -2864,6 +2948,7 @@ bool ProcessRun::addGroundItemID(uint32_t itemID, int x, int y)
     }
 
     m_groundItemIDList[{x, y}].push_back(itemID);
+    m_aiGroundRevision[{x, y}] = ++m_aiGroundSequence;
     return true;
 }
 
@@ -2876,6 +2961,7 @@ bool ProcessRun::removeGroundItemID(uint32_t itemID, int x, int y)
 
     for(auto i = to_lld(p->second.size()) - 1; i >= 0; --i){
         if(p->second[i] == itemID){
+            m_aiGroundRevision[{x, y}] = ++m_aiGroundSequence;
             p->second.erase(p->second.begin() + i);
             if(p->second.empty()){
                 m_groundItemIDList.erase(p);

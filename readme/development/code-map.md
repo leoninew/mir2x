@@ -1,4 +1,5 @@
 # 代码地图
+最后修改时间: 2026-11-01 19:26:21
 
 [返回知识库](README.md)
 
@@ -11,6 +12,7 @@
 | [common/src](../../common/src) | 两端共用的协议、业务数据、静态定义与工具类 | 消息、物品/地图/技能定义、序列化 |
 | [server/script](../../server/script) | 地图、NPC、任务及脚本 API | 游戏内容和剧情 |
 | [tools](../../tools) | 地图编辑、资源转换、打包、数据转换等工具 | 素材管线 |
+| [client/src/aibridge](../../client/src/aibridge)、[tools/mir2x-mcp](../../tools/mir2x-mcp)、[contracts/ai-bridge/v1](../../contracts/ai-bridge/v1) | 当前角色 AI 桥接、Python MCP、共同契约 | 固定能力、人工控制、结果证据与跨语言检查 |
 | [cmake](../../cmake) | 依赖、资源、测试和编译器接入 | 构建系统 |
 | [ports](../../ports) | vcpkg overlay ports | 项目额外依赖的构建适配 |
 | `common/test`、`server/test`、`client/test` | 各模块 Catch2/Lua 测试 | 与相应业务一起修改 |
@@ -52,6 +54,21 @@ flowchart LR
 | [pngtexdb.cpp](../../client/src/pngtexdb.cpp)、[pngtexoffdb.cpp](../../client/src/pngtexoffdb.cpp) | 普通贴图与带偏移信息贴图的读取、缓存 |
 
 客户端常见命名方式：`processxxx.cpp` 负责界面行为，`processxxxnet.cpp` 负责该状态下的 `on_SM_*`。全局消息分派位于 `Client::onServerMessage()`；只增加一个页面成员函数不会自动接入消息。
+
+### 当前角色 AI/MCP
+
+| 入口 | 作用 |
+| --- | --- |
+| `client/src/aibridge/runtime.*` | 主线程调度、窗口控制面板、意图所有权及故障关闭 |
+| `transport.*`、`protocol.*`、`instancefile.*`、`policy.*` | 环回认证传输、严格契约、安全实例与冻结策略 |
+| `controller.*`、`operation.*`、`events.*`、`audit.*` | 控制态、context、操作/账本、预算与日志 |
+| `gameadapter.*`、`combatadapter.*`、`npcadapter.*` | 真实观察/移动、技能/动作及 NPC 交互 |
+| `shopadapter.*`、`tradeadapter.*`、`auctionadapter.*` | 商店、玩家交易、拍卖和系统投递，复用原 GUI 入口 |
+| `client/src/responsecallbacks.hpp`、`Client::sendScoped` | Process 作用域回调、单调响应 ID 和期限 |
+| `tools/mir2x-mcp/src/mir2x_mcp/` | 官方 SDK stdio、35 个固定 typed 工具、6 资源及本地 IPC |
+| `contracts/ai-bridge/v1/`、`client/test/unit/test_ai_bridge*.cpp` | 同源 schema/fixture 与纯模型/真实组件测试 |
+
+上表短文件名均位于 `client/src/aibridge/`。详细模型和调用约束见[协议说明](ai-bridge-protocol.md)，使用方式见[使用说明](ai-mcp.md)。代码接入与开发检查已完成，最终 35 能力 stdio 和真实角色效果仍按[验证清单](../../docs/verification/20261031-ai-character-mcp.md)待验证，不能从该代码地图推断实机通过。
 
 ### 服务端
 

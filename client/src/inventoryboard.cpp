@@ -5,6 +5,7 @@
 #include "soundeffectdb.hpp"
 #include "processrun.hpp"
 #include "inventoryboard.hpp"
+#include <limits>
 
 extern PNGTexDB *g_progUseDB;
 extern PNGTexDB *g_itemDB;
@@ -21,6 +22,11 @@ InventoryBoard::InventoryBoard(InventoryBoard::InitArgs args)
       }}
 
     , m_processRun(args.runProc)
+    , m_shopAccess(args.shopAccess.value_or(ShopAccess{
+          .inventory = [this]{ return &m_processRun->getMyHero()->getInvPack(); },
+          .event = [this](uint64_t npc,const std::string &event,const std::string &value){ m_processRun->sendNPCEvent(npc,SYS_EPDEF,event,value); },
+          .now = []{ return SDL_GetTicks(); },
+      }))
 
     , m_wmdAniBoard
       {
@@ -78,7 +84,7 @@ InventoryBoard::InventoryBoard(InventoryBoard::InitArgs args)
           .onTrigger = [this](Widget *, int)
           {
               setShow(false);
-              m_sdInvOp.clear();
+              clearInvOp();
           },
 
           .parent{this},
@@ -346,6 +352,7 @@ bool InventoryBoard::processEventDefault(const SDL_Event &event, bool valid, Wid
                 switch(event.key.key){
                     case SDLK_ESCAPE:
                         {
+                            clearInvOp();
                             setShow(false);
                             setFocus(false);
                             return true;
@@ -406,11 +413,10 @@ bool InventoryBoard::processEventDefault(const SDL_Event &event, bool valid, Wid
                                 }
                                 else{
                                     if(const int selectedPackIndex = getPackBinIndex(to_d(event.button.x) - startXOff, to_d(event.button.y) - startYOff); selectedPackIndex >= 0){
-                                        m_selectedIndex = selectedPackIndex;
                                         const auto &selectedItem = invPackRef.getPackBinList().at(selectedPackIndex);
 
                                         if(m_sdInvOp.hasType(DBCOM_ITEMRECORD(selectedItem.item.itemID).type)){
-                                            m_processRun->sendNPCEvent(m_sdInvOp.uid, SYS_EPDEF, m_sdInvOp.queryTag.c_str(), str_printf("%d:%d", to_d(selectedItem.item.itemID), to_d(selectedItem.item. seqID)).c_str());
+                                            queryInvOp(selectedItem.item.itemID, selectedItem.item.seqID);
                                         }
                                         else{
                                             m_processRun->addCBLog(CBLOG_ERR, u8"只能维修%s", to_cstr(typeListString(m_sdInvOp.typeList)));
@@ -608,13 +614,26 @@ void InventoryBoard::packBinConsume(const PackBin &bin)
 
 void InventoryBoard::clearInvOp()
 {
+    invalidateQuote();
     m_sdInvOp.clear();
+}
+
+void InventoryBoard::invalidateQuote()
+{
+    ++m_invOpRevision;
+    m_quoteQuery.abandon();
+    m_quoteCost.reset();
     m_selectedIndex = -1;
     m_invOpCost = -1;
 }
 
 void InventoryBoard::startInvOp(SDStartInvOp sdSIOP)
 {
+    // NPC quote scripts send the same STARTINVOP after INVOPCOST to keep the board open.
+    if((m_quoteQuery.pending() || m_quoteQuery.accepted()) && m_sdInvOp.invOp == sdSIOP.invOp
+        && m_sdInvOp.uid == sdSIOP.uid && m_sdInvOp.queryTag == sdSIOP.queryTag
+        && m_sdInvOp.commitTag == sdSIOP.commitTag && m_sdInvOp.typeList == sdSIOP.typeList){ return; }
+    clearInvOp();
     m_sdInvOp = std::move(sdSIOP);
 }
 
@@ -622,6 +641,11 @@ void InventoryBoard::setInvOpCost(int mode, uint32_t itemID, uint32_t seqID, siz
 {
     fflassert(mode >= INVOP_BEGIN);
     fflassert(mode <  INVOP_END);
+
+    const auto key = m_quoteQuery.key();
+    const auto reply = m_quoteQuery.receive(itemID, seqID, mode, m_shopAccess.now());
+    if(reply != aibridge::ShopQuery::Reply::Accepted || key.npcUid != m_sdInvOp.uid
+        || key.panelRevision != m_invOpRevision || !show()){ return; }
 
     if(m_sdInvOp.invOp != mode){
         return;
@@ -631,19 +655,69 @@ void InventoryBoard::setInvOpCost(int mode, uint32_t itemID, uint32_t seqID, siz
         return;
     }
 
-    const auto myHeroPtr = m_processRun->getMyHero();
-    const auto &packBinListCRef = myHeroPtr->getInvPack().getPackBinList();
+    const auto &packBinListCRef = m_shopAccess.inventory()->getPackBinList();
 
     if(m_selectedIndex >= to_d(packBinListCRef.size())){
         return;
     }
 
     const auto &binCRef = packBinListCRef.at(m_selectedIndex);
-    if(binCRef.item.itemID != itemID || binCRef.item.seqID != seqID){
+    if(binCRef.item.itemID != itemID || binCRef.item.seqID != seqID || binCRef.item.count != m_quoteItem.count
+        || binCRef.item.duration[0] != m_quoteItem.duration[0] || binCRef.item.duration[1] != m_quoteItem.duration[1]
+        || binCRef.item.extAttrList != m_quoteItem.extAttrList){
         return;
     }
 
-    m_invOpCost = to_d(cost);
+    if(cost > std::numeric_limits<uint32_t>::max()){ return; }
+    m_quoteCost = static_cast<uint32_t>(cost);
+    m_invOpCost = cost <= static_cast<size_t>(std::numeric_limits<int>::max()) ? static_cast<int>(cost) : -1;
+    m_quoteReceivedAt = m_shopAccess.now();
+    ++m_quoteRevision;
+}
+
+aibridge::ShopQuery::Start InventoryBoard::queryInvOp(uint32_t itemId, uint32_t seqId)
+{
+    if(!show() || m_sdInvOp.invOp == INVOP_NONE || m_sdInvOp.queryTag.empty()
+        || m_sdInvOp.queryTag.size() >= 100 || m_sdInvOp.queryTag.find('\0') != std::string::npos){
+        return aibridge::ShopQuery::Start::Busy;
+    }
+    const auto &bins = m_shopAccess.inventory()->getPackBinList();
+    if(bins.size() > 8192){ return aibridge::ShopQuery::Start::Busy; }
+    const auto p = std::find_if(bins.begin(), bins.end(), [&](const auto &bin){ return bin.item.itemID == itemId && bin.item.seqID == seqId; });
+    if(p == bins.end() || !m_sdInvOp.hasType(DBCOM_ITEMRECORD(itemId).type)
+        || p->item.count > std::numeric_limits<uint32_t>::max()){ return aibridge::ShopQuery::Start::Busy; }
+    if(p->item.extAttrList.size()>100){ return aibridge::ShopQuery::Start::Busy; }
+    size_t attributeBytes=0;
+    for(const auto &[key,value]:p->item.extAttrList){ attributeBytes+=value.size(); if(attributeBytes>65536){ return aibridge::ShopQuery::Start::Busy; } }
+    const auto state = m_quoteQuery.begin({m_sdInvOp.uid, m_invOpRevision, itemId, seqId, m_sdInvOp.invOp}, m_shopAccess.now());
+    if(state == aibridge::ShopQuery::Start::Sent){
+        m_selectedIndex = static_cast<int>(p - bins.begin());
+        m_quoteCount = static_cast<uint32_t>(p->item.count);
+        m_quoteItem = p->item;
+        m_quoteCost.reset(); m_invOpCost = -1;
+        m_shopAccess.event(m_sdInvOp.uid,m_sdInvOp.queryTag,std::to_string(itemId) + ":" + std::to_string(seqId));
+    }
+    return state;
+}
+
+bool InventoryBoard::submitInvOp(uint32_t itemId, uint32_t seqId)
+{
+    const auto &key = m_quoteQuery.key();
+    if(!show() || m_sdInvOp.invOp == INVOP_NONE || !m_quoteQuery.accepted() || !m_quoteCost || m_invOpCost < 0
+        || key.npcUid != m_sdInvOp.uid || key.panelRevision != m_invOpRevision || key.itemId != itemId || key.seqId != seqId
+        || m_shopAccess.now() < m_quoteReceivedAt || m_shopAccess.now() - m_quoteReceivedAt >= 30000
+        || m_sdInvOp.commitTag.empty() || m_sdInvOp.commitTag.size() >= 100 || m_sdInvOp.commitTag.find('\0') != std::string::npos){ return false; }
+    const auto &bins = m_shopAccess.inventory()->getPackBinList();
+    if(bins.size() > 8192){ return false; }
+    const auto p = std::find_if(bins.begin(), bins.end(), [&](const auto &bin){ return bin.item.itemID == itemId && bin.item.seqID == seqId; });
+    if(p == bins.end() || p->item.count != m_quoteCount || !m_sdInvOp.hasType(DBCOM_ITEMRECORD(itemId).type)){ return false; }
+    if(p->item.duration[0]!=m_quoteItem.duration[0] || p->item.duration[1]!=m_quoteItem.duration[1]
+        || p->item.extAttrList!=m_quoteItem.extAttrList){ return false; }
+    m_selectedIndex = static_cast<int>(p - bins.begin());
+    m_shopAccess.event(m_sdInvOp.uid,m_sdInvOp.commitTag,std::to_string(itemId) + ":" + std::to_string(seqId));
+    m_invOpCost = -1; m_quoteCost.reset(); m_quoteQuery.abandon();
+    ++m_quoteRevision;
+    return true;
 }
 
 std::u8string InventoryBoard::typeListString(const std::vector<std::u8string> &typeList)
@@ -704,8 +778,7 @@ void InventoryBoard::commitInvOp()
         return;
     }
 
-    m_processRun->sendNPCEvent(m_sdInvOp.uid, SYS_EPDEF, m_sdInvOp.commitTag.c_str(), str_printf("%d:%d", to_d(selectedItem.item.itemID), to_d(selectedItem.item.seqID)).c_str());
-    m_invOpCost = -1;
+    submitInvOp(selectedItem.item.itemID, selectedItem.item.seqID);
 }
 
 void InventoryBoard::removeItem(uint32_t itemID, uint32_t seqID, size_t count)

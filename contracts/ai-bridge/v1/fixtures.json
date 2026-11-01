@@ -1,0 +1,1933 @@
+[
+  {
+    "method": "game_get_session",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_session",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "instance_id": "00000000000000000000000000000000",
+        "phase": "login",
+        "control_state": "disabled",
+        "context": null,
+        "character_uid": null,
+        "pause_reason": null,
+        "capabilities": {
+          "protocol_version": 1,
+          "build": "",
+          "tools": [],
+          "supported_skills": [],
+          "policy": {
+            "allowed_actions": [],
+            "allow_pvp": false,
+            "allow_npc_dialogue": false,
+            "max_gold_per_operation": "0",
+            "max_gold_per_session": "0",
+            "max_item_count_per_operation": 0,
+            "remaining_gold_budget": "0",
+            "economic_uncertain": false
+          },
+          "limitations": []
+        }
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_session",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_get_state",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_state",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "character_uid": "0",
+        "name": null,
+        "map_uid": "0",
+        "map_name": null,
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "action_endpoint": {
+          "x": 0,
+          "y": 0
+        },
+        "direction": null,
+        "hp": null,
+        "max_hp": null,
+        "mp": null,
+        "max_mp": null,
+        "level": null,
+        "gold": null,
+        "action": null,
+        "known_states": []
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_state",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_list_nearby",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_list_nearby",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "items": [],
+        "next_cursor": null
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_list_nearby",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_get_map_region",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_map_region",
+      "params": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      }
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "map_uid": "0",
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+        "cells": []
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_map_region",
+      "params": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_get_inventory",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_inventory",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "items": [],
+        "next_cursor": null
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_inventory",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_get_skills",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_skills",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "items": []
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_skills",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_get_interaction",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_interaction",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "interaction": {
+          "dialogue": null,
+          "input": null,
+          "shop_handle": null,
+          "invop_handle": null,
+          "trade": null,
+          "invitation": null,
+          "auction_open": false,
+          "revision": "0"
+        }
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_interaction",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_get_operation",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_operation",
+      "params": {
+        "operation_id": "example"
+      }
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "request_id": "00000000-0000-4000-8000-000000000001",
+        "method": "example",
+        "state": "accepted",
+        "context": {
+          "instance_id": "00000000000000000000000000000000",
+          "session_id": "00000000000000000000000000000000",
+          "world_epoch": "0",
+          "control_epoch": "0"
+        },
+        "started_at": "0",
+        "deadline_at": "0",
+        "completion_scope": null,
+        "evidence": [],
+        "error": null,
+        "cancel_requested": false,
+        "side_effects_possible": false,
+        "late_resolution": null,
+        "result": null
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_operation",
+      "params": {
+        "operation_id": "example",
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_get_events",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_events",
+      "params": {
+        "after_seq": "0"
+      }
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "events": [],
+        "gap": false,
+        "next_seq": "0"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_get_events",
+      "params": {
+        "after_seq": "0",
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_stop",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_stop",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "paused": false,
+        "stopped": [],
+        "operation": null,
+        "side_effects_possible": false
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_stop",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_move_to",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_move_to",
+      "params": {
+        "x": 0,
+        "y": 0
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_move_to",
+      "params": {
+        "x": 0,
+        "y": 0,
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_npc_open",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_open",
+      "params": {
+        "target_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_open",
+      "params": {
+        "target_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_npc_choose",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_choose",
+      "params": {
+        "dialogue_id": "example",
+        "option_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_choose",
+      "params": {
+        "dialogue_id": "example",
+        "option_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_npc_input",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_input",
+      "params": {
+        "input_handle": "example",
+        "text": ""
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_input",
+      "params": {
+        "input_handle": "example",
+        "text": "",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_npc_close",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_close",
+      "params": {
+        "dialogue_id": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_npc_close",
+      "params": {
+        "dialogue_id": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_pick_up",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_pick_up",
+      "params": {
+        "ground_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_pick_up",
+      "params": {
+        "ground_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_attack",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_attack",
+      "params": {
+        "target_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_attack",
+      "params": {
+        "target_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_cast",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_cast",
+      "params": {
+        "magic_id": 0,
+        "target_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_cast",
+      "params": {
+        "magic_id": 0,
+        "target_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_use_item",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_use_item",
+      "params": {
+        "item_id": 0,
+        "seq_id": 0,
+        "count": 1
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_use_item",
+      "params": {
+        "item_id": 0,
+        "seq_id": 0,
+        "count": 1,
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_shop_list",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_list",
+      "params": {
+        "shop_handle": "example"
+      }
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "items": [],
+        "next_cursor": null,
+        "refresh_pending": false,
+        "last_query_error": null
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_list",
+      "params": {
+        "shop_handle": "example",
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_shop_buy",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_buy",
+      "params": {
+        "quote_handle": "example",
+        "count": 1,
+        "max_total_gold": "0"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_buy",
+      "params": {
+        "quote_handle": "example",
+        "count": 1,
+        "max_total_gold": "0",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_shop_quote_sell",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_quote_sell",
+      "params": {
+        "invop_handle": "example",
+        "item_id": 0,
+        "seq_id": 0
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_quote_sell",
+      "params": {
+        "invop_handle": "example",
+        "item_id": 0,
+        "seq_id": 0,
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_shop_sell",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_sell",
+      "params": {
+        "quote_handle": "example",
+        "min_total_gold": "0"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_shop_sell",
+      "params": {
+        "quote_handle": "example",
+        "min_total_gold": "0",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_trade_request",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_request",
+      "params": {
+        "target_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_request",
+      "params": {
+        "target_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_trade_respond",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_respond",
+      "params": {
+        "invitation_handle": "example",
+        "accept": false
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_respond",
+      "params": {
+        "invitation_handle": "example",
+        "accept": false,
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_trade_offer",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_offer",
+      "params": {
+        "trade_handle": "example",
+        "gold": "0",
+        "items": []
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_offer",
+      "params": {
+        "trade_handle": "example",
+        "gold": "0",
+        "items": [],
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_trade_lock",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_lock",
+      "params": {
+        "trade_handle": "example",
+        "offer_revision": "0"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_lock",
+      "params": {
+        "trade_handle": "example",
+        "offer_revision": "0",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_trade_commit",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_commit",
+      "params": {
+        "trade_handle": "example",
+        "local_revision": "0",
+        "peer_revision": "0"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_commit",
+      "params": {
+        "trade_handle": "example",
+        "local_revision": "0",
+        "peer_revision": "0",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_trade_cancel",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_cancel",
+      "params": {
+        "trade_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_trade_cancel",
+      "params": {
+        "trade_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_auction_list",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_list",
+      "params": {
+        "category": 1
+      }
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "items": [],
+        "next_cursor": null,
+        "refresh_pending": false,
+        "last_query_error": null
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_list",
+      "params": {
+        "category": 1,
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_auction_register",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_register",
+      "params": {
+        "item_id": 0,
+        "seq_id": 0,
+        "price": "1",
+        "note": ""
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_register",
+      "params": {
+        "item_id": 0,
+        "seq_id": 0,
+        "price": "1",
+        "note": "",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_auction_buy",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_buy",
+      "params": {
+        "auction_handle": "example",
+        "max_total_gold": "0"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_buy",
+      "params": {
+        "auction_handle": "example",
+        "max_total_gold": "0",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_auction_cancel",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_cancel",
+      "params": {
+        "auction_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_auction_cancel",
+      "params": {
+        "auction_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  },
+  {
+    "method": "game_delivery_list",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_delivery_list",
+      "params": {}
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "snapshot_seq": "0",
+        "observed_at": "0",
+        "source": "client",
+        "coverage": "client_known",
+        "unavailable_fields": [],
+        "items": [],
+        "next_cursor": null
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_delivery_list",
+      "params": {
+        "unexpected": true
+      }
+    }
+  },
+  {
+    "method": "game_delivery_claim",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_delivery_claim",
+      "params": {
+        "delivery_handle": "example"
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_delivery_claim",
+      "params": {
+        "delivery_handle": "example",
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
+  }
+]

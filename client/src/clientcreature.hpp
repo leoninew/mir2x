@@ -8,6 +8,7 @@
 #include <climits>
 #include <optional>
 #include <concepts>
+#include <atomic>
 #include <optional>
 #include <SDL3/SDL.h>
 
@@ -28,6 +29,10 @@
 class ProcessRun;
 class ClientCreature
 {
+    private:
+        inline static std::atomic<uint64_t> s_incarnation = 0;
+        const uint64_t m_incarnation = ++s_incarnation;
+
     protected:
         const uint64_t m_UID;
 
@@ -77,6 +82,8 @@ class ClientCreature
         {
             return m_UID;
         }
+
+        uint64_t incarnation() const noexcept { return m_incarnation; }
 
         int type() const
         {

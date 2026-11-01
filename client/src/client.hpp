@@ -10,8 +10,10 @@
 #include "message.hpp"
 #include "sdldevice.hpp"
 #include "raiitimer.hpp"
+#include "responsecallbacks.hpp"
 
 class ProcessRun;
+namespace aibridge { class AiBridgeRuntime; struct RuntimeState; }
 class Client final
 {
     private:
@@ -30,13 +32,6 @@ class Client final
         };
 
     private:
-        struct ResponseHandler
-        {
-            uint64_t timeout;
-            std::function<void(uint8_t, const uint8_t *, size_t)> handler;
-        };
-
-    private:
         std::string m_token;
 
     private:
@@ -51,12 +46,15 @@ class Client final
 
     private:
         NetIO m_netIO;
-        uint64_t m_respHandlerIndex = 1;
-        std::unordered_map<uint64_t, ResponseHandler> m_respHandlers;
+        ResponseCallbacks m_respHandlers;
 
     private:
         int m_requestProcess = PROCESSID_NONE;
         std::unique_ptr<Process> m_currentProcess;
+        std::unique_ptr<aibridge::AiBridgeRuntime> m_aiRuntime;
+        bool m_quitRequested = false;
+        bool m_shutdown = false;
+        uint64_t m_renderSequence = 0;
 
     private:
         std::optional<SMOnlineOK> m_smOOK;
@@ -72,6 +70,14 @@ class Client final
 
     public:
         void mainLoop();
+        void requestQuit() noexcept { m_quitRequested = true; }
+        void shutdown() noexcept;
+        void logoutAi();
+        void observeAi();
+        void observeAi(const aibridge::RuntimeState &);
+        void drawAiPanel() const;
+        aibridge::AiBridgeRuntime *aiRuntime() const noexcept { return m_aiRuntime.get(); }
+        uint64_t renderSequence() const noexcept { return m_renderSequence; }
 
     public:
         void Clipboard(const std::string &szInfo)
@@ -91,6 +97,7 @@ class Client final
         }
 
     private:
+        void initializeAi();
         void switchProcess();
         void switchProcess(int);
         void switchProcess(int, int);
@@ -110,6 +117,7 @@ class Client final
         {
             if(m_currentProcess){
                 m_currentProcess->draw();
+                ++m_renderSequence;
             }
         }
 
@@ -144,23 +152,12 @@ class Client final
         void sendSMsgLog(uint8_t);
 
     public:
-        void send(const ClientMsgBuf &msg, std::function<void(uint8_t, const uint8_t *, size_t)> fnOp = nullptr)
-        {
-            if(fnOp){
-                if(m_respHandlers.empty()){
-                    m_respHandlerIndex = 1;
-                }
+        void send(const ClientMsgBuf &, ResponseCallbacks::Handler = {});
+        uint64_t sendScoped(const ClientMsgBuf &, uint64_t timeoutMS, ResponseCallbacks::Handler, ResponseCallbacks::OnCancel = {});
+        void cancelResponses(ResponseCallbacks::CancelReason) noexcept;
 
-                m_respHandlers.emplace(m_respHandlerIndex, ResponseHandler{hres_tstamp::localtime() + 1000, std::move(fnOp)});
-                m_netIO.send(msg.headCode, msg.data, msg.size, m_respHandlerIndex);
-                m_respHandlerIndex++;
-            }
-            else{
-                m_netIO.send(msg.headCode, msg.data, msg.size, 0);
-            }
-
-            sendCMsgLog(msg.headCode);
-        }
+    private:
+        uint64_t sendWithResponse(const ClientMsgBuf &, ResponseCallbacks::Handler, std::optional<uint64_t>, ResponseCallbacks::OnCancel);
 
     public:
         void PrintMonitor() const;

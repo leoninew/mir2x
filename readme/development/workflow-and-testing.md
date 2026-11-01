@@ -1,4 +1,5 @@
 # 开发与测试流程
+最后修改时间: 2026-11-01 19:26:21
 
 [返回知识库](README.md)
 
@@ -49,6 +50,11 @@
 | `playerquest` | 玩家侧任务行为 | 同上 |
 | `gridtrigger` | 地图格子触发 | 同上 |
 | `questscripts` | 实际任务脚本回归与商人/NPC 合约 | 内嵌 Lua、源码中的 Lua fixture；模拟游戏世界 |
+| `ai_bridge_protocol`、`ai_bridge_security` | 共同契约、真实环回传输、实例与策略 | Windows 使用真实 ACL/AccessCheck/junction；POSIX 另验 |
+| `response_callbacks` | 单调响应 ID、作用域、期限、迟到与重入 | 独立共用回调管理器 |
+| `ai_bridge_controller`、`ai_bridge_runtime` | 控制/预算/去重/事件/审计、按钮手势及意图所有权 | fake 时钟/适配器及实际 SDL 事件数据；不是实际游戏输入 |
+| `ai_bridge_actions`、`ai_bridge_npc`、`ai_bridge_economy`、`ai_bridge_shop` | 快照/寻路/动作/NPC/经济纯模型 | 复用产品 helper；fake 地图/网络不能替代实机 |
+| `ai_bridge_npc_gui`、`ai_bridge_economy_gui`、`ai_bridge_trade_gui`、`ai_bridge_shop_gui` | NPC/拍卖/交易/商店实际 GUI 共用入口 | `client_objs`、字体/emoji、dummy SDL/software、生成纹理和受控同步网络端口 |
 
 target 名为 `test_<名称>`。来源：[公共测试](../../common/test/unit/CMakeLists.txt)、[客户端测试](../../client/test/unit/CMakeLists.txt)、[服务端测试](../../server/test/unit/CMakeLists.txt)、[测试基础设施](../../cmake/Mir2xTest.cmake)。
 
@@ -99,8 +105,43 @@ python3 ./build.py --build-dir=. \
 | 任务或商人内容 | `questscripts` | 真客户端菜单和完整业务数据变化 |
 | 物品定义或发放 | `itemquality` / `itemgrant`，按实际职责选择 | 堆叠、容量、实例属性、保存重登 |
 | 协议或序列化 | 相关消息测试和收发双方构建 | 正常、拒绝、重复请求和旧版本行为 |
+| AI 桥接、控制权或经济适配 | 下述定向 C++ 回归、Python 检查，按影响选取 | 真实角色、人工接管、钱物对照和异常路径；见验证清单 |
 
 不要把某个 suite 名与业务覆盖画等号。真正修改之前需要读对应测试用例，确认它是否检查了本次变化。
+
+## AI 桥接的定向回归
+
+当前最终交付 `MCP-T05-001/r3/delivery2` 已通过下列 15 组共 166 项 CTest（38.81 秒），Python 76 项及 ruff 也已通过；本次文档维护未重跑。版本和证据索引见[验证文档](../../docs/verification/20261031-ai-character-mcp.md)。这不是全仓库 `check`，也不是 T07 真实角色验收。
+
+在已配置的 MSYS2 UCRT64 仓库根目录按需复跑；首次增加源文件/依赖先按 Windows 文档配置。GUI 组件需已安装字体/emoji 资源，默认读取 `install/client/res`，或设置 `MIR2X_TEST_RES_DIR`。
+
+```bash
+cmake --build build --target client server \
+    test_ai_bridge_protocol test_ai_bridge_security test_response_callbacks \
+    test_ai_bridge_controller test_ai_bridge_runtime test_ai_bridge_actions \
+    test_ai_bridge_npc test_ai_bridge_npc_gui \
+    test_ai_bridge_economy test_ai_bridge_economy_gui \
+    test_ai_bridge_shop test_ai_bridge_shop_gui test_ai_bridge_trade_gui \
+    test_netio test_widget --parallel 8
+ctest --test-dir build -R '^(ai_bridge_[^/]+|response_callbacks|netio|widget)/' --output-on-failure
+```
+
+Windows PowerShell 的 Python 检查（先按 [Python 项目说明](../../tools/mir2x-mcp/README.md)安装锁定依赖）：
+
+```powershell
+$env:UV_CACHE_DIR = Join-Path $PWD '.runtime/uv-cache'
+$env:UV_PYTHON_INSTALL_DIR = Join-Path $PWD '.runtime/uv-python'
+uv run --project tools/mir2x-mcp --locked --no-sync python -m pytest tools/mir2x-mcp/tests -q
+uv run --project tools/mir2x-mcp --locked --no-sync ruff check tools/mir2x-mcp
+uv run --project tools/mir2x-mcp --locked --no-sync ruff format --check tools/mir2x-mcp
+```
+
+- [x] 纯模型与真实 GUI 组件、真实环回传输和 Windows 权限检查已取得最终开发证据。
+- [x] Python 官方 SDK 子进程 stdio 已检查 35 工具/6 资源，游戏桥接为 fake；另有至 T04 的真实 C++ 19 能力只读冒烟。
+- [ ] 最终 T05 二进制真实 35 能力 SDK/宿主、登录角色和全部正常/失败路径。
+- [ ] 桥接禁用的原 GUI/动作回归、真实整帧耗时、POSIX、正式辅助脚本和文档实机复现。
+
+经济与双角色验证必须使用独立测试库/角色，记录请求/operation/context、前后钱物和回执/画面。阶段收尾后不因文档中列出命令自动启动测试；剩余逐项条件统一在验证文档 V01 至 V06。
 
 ## 调试、日志与定位
 

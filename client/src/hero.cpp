@@ -640,9 +640,9 @@ bool Hero::parseAction(const ActionNode &action)
                 }));
 
                 if(isMyHero()){
-                    m_motionQueue.back()->addTrigger(false, [mine, this](MotionNode *)
+                    m_motionQueue.back()->addTrigger(false, [mine, this, valid=continuationGuard(action)](MotionNode *)
                     {
-                        m_processRun->getMyHero()->emplaceAction(mine);
+                        if(valid()){ m_processRun->getMyHero()->emplaceAction(mine); }
                         return true;
                     });
                 }
@@ -1126,9 +1126,9 @@ bool Hero::parseAction(const ActionNode &action)
                         }));
 
                         if(UID() == m_processRun->getMyHeroUID()){
-                            m_motionQueue.back()->addTrigger(false, [aimUID = action.aimUID, this](MotionNode *)
+                            m_motionQueue.back()->addTrigger(false, [aimUID = action.aimUID, this, valid=continuationGuard(action)](MotionNode *)
                             {
-                                if(auto p = m_processRun->findUID(aimUID); p && p->alive()){
+                                if(auto p = m_processRun->findUID(aimUID); valid() && p && p->alive()){
                                     m_processRun->trackAttack(false, aimUID);
                                 }
                                 return true;
@@ -1173,9 +1173,9 @@ bool Hero::parseAction(const ActionNode &action)
                 }));
 
                 if(isMyHero()){
-                    m_motionQueue.back()->addTrigger(false, [this](MotionNode *) -> bool
+                    m_motionQueue.back()->addTrigger(false, [this, valid=continuationGuard(action)](MotionNode *) -> bool
                     {
-                        m_processRun->requestPickUp();
+                        if(valid()){ m_processRun->requestPickUp(); }
                         return true;
                     });
                 }

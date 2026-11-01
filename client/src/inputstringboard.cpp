@@ -96,7 +96,6 @@ InputStringBoard::InputStringBoard(
           .onCR = [this]
           {
               acceptInput();
-              setShow(false);
           },
 
           .codeXfer = [argSecurity, codeMask = utf8f::str2code("*")](uint32_t codePoint)
@@ -130,7 +129,6 @@ InputStringBoard::InputStringBoard(
           .onTrigger = [this](Widget *, int)
           {
               acceptInput();
-              setShow(false);
           },
 
           .parent{this},
@@ -158,16 +156,7 @@ InputStringBoard::InputStringBoard(
 
           .onTrigger = [this](Widget *, int)
           {
-              setShow(false);
-              m_input.clear();
-              m_input.setFocus(false);
-
-              m_modal = false;
-              m_onAccept = {};
-              m_input.setValidateFunc({});
-              if(auto onReject = std::move(m_onReject)){
-                  onReject();
-              }
+              rejectInput();
           },
 
           .parent{this},
@@ -192,10 +181,16 @@ void InputStringBoard::acceptInput()
     const auto inputPos = fullInput.find_first_not_of(" \n\r\t");
     const std::string realInput = (inputPos == std::string::npos) ? "" : fullInput.substr(inputPos);
 
+    if(m_npcUid && !aibridge::npcInputFits(fullInput)){ return; }
+    setShow(false);
+
     m_input.clear();
     m_input.setFocus(false);
 
     m_modal = false;
+    m_npcUid = 0;
+    m_tradePeerUid = 0;
+    ++m_revision;
     m_onReject = {};
     m_input.setValidateFunc({});
     if(auto onAccept = std::move(m_onAccept)){
@@ -205,14 +200,23 @@ void InputStringBoard::acceptInput()
 
 void InputStringBoard::waitInput(InputStringBoard::WaitInputArgs args)
 {
+    m_tradePeerUid = 0;
+    m_npcUid = 0;
+    m_onAccept = {};
+    m_onReject = {};
+    ++m_revision;
     m_textInfo.loadXML(to_cstr(args.layoutString), 0);
+    m_npcUid = args.npcUid;
+    m_sensitive = args.security;
     m_onAccept = std::move(args.onAccept);
     m_onReject = std::move(args.onReject);
     m_modal = args.modal;
 
     m_input.setShow(true);
     m_input.setActive(true);
-    m_input.setValidateFunc(std::move(args.validate));
+    m_input.setValidateFunc([npcUid=args.npcUid, validate=std::move(args.validate)](std::string current, std::string added){
+        return (!npcUid || aibridge::npcInputFits(current + added)) && (!validate || validate(std::move(current), std::move(added)));
+    });
     if(args.security){
         m_input.setCodeXferFunc([maskCode = utf8f::str2code("*")](uint32_t){ return maskCode; });
     } else {
@@ -226,6 +230,11 @@ void InputStringBoard::waitInput(InputStringBoard::WaitInputArgs args)
 
 void InputStringBoard::waitChoice(std::u8string layoutString, bool modal, std::function<void()> onAccept, std::function<void()> onReject)
 {
+    m_tradePeerUid = 0;
+    ++m_revision;
+    m_npcUid = 0;
+    m_onAccept = {};
+    m_onReject = {};
     m_textInfo.loadXML(to_cstr(layoutString), 0);
     if(onAccept){
         m_onAccept = [onAccept = std::move(onAccept)](std::u8string){ onAccept(); };
@@ -244,4 +253,51 @@ void InputStringBoard::waitChoice(std::u8string layoutString, bool modal, std::f
 
     setShow(true);
     setFocus(true);
+}
+
+std::optional<aibridge::NpcInput> InputStringBoard::npcInput() const
+{
+    if(!show() || !m_npcUid || !m_onAccept){ return {}; }
+    return aibridge::NpcInput{m_revision, m_npcUid, m_textInfo.getTextBounded(2048), 199, m_sensitive};
+}
+
+bool InputStringBoard::submitNpcInput(uint64_t revision, const std::string &text)
+{
+    if(!show() || !m_npcUid || !m_onAccept || revision != m_revision || !aibridge::npcInputFits(text)){
+        return false;
+    }
+    if(!m_input.setValidatedInput(text)){ return false; }
+    acceptInput();
+    return true;
+}
+
+void InputStringBoard::rejectInput()
+{
+    setShow(false);
+    m_input.clear();
+    m_input.setFocus(false);
+    m_modal = false;
+    m_npcUid = 0;
+    m_tradePeerUid = 0;
+    ++m_revision;
+    m_onAccept = {};
+    m_input.setValidateFunc({});
+    if(auto callback = std::move(m_onReject)){ callback(); }
+}
+
+void InputStringBoard::waitTradeChoice(uint64_t peerUid, std::u8string text,
+    std::function<void()> accept, std::function<void()> reject)
+{
+    waitChoice(std::move(text), false, std::move(accept), std::move(reject));
+    m_tradePeerUid = peerUid;
+}
+
+bool InputStringBoard::respondTradeChoice(uint64_t expectedRevision, uint64_t peerUid, bool accept, const std::function<bool()> &canSend)
+{
+    if(!show() || !peerUid || m_tradePeerUid != peerUid || m_revision != expectedRevision
+        || (accept ? !m_onAccept : !m_onReject)){ return false; }
+    if(canSend && !canSend()){ return false; }
+    if(accept){ acceptInput(); }
+    else { rejectInput(); }
+    return true;
 }

@@ -10,6 +10,7 @@
 #include "clientargparser.hpp"
 #include "processrun.hpp"
 #include "clientpathfinder.hpp"
+#include "aibridge/movement.hpp"
 
 extern Log *g_mir2xLog;
 extern Client *g_client;
@@ -18,6 +19,78 @@ extern ClientArgParser *g_clientArgParser;
 MyHero::MyHero(uint64_t nUID, bool argGender, int argJob, ProcessRun *pRun, const ActionNode &action)
     : Hero(nUID, argGender, argJob, pRun, action)
 {}
+
+std::function<bool()> MyHero::continuationGuard(const ActionNode &action) const
+{
+    // The bridge schedules bounded pursuit and each strike itself; human auto-attack is unchanged.
+    if(action.type == ACTION_ATTACK && m_aiIntent.owned()){ return []{ return false; }; }
+    // A corrected manual action can continue, but a late AI echo cannot invent a new intention.
+    const bool matchingHumanIntent = m_latestLocalAction && m_latestLocalAction->type == action.type
+        && (action.type == ACTION_ATTACK
+            ? m_latestLocalAction->aimUID == action.aimUID
+            : m_latestLocalAction->x == action.x && m_latestLocalAction->y == action.y);
+    if(action.type==ACTION_PICKUP && m_aiIntent.owned()){
+        const auto expected=m_aiPickupGround;
+        return [this,expected,stamp=m_aiIntent.stamp(m_parsingLocalAction,matchingHumanIntent)]{
+            if(!m_aiIntent.permits(stamp) || !expected){ return false; }
+            try{ if(m_aiActionGuard && !m_aiActionGuard()){ return false; } }catch(...){ return false; }
+            const auto [x,y,revision]=*expected;
+            return m_currMotion->endX==x && m_currMotion->endY==y && m_processRun->aiGroundRevision(x,y)==revision;
+        };
+    }
+    return [this, stamp=m_aiIntent.stamp(m_parsingLocalAction, matchingHumanIntent)]{ return m_aiIntent.permits(stamp); };
+}
+
+void MyHero::beginAiIntent()
+{
+    m_aiIntent.begin();
+    m_latestLocalAction.reset();
+    m_aiPickupGround.reset();
+    m_aiActionGuard={}; m_aiActionRejected=false;
+    clearActionQueue();
+}
+
+bool MyHero::cancelAiIntent()
+{
+    if(!m_aiIntent.cancel()){ return false; }
+    m_latestLocalAction.reset();
+    m_aiPickupGround.reset();
+    m_aiActionGuard={};
+    clearActionQueue();
+    m_motionQueue.clear();
+    // A dying/forced server motion is authoritative; never flush it to a stand motion.
+    if(m_currMotion->type != MOTION_DIE && m_forcedMotionQueue.empty()){
+        brakeMove();
+    }
+    return true;
+}
+
+bool MyHero::aiMotionStopped() const
+{
+    return stayIdle() && (m_currMotion->type == MOTION_STAND || m_currMotion->type == MOTION_ONHORSESTAND);
+}
+
+bool MyHero::aiCanStartMove() const
+{
+    if(!stayIdle()){ return false; }
+    switch(m_currMotion->type){
+        case MOTION_STAND: case MOTION_ONHORSESTAND:
+        case MOTION_WALK: case MOTION_RUN: case MOTION_ONHORSEWALK: case MOTION_ONHORSERUN: return true;
+        default: return false;
+    }
+}
+
+std::vector<pathf::PathNode> MyHero::aiPlanMove(int x, int y)
+{
+    const auto srcX=m_currMotion->endX, srcY=m_currMotion->endY;
+    if(srcX==x && srcY==y){ return {{x,y}}; }
+    if(!m_processRun->groundValid(srcX,srcY) || !m_processRun->groundValid(x,y)){ return {}; }
+    ClientPathFinder finder(m_processRun,true,0,1);
+    const auto result=finder.search(srcX,srcY,m_currMotion->direction,x,y,aibridge::maxMoveSearchRounds);
+    if(result.hasPath()){ return finder.getPathNode(); }
+    if(result.doneSearch()){ return {}; }
+    throw aibridge::ProtocolError("unavailable","Movement search budget exhausted");
+}
 
 bool MyHero::moveNextMotion()
 {
@@ -385,6 +458,8 @@ bool MyHero::decompActionAttack()
                 }
             default:
                 {
+                    // A moving target may leave melee range between adapter validation and parsing.
+                    if(m_aiIntent.owned()){ m_actionQueue.clear(); return false; }
                     // not close enough for the PLAIN_PHY_ATTACK
                     // need to schedule a path to move closer and then attack
 
@@ -474,6 +549,7 @@ bool MyHero::decompActionPickUp()
     const auto nY0 = m_currMotion->endY;
     const auto nX1 = pickUp.x;
     const auto nY1 = pickUp.y;
+    if(m_aiIntent.owned() && (nX0!=nX1 || nY0!=nY1)){ m_actionQueue.clear(); return false; }
 
     switch(mathf::LDistance2(nX0, nY0, nX1, nY1)){
         case 0:
@@ -598,6 +674,11 @@ bool MyHero::parseActionQueue()
     if(m_actionQueue.empty()){
         return true;
     }
+    if(m_aiIntent.owned() && m_aiActionGuard){
+        bool allowed=false;
+        try{ allowed=m_aiActionGuard(); }catch(...){}
+        if(!allowed){ m_aiActionRejected=true; clearActionQueue(); return false; }
+    }
 
     // trace message
     // trace move action before parsing
@@ -674,11 +755,18 @@ bool MyHero::parseActionQueue()
 
     const auto currAction = m_actionQueue.front();
     m_actionQueue.pop_front();
+    m_latestLocalAction = currAction;
 
     // present current *local* action without verification
     // later if server refused current action we'll do correction by pullback
 
     reportAction(currAction);
+    struct LocalActionGuard
+    {
+        bool &flag;
+        explicit LocalActionGuard(bool &f): flag(f){ flag = true; }
+        ~LocalActionGuard(){ flag = false; }
+    } localActionGuard(m_parsingLocalAction);
     if(parseAction(currAction)){
         // trace message
         // trace move action after parsing
@@ -780,6 +868,7 @@ void MyHero::brakeMove()
 
 bool MyHero::emplaceAction(const ActionNode &action)
 {
+    m_latestLocalAction = action;
     // always clear motionQueue if new action provided
     // for urgent motion must play, push them into forcedMotionQueue
 
@@ -799,6 +888,8 @@ void MyHero::reportAction(const ActionNode &action)
     cmA.action = action;
 
     g_client->send({CM_ACTION, cmA});
+    ++m_actionSendSequence;
+    ++m_actionTypeSendSequence[action.type];
 }
 
 void MyHero::pullGold()
@@ -815,6 +906,7 @@ void MyHero::flushForcedMotion()
 void MyHero::setBelt(SDBelt belt)
 {
     m_sdBelt = std::move(belt);
+    m_beltKnown = true;
 }
 
 void MyHero::setBelt(int slot, SDItem item, bool playSound)
@@ -873,6 +965,15 @@ int MyHero::getMagicCoolDownAngle(uint32_t magicID) const
         return 360;
     }
     return mathf::bound<int>(std::lround(360.0 * to_df(castTimeDiff) / coolDown), 0, 360);
+}
+
+uint64_t MyHero::magicCooldownRemaining(uint32_t magicID) const
+{
+    const auto duration=DBCOM_MAGICRECORD(magicID).coolDown;
+    const auto p=m_lastCastTime.find(magicID);
+    if(duration<=0 || p==m_lastCastTime.end()){ return 0; }
+    const auto elapsed=hres_tstamp().to_msec()-p->second;
+    return elapsed>=uint64_t(duration) ? 0 : uint64_t(duration)-elapsed;
 }
 
 bool MyHero::hasTeam() const

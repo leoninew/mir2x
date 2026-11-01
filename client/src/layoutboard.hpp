@@ -244,6 +244,17 @@ class LayoutBoard: public Widget
     public:
         std::string getXML() const;
         std::string getText() const;
+        std::string getTextBounded(size_t maxBytes) const;
+
+        struct TextEvent
+        {
+            int paragraph = 0;
+            int leaf = 0;
+            std::string text;
+            std::unordered_map<std::string, std::string> attributes;
+        };
+        std::vector<TextEvent> textEvents(size_t limit = 100) const;
+        bool activateTextEvent(int paragraph, int leaf);
 
     public:
         void setFocus(bool) override;

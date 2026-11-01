@@ -1,3 +1,4 @@
+#include "aibridge/economyrequest.hpp"
 #include <algorithm>
 #include <utility>
 #include "strf.hpp"
@@ -12,12 +13,14 @@
 #include "gui/friendchatboard/friendchatboard.hpp"
 #include "auctionregisterboard.hpp"
 #include "auctionboard.hpp"
+#include "utf8f.hpp"
+#include "aibridge/runtime.hpp"
 
 extern PNGTexDB *g_progUseDB;
 extern SDLDevice *g_sdlDevice;
 extern Client *g_client;
 
-AuctionBoard::AuctionBoard(ProcessRun *argProc, Widget *argParent, bool argAutoDelete)
+AuctionBoard::AuctionBoard(ProcessRun *argProc, Widget *argParent, bool argAutoDelete, std::optional<Access> access)
     : Widget
       {{
           .dir = DIR_NONE,
@@ -28,7 +31,25 @@ AuctionBoard::AuctionBoard(ProcessRun *argProc, Widget *argParent, bool argAutoD
           .parent{argParent, argAutoDelete},
       }}
 
-    , m_runProc(fflcheck(argProc))
+    , m_runProc(argProc)
+    , m_access(access ? std::move(*access) : Access{
+        .dbid=[argProc]{ return fflcheck(argProc)->getMyHeroDBID(); },
+        .gold=[argProc]{ return fflcheck(argProc)->getMyHero()->getGold(); },
+        .query=[](int category){ g_client->send({CM_QUERYAUCTIONITEMLIST,CMQueryAuctionItemList{.category=to_u8(category)}}); },
+        .submit=[](uint64_t id,bool cancel){
+            return cancel ? aibridge::sendEconomic<SMAuctionUnregisterError>(*g_client,
+                {CM_UNREGISTERAUCTIONITEM,CMUnregisterAuctionItem{.auctionID=id}},SM_AUCTIONUNREGISTERERROR)
+                : aibridge::sendEconomic<SMAuctionBuyError>(*g_client,
+                {CM_BUYAUCTIONITEM,CMBuyAuctionItem{.auctionID=id}},SM_AUCTIONBUYERROR);
+        },
+        .log=[argProc](const char8_t *message){ if(argProc){argProc->addCBLog(CBLOG_SYS,u8"%s",to_cstr(message));} },
+        .clock=[]{ return SDL_GetTicks(); },
+        .scope=[]{
+            const auto runtime=g_client ? g_client->aiRuntime() : nullptr;
+            const auto controller=runtime ? runtime->controller() : nullptr;
+            return controller ? controller->context() : aibridge::Json(nullptr);
+        },
+    })
     , m_background
       {{
           .texLoadFunc = []{ return g_progUseDB->retrieve(0X00001400); },
@@ -287,7 +308,7 @@ AuctionBoard::AuctionBoard(ProcessRun *argProc, Widget *argParent, bool argAutoD
           },
           .onTrigger = [this](Widget *, int)
           {
-              flipShow(false);
+              closePanel();
               if(auto registerBoardPtr = dynamic_cast<AuctionRegisterBoard *>(m_runProc->getWidget("AuctionRegisterBoard"))){
                   registerBoardPtr->beginRegister();
               }
@@ -318,7 +339,7 @@ AuctionBoard::AuctionBoard(ProcessRun *argProc, Widget *argParent, bool argAutoD
                   }
 
                   if(const auto item = selectedItem()){
-                      return item->seller.id != m_runProc->getMyHeroDBID();
+                      return item->seller.id != m_access.dbid();
                   }
 
                   return false;
@@ -351,7 +372,7 @@ AuctionBoard::AuctionBoard(ProcessRun *argProc, Widget *argParent, bool argAutoD
                   }
 
                   if(const auto item = selectedItem()){
-                      return item->seller.id == m_runProc->getMyHeroDBID();
+                      return item->seller.id == m_access.dbid();
                   }
 
                   return false;
@@ -371,12 +392,12 @@ AuctionBoard::AuctionBoard(ProcessRun *argProc, Widget *argParent, bool argAutoD
           },
           .onTrigger = [this](Widget *, int)
           {
-              setShow(false);
+              closePanel();
           },
           .parent{this},
       }}
 {
-    setShow(false);
+    closePanel();
 }
 
 bool AuctionBoard::processEventDefault(const SDL_Event &event, bool valid, Widget::ROIMap m)
@@ -413,7 +434,7 @@ bool AuctionBoard::processEventDefault(const SDL_Event &event, bool valid, Widge
         case SDL_EVENT_KEY_DOWN:
             {
                 if(event.key.key == SDLK_ESCAPE){
-                    flipShow(false);
+                    closePanel();
                     setFocus(false);
                     return true;
                 }
@@ -444,11 +465,31 @@ bool AuctionBoard::processEventDefault(const SDL_Event &event, bool valid, Widge
     }
 }
 
-void AuctionBoard::setItemList(SDAuctionItemList sdAuctionItemList)
+void AuctionBoard::setItemList(SDAuctionItemList list)
 {
-    m_itemList.setItemList(std::move(sdAuctionItemList));
-    m_itemDetailUpper.setItem(nullptr);
-    m_itemDetailLower.setItem(nullptr);
+    if(list.category < AUCTIONCAT_BEGIN || list.category >= AUCTIONCAT_END){ return; }
+    auto &cache=m_cachedLists[list.category];
+    if(!cache.refresh.receive(m_access.clock())){ return; }
+    if(list.itemList.size() > 8192){
+        cache.refresh.known=false;
+        cache.refresh.error=aibridge::OperationError{"unavailable","拍卖列表超过客户端有界处理上限",aibridge::Json::object()};
+        return;
+    }
+    for(const auto &entry:list.itemList){
+        if(!entry.auctionID || !entry.item || !DBCOM_ITEMRECORD(entry.item.itemID)
+            || !entry.seller.player() || !entry.seller.id || entry.seller.id>SYS_MAXDBID
+            || !entry.price || entry.price>uint64_t(INT64_MAX) || entry.item.count>UINT32_MAX
+            || entry.note.size()>128 || !utf8f::valid(entry.note)){
+            cache.refresh.known=false;
+            cache.refresh.error=aibridge::OperationError{"unavailable","拍卖数据超出当前观察契约",aibridge::Json::object()};
+            return;
+        }
+    }
+    cache.list=list;
+    if(m_requestedCategory != list.category){ return; }
+    m_itemList.setItemList(std::move(list));
+    m_itemDetailUpper.setItem(nullptr); m_itemDetailLower.setItem(nullptr);
+    setShow(true);
 }
 
 const SDAuctionItem *AuctionBoard::selectedItem() const
@@ -459,13 +500,8 @@ const SDAuctionItem *AuctionBoard::selectedItem() const
 
 void AuctionBoard::refreshItemList()
 {
-    const auto currCategory = m_itemList.getItemList().category;
-    const auto queryCategory = (currCategory >= AUCTIONCAT_BEGIN && currCategory < AUCTIONCAT_END) ? currCategory : AUCTIONCAT_ALL;
-
-    g_client->send({CM_QUERYAUCTIONITEMLIST, CMQueryAuctionItemList
-    {
-        .category = to_u8(queryCategory),
-    }});
+    const auto category=m_itemList.getItemList().category;
+    requestList(category >= AUCTIONCAT_BEGIN && category < AUCTIONCAT_END ? category : AUCTIONCAT_ALL);
 }
 
 void AuctionBoard::confirmBuy()
@@ -480,12 +516,12 @@ void AuctionBoard::confirmBuy()
         return;
     }
 
-    if(item->seller.id == m_runProc->getMyHeroDBID()){
+    if(item->seller.id == m_access.dbid()){
         m_runProc->addCBLog(CBLOG_ERR, u8"不能购买自己寄售的物品");
         return;
     }
 
-    if(item->price > m_runProc->getMyHero()->getGold()){
+    if(item->price > m_access.gold()){
         m_runProc->addCBLog(CBLOG_ERR, u8"金币不够");
         return;
     }
@@ -507,62 +543,10 @@ void AuctionBoard::confirmBuy()
     });
 }
 
-void AuctionBoard::buyItem(uint64_t auctionID, std::string itemName)
+void AuctionBoard::buyItem(uint64_t auctionID, std::string)
 {
-    if(m_pending){
-        return;
-    }
-
-    m_pending = true;
-    g_client->send({CM_BUYAUCTIONITEM, CMBuyAuctionItem
-    {
-        .auctionID = auctionID,
-    }},
-
-    [itemName = std::move(itemName), this](uint8_t headCode, const uint8_t *buf, size_t bufSize)
-    {
-        m_pending = false;
-        switch(headCode){
-            case SM_OK:
-                {
-                    m_runProc->addCBLog(CBLOG_SYS, u8"%s购买成功，物品已发送到系统投递", itemName.c_str());
-                    refreshItemList();
-                    return;
-                }
-            case SM_AUCTIONBUYERROR:
-                {
-                    switch(ServerMsg::conv<SMAuctionBuyError>(buf, bufSize).error){
-                        case AUCTIONBUYERR_UNAVAILABLE:
-                            {
-                                m_runProc->addCBLog(CBLOG_ERR, u8"该寄售物品已售出或到期");
-                                refreshItemList();
-                                return;
-                            }
-                        case AUCTIONBUYERR_INSUFFICIENT:
-                            {
-                                m_runProc->addCBLog(CBLOG_ERR, u8"金币不够");
-                                return;
-                            }
-                        case AUCTIONBUYERR_OWNITEM:
-                            {
-                                m_runProc->addCBLog(CBLOG_ERR, u8"不能购买自己寄售的物品");
-                                return;
-                            }
-                        case AUCTIONBUYERR_BADITEM:
-                        default:
-                            {
-                                m_runProc->addCBLog(CBLOG_ERR, u8"购买失败");
-                                return;
-                            }
-                    }
-                }
-            default:
-                {
-                    m_runProc->addCBLog(CBLOG_ERR, u8"购买失败");
-                    return;
-                }
-        }
-    });
+    try{ submitAuction(auctionID, false); }
+    catch(const aibridge::ProtocolError &){ m_runProc->addCBLog(CBLOG_ERR, u8"当前物品不可购买，请刷新或核对交易状态"); }
 }
 
 void AuctionBoard::confirmUnregister()
@@ -577,7 +561,7 @@ void AuctionBoard::confirmUnregister()
         return;
     }
 
-    if(item->seller.id != m_runProc->getMyHeroDBID()){
+    if(item->seller.id != m_access.dbid()){
         m_runProc->addCBLog(CBLOG_ERR, u8"只能下架自己寄售的物品");
         return;
     }
@@ -599,50 +583,115 @@ void AuctionBoard::confirmUnregister()
     });
 }
 
-void AuctionBoard::unregisterItem(uint64_t auctionID, std::string itemName)
+void AuctionBoard::unregisterItem(uint64_t auctionID, std::string)
 {
-    if(m_pending){
-        return;
+    try{ submitAuction(auctionID, true); }
+    catch(const aibridge::ProtocolError &){ m_runProc->addCBLog(CBLOG_ERR, u8"当前物品不可下架，请刷新或核对交易状态"); }
+}
+
+bool AuctionBoard::uncertain() const noexcept
+{
+    return m_economicRequest && m_economicRequest->submitted
+        && m_economicRequest->receipt == aibridge::EconomicReceipt::Unknown;
+}
+
+std::shared_ptr<aibridge::EconomicRequest> AuctionBoard::submitAuction(uint64_t auctionID, bool cancel)
+{
+    updateDefault(0);
+    if(m_pending || uncertain()){ throw aibridge::ProtocolError("busy", "Auction outcome is unresolved"); }
+    const auto &items = m_itemList.getItemList().itemList;
+    const auto found = std::find_if(items.begin(), items.end(), [auctionID](const auto &i){ return i.auctionID == auctionID; });
+    if(found == items.end()){ throw aibridge::ProtocolError("stale_target", "Auction is not in current list"); }
+    if((found->seller.id == m_access.dbid()) != cancel){
+        throw aibridge::ProtocolError("policy_denied", "Auction ownership mismatch");
     }
+    if(!cancel && found->price > m_access.gold()){
+        throw aibridge::ProtocolError("budget_exceeded", "Not enough gold");
+    }
+    const auto index = size_t(found - items.begin());
+    m_itemList.setFirstIndex(index);
+    m_itemList.setSelectedRow(0,true);
+    m_itemDetailUpper.setItem(&*found); m_itemDetailLower.setItem(&*found);
+    setShow(true);
+    m_pending = true; m_economicSettled = false;
+    m_economicRequest=m_access.submit(auctionID,cancel);
+    return m_economicRequest;
+}
 
-    m_pending = true;
-    g_client->send({CM_UNREGISTERAUCTIONITEM, CMUnregisterAuctionItem
-    {
-        .auctionID = auctionID,
-    }},
+void AuctionBoard::updateDefault(double ms)
+{
+    Widget::updateDefault(ms);
+    for(auto &[category, cache]: m_cachedLists){ cache.refresh.expire(m_access.clock()); }
+    if(!m_economicRequest || m_economicSettled || m_economicRequest->receipt == aibridge::EconomicReceipt::Pending){ return; }
+    m_economicSettled = true; m_pending = false;
+    if(m_economicRequest->receipt == aibridge::EconomicReceipt::Ok){
+        m_access.log(u8"拍卖操作已确认，物品等待系统投递");
+        const auto cat=m_itemList.getItemList().category;
+        auto &cache=m_cachedLists[cat];
+        cache.refresh.known=false; ++cache.refresh.revision;
+        m_itemDetailUpper.setItem(nullptr); m_itemDetailLower.setItem(nullptr);
+        m_itemList.setItemList(SDAuctionItemList{.category=cat});
+    }
+    else if(uncertain()){ m_access.log(u8"拍卖结果未知，请人工核对；不会自动重发"); }
+    else{ m_access.log(u8"服务器拒绝拍卖操作"); }
+}
 
-    [itemName = std::move(itemName), this](uint8_t headCode, const uint8_t *buf, size_t bufSize)
-    {
-        m_pending = false;
-        switch(headCode){
-            case SM_OK:
-                {
-                    m_runProc->addCBLog(CBLOG_SYS, u8"%s已下架，物品已发送到系统投递", itemName.c_str());
-                    refreshItemList();
-                    return;
-                }
-            case SM_AUCTIONUNREGISTERERROR:
-                {
-                    switch(ServerMsg::conv<SMAuctionUnregisterError>(buf, bufSize).error){
-                        case AUCTIONUNREGERR_UNAVAILABLE:
-                            {
-                                m_runProc->addCBLog(CBLOG_ERR, u8"该寄售物品已售出或下架");
-                                refreshItemList();
-                                return;
-                            }
-                        case AUCTIONUNREGERR_BADITEM:
-                        default:
-                            {
-                                m_runProc->addCBLog(CBLOG_ERR, u8"下架失败");
-                                return;
-                            }
-                    }
-                }
-            default:
-                {
-                    m_runProc->addCBLog(CBLOG_ERR, u8"下架失败");
-                    return;
-                }
-        }
-    });
+bool AuctionBoard::requestList(int category)
+{
+    if(category < AUCTIONCAT_BEGIN || category >= AUCTIONCAT_END){
+        throw aibridge::ProtocolError("invalid_argument", "Invalid auction category");
+    }
+    auto &cache=m_cachedLists[category];
+    m_requestedCategory=category;
+    if(!cache.refresh.begin(m_access.clock())){ return false; }
+    const auto context=m_access.scope ? m_access.scope() : aibridge::Json(nullptr);
+    cache.scope=context.is_null() ? context : aibridge::economyScope(context);
+    try{ m_access.query(category); }
+    catch(...){ cache.refresh.pending=false; cache.refresh.error=aibridge::OperationError{"unavailable","列表请求发送失败",aibridge::Json::object()}; }
+    return cache.refresh.pending;
+}
+const SDAuctionItemList *AuctionBoard::cachedList(int category) const
+{
+    const auto found=m_cachedLists.find(category);
+    return found != m_cachedLists.end() && found->second.refresh.known ? &found->second.list : nullptr;
+}
+void AuctionBoard::showCategory(int category)
+{
+    if(category<AUCTIONCAT_BEGIN || category>=AUCTIONCAT_END){ throw aibridge::ProtocolError("invalid_argument","Invalid auction category"); }
+    m_requestedCategory=category;
+    if(const auto list=cachedList(category)){
+        m_itemList.setItemList(*list);
+        m_itemDetailUpper.setItem(nullptr); m_itemDetailLower.setItem(nullptr);
+    }
+    else{
+        m_itemList.setItemList(SDAuctionItemList{.category=category});
+        m_itemDetailUpper.setItem(nullptr); m_itemDetailLower.setItem(nullptr);
+    }
+    setShow(true);
+}
+void AuctionBoard::closePanel()
+{
+    ++m_panelRevision;
+    setShow(false);
+}
+void AuctionBoard::invalidateScope(const aibridge::Json &context)
+{
+    const auto next=context.is_null() ? context : aibridge::economyScope(context);
+    const auto current=m_cachedLists.find(m_requestedCategory);
+    const bool preserve=!next.is_null() && current!=m_cachedLists.end() && current->second.scope==next;
+    if(!preserve){ closePanel(); m_requestedCategory=0; }
+    for(auto &[cat,cache]:m_cachedLists){
+        if(!next.is_null() && cache.scope==next){ continue; }
+        if(cache.refresh.pending){ cache.refresh.quarantined=true; cache.refresh.pending=false; }
+        cache.refresh.known=false; ++cache.refresh.revision; cache.list.itemList.clear();
+    }
+    if(!preserve){
+        m_itemList.setItemList(SDAuctionItemList{.category=AUCTIONCAT_ALL});
+        m_itemDetailUpper.setItem(nullptr); m_itemDetailLower.setItem(nullptr);
+    }
+}
+const aibridge::EconomyRefresh &AuctionBoard::refreshState(int category)
+{
+    if(category < AUCTIONCAT_BEGIN || category >= AUCTIONCAT_END){ throw aibridge::ProtocolError("invalid_argument","Invalid auction category"); }
+    auto &state=m_cachedLists[category].refresh; state.expire(m_access.clock()); return state;
 }

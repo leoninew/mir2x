@@ -25,6 +25,7 @@
 #include "buildconfig.hpp"
 #include "processlogin.hpp"
 #include "clientargparser.hpp"
+#include "aibridge/runtime.hpp"
 
 extern Log *g_mir2xLog;
 extern SDLDevice *g_sdlDevice;
@@ -41,19 +42,150 @@ Client::Client()
 }
 
 Client::~Client()
-{}
+{
+    shutdown();
+}
+
+void Client::shutdown() noexcept
+{
+    if(m_shutdown){ return; }
+    m_shutdown = true;
+    m_quitRequested = true;
+    if(m_aiRuntime){ m_aiRuntime->shutdown(); }
+    cancelResponses(ResponseCallbacks::CancelReason::Shutdown);
+}
+
+void Client::observeAi(const aibridge::RuntimeState &state)
+{
+    if(m_aiRuntime){
+        try{ m_aiRuntime->observe(state); }
+        catch(...){
+            m_aiRuntime->shutdown();
+            g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge stopped after context failure");
+        }
+    }
+}
+
+void Client::observeAi()
+{
+    if(!m_aiRuntime || m_shutdown){ return; }
+    aibridge::RuntimeState state;
+    if(auto run = getProcess<ProcessRun>()){
+        state = run->aiState();
+    }
+    else if(!m_currentProcess || m_quitRequested){ state.phase = "exiting"; }
+    else{
+        switch(m_currentProcess->id()){
+            case PROCESSID_SELECTCHAR: case PROCESSID_CREATECHAR: state.phase = "select_character"; break;
+            case PROCESSID_CONNECTIONERROR: state.phase = "disconnected"; break;
+            case PROCESSID_LOGO: case PROCESSID_SYRC: state.phase = "loading"; break;
+            default: state.phase = "login"; break;
+        }
+    }
+    observeAi(state);
+}
+
+void Client::drawAiPanel() const
+{
+    if(m_aiRuntime){
+        try{ m_aiRuntime->drawPanel(); }
+        catch(...){ m_aiRuntime->shutdown(); }
+    }
+}
+
+void Client::logoutAi()
+{
+    observeAi({.phase="select_character"});
+}
+
+void Client::initializeAi()
+{
+    if(!g_clientArgParser->enableAiBridge || m_shutdown){ return; }
+    try{
+        m_aiRuntime = std::make_unique<aibridge::AiBridgeRuntime>(*this);
+        m_aiRuntime->start({g_clientArgParser->aiBridgeDir, g_clientArgParser->aiPolicy, std::string(getBuildSignature())});
+        observeAi();
+    }
+    catch(...){ g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge initialization failed; game connection remains enabled"); }
+}
+
+void Client::send(const ClientMsgBuf &msg, ResponseCallbacks::Handler handler)
+{
+    if(handler){
+        sendWithResponse(msg, std::move(handler), {}, {});
+    }
+    else{
+        m_netIO.send(msg.headCode, msg.data, msg.size, 0);
+        sendCMsgLog(msg.headCode);
+    }
+}
+
+uint64_t Client::sendScoped(const ClientMsgBuf &msg, uint64_t timeoutMS, ResponseCallbacks::Handler handler, ResponseCallbacks::OnCancel onCancel)
+{
+    const uint64_t now = SDL_GetTicks();
+    if(!timeoutMS || timeoutMS > std::numeric_limits<uint64_t>::max() - now){
+        throw std::invalid_argument("Invalid response timeout");
+    }
+    return sendWithResponse(msg, std::move(handler), now + timeoutMS, std::move(onCancel));
+}
+
+uint64_t Client::sendWithResponse(const ClientMsgBuf &msg, ResponseCallbacks::Handler handler, std::optional<uint64_t> deadline, ResponseCallbacks::OnCancel onCancel)
+{
+    const auto id = m_respHandlers.add(std::move(handler), deadline, std::move(onCancel));
+    try{
+        m_netIO.send(msg.headCode, msg.data, msg.size, id);
+    }
+    catch(...){
+        const auto error = std::current_exception();
+        try{
+            m_respHandlers.cancel(id, ResponseCallbacks::CancelReason::SendFailed);
+        }
+        catch(...){}
+        std::rethrow_exception(error);
+    }
+    sendCMsgLog(msg.headCode);
+    return id;
+}
+
+void Client::cancelResponses(ResponseCallbacks::CancelReason reason) noexcept
+{
+    try{
+        m_respHandlers.cancelAll(reason);
+    }
+    catch(...){
+        g_mir2xLog->addLog(LOGTYPE_WARNING, "Response cancellation callback failed");
+    }
+}
 
 void Client::processEvent()
 {
     if(m_currentProcess){
         SDL_Event event;
-        while(SDL_PollEvent(&event)){
+        while(m_currentProcess && !m_quitRequested && SDL_PollEvent(&event)){
             if(g_clientArgParser->debugSDLEvent){
                 char buf[256];
                 SDL_GetEventDescription(&event, buf, sizeof(buf));
                 g_mir2xLog->addLog(LOGTYPE_INFO, "[%s] %s", str_localtime().c_str(), buf);
             }
-            m_currentProcess->processEvent(g_sdlDevice->scaleEvent(event));
+            auto gameWindow = SDL_GetRenderWindow(g_sdlDevice->getRenderer());
+            if(auto eventWindow = SDL_GetWindowFromEvent(&event); eventWindow && eventWindow != gameWindow){ continue; }
+            const auto gameWindowID = SDL_GetWindowID(gameWindow);
+            if(event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID != gameWindowID){ continue; }
+            if(aibridge::ControlGesture::manual(event) && !aibridge::ControlGesture::gameWindowEvent(event, gameWindowID)){ continue; }
+            if(event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED){
+                requestQuit();
+                break;
+            }
+            const auto scaled = g_sdlDevice->scaleEvent(event);
+            observeAi();
+            if(m_aiRuntime){
+                try{ if(m_aiRuntime->processEvent(scaled)){ continue; } }
+                catch(...){
+                    m_aiRuntime->shutdown();
+                    g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge stopped after input failure");
+                }
+            }
+            m_currentProcess->processEvent(scaled);
             switchProcess();
         }
     }
@@ -61,8 +193,10 @@ void Client::processEvent()
 
 void Client::mainLoop()
 {
+    struct ShutdownGuard { Client &client; ~ShutdownGuard(){ client.shutdown(); } } guard{*this};
     switchProcess(PROCESSID_LOGO);
     initASIO();
+    initializeAi();
 
     const auto fDelayDraw   = (1000.0 / (1.0 * SYS_DEFFPS)) / 6.0;
     const auto fDelayUpdate = (1000.0 / (1.0 * SYS_DEFFPS)) / 7.0;
@@ -77,9 +211,13 @@ void Client::mainLoop()
             PrintMonitor();
         }
 
-        if(!(m_currentProcess && (m_currentProcess->id() != PROCESSID_EXIT))){
+        if(m_quitRequested || !(m_currentProcess && (m_currentProcess->id() != PROCESSID_EXIT))){
             break;
         }
+
+        // Drain network and player input before animation triggers or new AI work.
+        if(m_aiRuntime){ eventDelay(0); }
+        if(m_quitRequested || !m_currentProcess){ break; }
 
         if(m_netPackTick > 0.0){
             if(SDL_GetTicks() * 1.0 - m_netPackTick > 15.0 * 1000){
@@ -92,6 +230,7 @@ void Client::mainLoop()
             fLastUpdate = fCurrUpdate;
             update(fPastUpdate);
         }
+        if(m_quitRequested || !m_currentProcess){ break; }
 
         if(auto fCurrDraw = 1.0 * SDL_GetTicks(); fCurrDraw - fLastDraw > fDelayDraw){
             fLastDraw = fCurrDraw;
@@ -109,9 +248,14 @@ void Client::mainLoop()
 void Client::eventDelay(double fDelayMS)
 {
     const double fStartDelayMS = SDL_GetTicks() * 1.0;
-    while(true){
+    while(!m_quitRequested){
         m_netIO.poll();
+        m_respHandlers.expire(SDL_GetTicks());
+        switchProcess();
         processEvent();
+        if(m_quitRequested || !m_currentProcess){ break; }
+        observeAi();
+        if(m_aiRuntime){ m_aiRuntime->poll(); }
 
         double fCurrentMS = SDL_GetTicks() * 1.0;
         double fDelayDone = fCurrentMS - fStartDelayMS;
@@ -143,12 +287,8 @@ void Client::initASIO()
         // previously there are two steps (HC, Body) seperately handled, error-prone
 
         if(respID){
-            if(auto p = m_respHandlers.find(respID); p != m_respHandlers.end()){
-                p->second.handler(headCode, pData, nDataLen);
-                m_respHandlers.erase(p);
-            }
-            else{
-                throw fflpanic("no handler found for response id {}", respID);
+            if(!m_respHandlers.dispatch(respID, headCode, pData, nDataLen, SDL_GetTicks())){
+                g_mir2xLog->addLog(LOGTYPE_WARNING, "Ignored expired or unknown response id: %llu", static_cast<unsigned long long>(respID));
             }
         }
         else{
@@ -159,6 +299,7 @@ void Client::initASIO()
 
     [this](std::error_code ec)
     {
+        observeAi({.phase="disconnected"});
         g_mir2xLog->addLog(LOGTYPE_WARNING, "Connection error: %s (%s:%d)", ec.message().c_str(), ec.category().name(), ec.value());
         requestProcess(PROCESSID_CONNECTIONERROR);
         switchProcess();
@@ -292,6 +433,10 @@ void Client::onServerMessage(uint8_t headCode, const uint8_t *buf, size_t bufSiz
 
 void Client::switchProcess()
 {
+    if(m_quitRequested){
+        shutdown();
+        return;
+    }
     if(m_requestProcess >= PROCESSID_BEGIN && m_requestProcess < PROCESSID_END){
         switchProcess(m_currentProcess ? m_currentProcess->id() : PROCESSID_NONE, m_requestProcess);
     }
@@ -305,9 +450,10 @@ void Client::switchProcess(int newID)
 
 void Client::switchProcess(int oldID, int newID)
 {
-    // Drop pending server-response callbacks -- they capture widget pointers
-    // into m_currentProcess and would UAF on late replies.
-    m_respHandlers.clear();
+    if(newID == PROCESSID_EXIT){ requestQuit(); shutdown(); return; }
+    if(m_currentProcess){ observeAi({.phase=newID == PROCESSID_CONNECTIONERROR ? "disconnected" : "loading"}); }
+    // Notify while the old process still exists, then drop all of its handlers.
+    cancelResponses(ResponseCallbacks::CancelReason::ProcessChanged);
 
     m_currentProcess.reset();
     switch(oldID){
@@ -540,6 +686,7 @@ void Client::switchProcess(int oldID, int newID)
                 break;
             }
     }
+    observeAi();
 }
 
 void Client::sendCMsgLog(uint8_t headCode)

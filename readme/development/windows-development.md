@@ -1,8 +1,13 @@
 # Windows 开发环境
+最后修改时间: 2026-11-01 20:13:14
 
 [返回知识库](README.md)
 
 本机已经用 MSYS2 UCRT64 完整编译、安装客户端、服务端和资源。所有开发命令都可以从 `D:\SourceCodes\opensource\mir2x` 发起。
+
+上述安装事实来自已有开发环境；不表示每次新源码构建都会自动更新 install。当前 AI/MCP delivery2 的 client/server 已链接、166 项定向回归通过，最终完整 stdio 和真实角色仍未验证，见[验证清单](../../docs/verification/20261031-ai-character-mcp.md)。MCP 启用与人工控制步骤见[使用说明](ai-mcp.md)，本次文档更新没有执行构建、安装或启动。
+
+用户随后已自行编译；目前生成标识为 `VENGINEERING-20261101192035`，build/install 中 client/server EXE 的哈希已分别核对相同。新产物版本已单独登记到验证清单，原 166 项检查不改标为新 EXE 已复测；实际资源/握手/运行效果仍待反馈。
 
 ## 工具链与目录约定
 

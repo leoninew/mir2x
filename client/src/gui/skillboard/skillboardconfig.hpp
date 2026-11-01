@@ -46,6 +46,17 @@ class SkillBoardConfig final
         }
 
     public:
+        size_t magicCount() const noexcept { return m_learnedMagicList.size(); }
+        auto learnedMagicLevels() const
+        {
+            std::vector<std::pair<uint32_t, int>> result;
+            for(const auto &[id, config]: m_learnedMagicList){
+                if(config.level >= 0){ result.emplace_back(id, config.level); }
+            }
+            std::sort(result.begin(), result.end());
+            return result;
+        }
+
         uint32_t key2MagicID(char key) const
         {
             for(const auto &p: m_learnedMagicList){

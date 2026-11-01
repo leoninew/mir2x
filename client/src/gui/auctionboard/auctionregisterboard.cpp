@@ -1,3 +1,4 @@
+#include "aibridge/economyrequest.hpp"
 #include <algorithm>
 #include <charconv>
 #include <limits>
@@ -17,7 +18,7 @@ extern PNGTexDB *g_progUseDB;
 extern SDLDevice *g_sdlDevice;
 extern Client *g_client;
 
-AuctionRegisterBoard::AuctionRegisterBoard(ProcessRun *argProc, Widget *argParent, bool argAutoDelete)
+AuctionRegisterBoard::AuctionRegisterBoard(ProcessRun *argProc, Widget *argParent, bool argAutoDelete, std::optional<Access> access)
     : Widget
       {{
           .dir = DIR_NONE,
@@ -28,7 +29,16 @@ AuctionRegisterBoard::AuctionRegisterBoard(ProcessRun *argProc, Widget *argParen
           .parent{argParent, argAutoDelete},
       }}
 
-    , m_runProc(fflcheck(argProc))
+    , m_runProc(argProc)
+    , m_access(access ? std::move(*access) : Access{
+        .inventory=[argProc]() -> InvPack & { return fflcheck(argProc)->getMyHero()->getInvPack(); },
+        .restore=[argProc](SDItem item){ fflcheck(argProc)->getMyHero()->getInvPack().add(std::move(item)); },
+        .submit=[](const SDItem &item,uint64_t price,const std::string &note){
+            CMRegisterAuctionItem message{.itemID=item.itemID,.seqID=item.seqID,.price=price}; message.note.assign(note);
+            return aibridge::sendEconomic<SMAuctionRegisterError>(*g_client,{CM_REGISTERAUCTIONITEM,message},SM_AUCTIONREGISTERERROR);
+        },
+        .log=[argProc](const char8_t *message){ if(argProc){argProc->addCBLog(CBLOG_SYS,u8"%s",to_cstr(message));} },
+    })
     , m_background
       {{
           .texLoadFunc = []{ return g_progUseDB->retrieve(0X00001410); },
@@ -40,7 +50,7 @@ AuctionRegisterBoard::AuctionRegisterBoard(ProcessRun *argProc, Widget *argParen
       {{
           .x = 9,
           .y = 68,
-          .enableIME = [this]{ return m_runProc->getRuntimeConfig<RTCFG_IME>(); },
+          .enableIME = [this]{ return m_runProc ? m_runProc->getRuntimeConfig<RTCFG_IME>() : IME_DISABLE; },
           .parent{this},
       }}
 
@@ -50,7 +60,7 @@ AuctionRegisterBoard::AuctionRegisterBoard(ProcessRun *argProc, Widget *argParen
           .y = 45,
           .onClick = [this]
           {
-              if(auto &invPack = m_runProc->getMyHero()->getInvPack(); invPack.getGrabbedItem()){ // has item in hand
+              if(auto &invPack = m_access.inventory(); invPack.getGrabbedItem()){ // has item in hand
                   if(m_box.item()){
                       restoreItemInBox();
                   }
@@ -135,10 +145,7 @@ AuctionRegisterBoard::AuctionRegisterBoard(ProcessRun *argProc, Widget *argParen
 
 void AuctionRegisterBoard::beginRegister()
 {
-    auto invBoard = dynamic_cast<InventoryBoard *>(m_runProc->getWidget("InventoryBoard"));
-
-    fflassert(invBoard);
-    invBoard->flipShow(true);
+    if(m_runProc){ if(auto invBoard=dynamic_cast<InventoryBoard *>(m_runProc ? m_runProc->getWidget("InventoryBoard") : nullptr)){ invBoard->flipShow(true); } }
 
     flipShow(true);
     setFocus(true);
@@ -226,14 +233,14 @@ void AuctionRegisterBoard::setPending(bool pending)
     m_buttonCancel.setActive(!pending);
     m_buttonClose.setActive(!pending);
 
-    if(auto invBoard = dynamic_cast<InventoryBoard *>(m_runProc->getWidget("InventoryBoard"))){
+    if(auto invBoard = dynamic_cast<InventoryBoard *>(m_runProc ? m_runProc->getWidget("InventoryBoard") : nullptr)){
         invBoard->setActive(!pending);
     }
 }
 
 void AuctionRegisterBoard::setPrice()
 {
-    auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc->getWidget("InputStringBoard"));
+    auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc ? m_runProc->getWidget("InputStringBoard") : nullptr);
     fflassert(inputBoard);
 
     inputBoard->waitInput(
@@ -264,7 +271,7 @@ void AuctionRegisterBoard::setPrice()
 
 void AuctionRegisterBoard::confirmRegister()
 {
-    if(m_pending){
+    if(m_pending || uncertain()){
         return;
     }
 
@@ -292,10 +299,10 @@ void AuctionRegisterBoard::confirmRegister()
     const auto &ir = DBCOM_ITEMRECORD(m_box.item().itemID);
     fflassert(ir);
 
-    auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc->getWidget("InputStringBoard"));
+    auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc ? m_runProc->getWidget("InputStringBoard") : nullptr);
     fflassert(inputBoard);
 
-    std::u8string prompt = to_u8rawstr("<layout>" + xmlf::toParString("你确定上架%s吗?", to_cstr(ir.name)) + xmlf::toParString("委托交易将会扣除手续费500，交易成功后扣除2%%交易额") + "</layout>");
+    std::u8string prompt = to_u8rawstr("<layout>" + xmlf::toParString("你确定上架%s吗?", to_cstr(ir.name)) + xmlf::toParString("上架成功后物品进入寄售，收益通过系统投递领取") + "</layout>");
     inputBoard->waitChoice(std::move(prompt), false, [this]
     {
         registerItem();
@@ -304,87 +311,83 @@ void AuctionRegisterBoard::confirmRegister()
 
 void AuctionRegisterBoard::registerItem()
 {
-    if(m_pending || !m_box.item()){
-        return;
+    try{ submitRegister(); }
+    catch(const aibridge::ProtocolError &){ m_runProc->addCBLog(CBLOG_ERR, u8"当前物品或报价不可上架，请核对输入和交易状态"); }
+}
+
+bool AuctionRegisterBoard::uncertain() const noexcept
+{
+    return m_economicRequest && m_economicRequest->submitted
+        && m_economicRequest->receipt == aibridge::EconomicReceipt::Unknown;
+}
+
+void AuctionRegisterBoard::prepareItem(uint32_t itemId,uint32_t seqId,uint64_t price,const std::string &note)
+{
+    updateDefault(0);
+    if(m_pending || uncertain() || m_box.item()) { throw aibridge::ProtocolError("busy","Register box is reserved"); }
+    if(!price || price > uint64_t(INT64_MAX) || note.size()>SYS_AUCTIONNOTESIZE || !utf8f::valid(note)){
+        throw aibridge::ProtocolError("invalid_argument","Invalid auction price or note");
     }
+    auto &pack=m_access.inventory();
+    if(pack.getGrabbedItem()){ throw aibridge::ProtocolError("busy","An item is being dragged"); }
+    const auto &bins=pack.getPackBinList();
+    if(bins.size()>8192){ throw aibridge::ProtocolError("unavailable","Inventory scan limit"); }
+    const auto found=std::find_if(bins.begin(),bins.end(),[=](const auto &b){ return b.item.itemID==itemId && b.item.seqID==seqId; });
+    if(found==bins.end() || !found->item || found->item.isGold()){ throw aibridge::ProtocolError("stale_target","Item is not available"); }
+    const auto item=found->item;
+    m_note.setText(note); m_price.setPrice(price);
+    if(pack.remove(item)!=item.count){ throw aibridge::ProtocolError("stale_target","Item reservation failed"); }
+    m_box.setItem(item);
+    beginRegister();
+}
 
-    const std::string note = m_note.getText();
-    if(!utf8f::valid(note)){
-        m_runProc->addCBLog(CBLOG_ERR, u8"寄售留言不是有效的UTF-8文本");
-        return;
+std::shared_ptr<aibridge::EconomicRequest> AuctionRegisterBoard::submitRegister()
+{
+    updateDefault(0);
+    if(m_pending || uncertain()){ throw aibridge::ProtocolError("busy","Auction registration unresolved"); }
+    const auto &item=m_box.item(); const auto note=m_note.getText();
+    if(!item || item.isGold() || !item.seqID || !m_price.price() || m_price.price()>uint64_t(INT64_MAX)
+        || note.size()>SYS_AUCTIONNOTESIZE || !utf8f::valid(note)){
+        throw aibridge::ProtocolError("invalid_argument","Invalid auction registration");
     }
+    setPending(true); m_economicSettled=false;
+    m_economicRequest=m_access.submit(item,m_price.price(),note);
+    return m_economicRequest;
+}
 
-    if(note.size() > SYS_AUCTIONNOTESIZE){
-        m_runProc->addCBLog(CBLOG_ERR, u8"寄售留言不能超过%zu字节", SYS_AUCTIONNOTESIZE);
-        return;
+void AuctionRegisterBoard::updateDefault(double ms)
+{
+    Widget::updateDefault(ms);
+    if(!m_economicRequest || m_economicSettled || m_economicRequest->receipt==aibridge::EconomicReceipt::Pending){ return; }
+    m_economicSettled=true;
+    setPending(false);
+    if(m_economicRequest->receipt==aibridge::EconomicReceipt::Ok){
+        m_access.log(u8"服务器已确认上架"); closeRegister(true);
     }
-
-    if(m_price.price() == 0 || m_price.price() > to_u64(std::numeric_limits<int64_t>::max())){
-        m_runProc->addCBLog(CBLOG_ERR, u8"寄售价格无效");
-        return;
+    else if(uncertain()){
+        m_box.setInputEnabled(false); m_note.setInputEnabled(false); m_price.setInputEnabled(false);
+        m_buttonRegister.setActive(false); m_buttonCancel.setActive(false); m_buttonClose.setActive(false);
+        m_access.log(u8"上架结果未知，物品暂存保留，请人工核对或重新登录");
     }
-
-    const auto &item = m_box.item();
-    const auto &ir = DBCOM_ITEMRECORD(item.itemID);
-    fflassert(ir);
-    const std::string itemName = to_cstr(ir.name);
-
-    CMRegisterAuctionItem cmRAI
-    {
-        .itemID = item.itemID,
-        .seqID = item.seqID,
-        .price = m_price.price(),
-    };
-    cmRAI.note.assign(note);
-
-    setPending(true);
-    g_client->send({CM_REGISTERAUCTIONITEM, cmRAI}, [itemName, this](uint8_t headCode, const uint8_t *buf, size_t bufSize)
-    {
-        switch(headCode){
-            case SM_OK:
-                {
-                    m_runProc->addCBLog(CBLOG_SYS, u8"%s寄售成功", itemName.c_str());
-                    closeRegister(true);
-                    return;
-                }
-            case SM_AUCTIONREGISTERERROR:
-                {
-                    setPending(false);
-                    switch(ServerMsg::conv<SMAuctionRegisterError>(buf, bufSize).error){
-                        case AUCTIONREGERR_BADITEM : m_runProc->addCBLog(CBLOG_ERR, u8"寄售物品无效"); return;
-                        case AUCTIONREGERR_BADPRICE: m_runProc->addCBLog(CBLOG_ERR, u8"寄售价格无效"); return;
-                        case AUCTIONREGERR_BADNOTE : m_runProc->addCBLog(CBLOG_ERR, u8"寄售留言无效"); return;
-                        default: break;
-                    }
-                    m_runProc->addCBLog(CBLOG_ERR, u8"寄售失败");
-                    return;
-                }
-            default:
-                {
-                    setPending(false);
-                    m_runProc->addCBLog(CBLOG_ERR, u8"寄售失败");
-                    return;
-                }
-        }
-    });
+    else{ m_access.log(u8"上架请求被拒绝，物品仍在上架盒"); }
 }
 
 void AuctionRegisterBoard::confirmCancel()
 {
-    if(m_pending){
+    if(m_pending || uncertain()){
         return;
     }
 
     if(!m_box.item()){
-        closeRegister(false);
+        cancelUnsubmitted();
         return;
     }
 
-    auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc->getWidget("InputStringBoard"));
+    auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc ? m_runProc->getWidget("InputStringBoard") : nullptr);
     fflassert(inputBoard);
     inputBoard->waitChoice(u8"<layout><par>你确定取消吗？</par></layout>", false, [this]
     {
-        closeRegister(false);
+        cancelUnsubmitted();
     });
 }
 
@@ -392,22 +395,23 @@ void AuctionRegisterBoard::restoreItemInBox()
 {
     if(m_box.item()){
         const auto item = m_box.takeItem();
-        m_runProc->getMyHero()->getInvPack().add(item);
+        m_access.restore(item);
         m_price.clear();
     }
 }
 
 void AuctionRegisterBoard::restoreItemInGrab()
 {
-    auto &invPack = m_runProc->getMyHero()->getInvPack();
+    auto &invPack = m_access.inventory();
     if(const auto grabbedItem = invPack.getGrabbedItem()){
-        invPack.add(grabbedItem);
+        m_access.restore(grabbedItem);
         invPack.setGrabbedItem({});
     }
 }
 
 void AuctionRegisterBoard::closeRegister(bool registered)
 {
+    if(!registered && (m_pending || uncertain())){ return; }
     if(!registered){
         restoreItemInBox();
     }
@@ -422,14 +426,21 @@ void AuctionRegisterBoard::closeRegister(bool registered)
     m_note.setInputFocus(false);
     setPending(false);
 
-    if(auto invBoard = dynamic_cast<InventoryBoard *>(m_runProc->getWidget("InventoryBoard"))){
+    if(auto invBoard = dynamic_cast<InventoryBoard *>(m_runProc ? m_runProc->getWidget("InventoryBoard") : nullptr)){
         invBoard->flipShow(false);
     }
 
-    if(auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc->getWidget("InputStringBoard"))){
+    if(auto inputBoard = dynamic_cast<InputStringBoard *>(m_runProc ? m_runProc->getWidget("InputStringBoard") : nullptr)){
         inputBoard->flipShow(false);
     }
 
     flipShow(false);
     setFocus(false);
+}
+
+bool AuctionRegisterBoard::cancelUnsubmitted()
+{
+    updateDefault(0);
+    if(m_pending || uncertain()){ return false; }
+    closeRegister(false); return true;
 }

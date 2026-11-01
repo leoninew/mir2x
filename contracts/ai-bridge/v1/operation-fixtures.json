@@ -1,0 +1,141 @@
+[
+  {
+    "operation_id": "example",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "method": "game_move_to",
+    "state": "accepted",
+    "context": {
+      "instance_id": "00000000000000000000000000000000",
+      "session_id": "00000000000000000000000000000000",
+      "world_epoch": "0",
+      "control_epoch": "0"
+    },
+    "started_at": "0",
+    "deadline_at": "0",
+    "completion_scope": null,
+    "evidence": [],
+    "error": null,
+    "cancel_requested": false,
+    "side_effects_possible": false,
+    "late_resolution": null,
+    "result": null
+  },
+  {
+    "operation_id": "example",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "method": "game_move_to",
+    "state": "running",
+    "context": {
+      "instance_id": "00000000000000000000000000000000",
+      "session_id": "00000000000000000000000000000000",
+      "world_epoch": "0",
+      "control_epoch": "0"
+    },
+    "started_at": "0",
+    "deadline_at": "0",
+    "completion_scope": null,
+    "evidence": [],
+    "error": null,
+    "cancel_requested": false,
+    "side_effects_possible": false,
+    "late_resolution": null,
+    "result": null
+  },
+  {
+    "operation_id": "example",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "method": "game_move_to",
+    "state": "succeeded",
+    "context": {
+      "instance_id": "00000000000000000000000000000000",
+      "session_id": "00000000000000000000000000000000",
+      "world_epoch": "0",
+      "control_epoch": "0"
+    },
+    "started_at": "0",
+    "deadline_at": "0",
+    "completion_scope": "observed_postcondition",
+    "evidence": [
+      {
+        "source": "client",
+        "kind": "server_ack",
+        "observed_at": "0",
+        "snapshot_seq": "0",
+        "server_code": null,
+        "description": ""
+      }
+    ],
+    "error": null,
+    "cancel_requested": false,
+    "side_effects_possible": false,
+    "late_resolution": null,
+    "result": null
+  },
+  {
+    "operation_id": "example",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "method": "game_move_to",
+    "state": "failed",
+    "context": {
+      "instance_id": "00000000000000000000000000000000",
+      "session_id": "00000000000000000000000000000000",
+      "world_epoch": "0",
+      "control_epoch": "0"
+    },
+    "started_at": "0",
+    "deadline_at": "0",
+    "completion_scope": null,
+    "evidence": [],
+    "error": {
+      "code": "unreachable",
+      "message": "目标不可达",
+      "details": {}
+    },
+    "cancel_requested": false,
+    "side_effects_possible": false,
+    "late_resolution": null,
+    "result": null
+  },
+  {
+    "operation_id": "example",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "method": "game_move_to",
+    "state": "cancelled",
+    "context": {
+      "instance_id": "00000000000000000000000000000000",
+      "session_id": "00000000000000000000000000000000",
+      "world_epoch": "0",
+      "control_epoch": "0"
+    },
+    "started_at": "0",
+    "deadline_at": "0",
+    "completion_scope": null,
+    "evidence": [],
+    "error": null,
+    "cancel_requested": false,
+    "side_effects_possible": false,
+    "late_resolution": null,
+    "result": null
+  },
+  {
+    "operation_id": "example",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "method": "game_move_to",
+    "state": "unknown",
+    "context": {
+      "instance_id": "00000000000000000000000000000000",
+      "session_id": "00000000000000000000000000000000",
+      "world_epoch": "0",
+      "control_epoch": "0"
+    },
+    "started_at": "0",
+    "deadline_at": "0",
+    "completion_scope": null,
+    "evidence": [],
+    "error": null,
+    "cancel_requested": false,
+    "side_effects_possible": true,
+    "late_resolution": null,
+    "result": null
+  }
+]

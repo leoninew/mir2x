@@ -393,6 +393,15 @@ void InputLine::setInput(const char *utf8Str)
     notifyInputChange();
 }
 
+bool InputLine::setValidatedInput(const std::string &text)
+{
+    if(text.find('\0') != std::string::npos || !utf8::is_valid(text.begin(), text.end()) || !validateInput("", text)){
+        return false;
+    }
+    setInput(text.c_str());
+    return true;
+}
+
 int InputLine::tpx() const
 {
     if(varWOpt()){

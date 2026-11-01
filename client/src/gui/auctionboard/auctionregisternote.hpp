@@ -3,6 +3,7 @@
 #include "widget.hpp"
 #include "textboard.hpp"
 #include "layoutboard.hpp"
+#include "xmlf.hpp"
 
 class AuctionRegisterNote final: public Widget
 {
@@ -52,5 +53,9 @@ class AuctionRegisterNote final: public Widget
         void clear()
         {
             m_note.clear();
+        }
+        void setText(const std::string &text)
+        {
+            m_note.loadXML(("<layout>" + xmlf::toParString("%s", text.c_str()) + "</layout>").c_str());
         }
 };

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mir2x-mcp"
+version = "0.1.0"
+description = "mir2x 当前窗口角色的本机 MCP 桥接"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "mcp==2.3.0", "pydantic>=2.12,<3", "jsonschema>=4.26,<5",
+    "pywin32>=312; sys_platform == 'win32'",
+]
+
+[project.scripts]
+mir2x-mcp = "mir2x_mcp.__main__:main"
+
+[dependency-groups]
+dev = ["pytest>=9,<10", "pytest-asyncio>=1,<2", "ruff>=0.15,<1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mir2x_mcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+cache_dir = ".runtime/pytest-cache"
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]

@@ -239,7 +239,7 @@ void ProcessLogin::doChangePassword()
 
 void ProcessLogin::doExit()
 {
-    std::exit(0);
+    g_client->requestQuit();
 }
 
 void ProcessLogin::sendLogin(const std::string &id, const std::string &password)

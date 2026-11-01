@@ -1,0 +1,436 @@
+#include "runtime.hpp"
+#include "instancefile.hpp"
+#include "gameadapter.hpp"
+#include "combatadapter.hpp"
+#include "npcadapter.hpp"
+#include "tradeadapter.hpp"
+#include "shopadapter.hpp"
+#include "auctionadapter.hpp"
+#include "client.hpp"
+#include "processrun.hpp"
+#include "myhero.hpp"
+#include "textbutton.hpp"
+#include "textboard.hpp"
+#include "sdldevice.hpp"
+#include "log.hpp"
+#include <utility>
+#include <deque>
+#include <map>
+
+extern SDLDevice *g_sdlDevice;
+extern Log *g_mir2xLog;
+
+namespace aibridge
+{
+    struct AiBridgeRuntime::Impl
+    {
+        Client &client;
+        AiBridgeTransport transport;
+        std::unique_ptr<AiBridgeController> controller;
+        std::unique_ptr<AiGameAdapter> game;
+        std::unique_ptr<AiCombatAdapter> combat;
+        std::unique_ptr<AiNpcAdapter> npc;
+        std::unique_ptr<AiTradeAdapter> trade;
+        std::unique_ptr<AiShopAdapter> shop;
+        std::unique_ptr<AiAuctionAdapter> auction;
+        RuntimeState state;
+        ControlGesture gesture;
+        std::string intentOperation;
+        std::string intentKind;
+        uint64_t intentRole = 0;
+        std::map<int, uint64_t> intentFocus;
+        std::deque<BridgeRequest> pending;
+        std::shared_ptr<bool> callbackFault = std::make_shared<bool>(false);
+        bool closed = false;
+        std::string status = "AI: 未启用";
+        std::string role = "角色：未进入游戏";
+        std::string reason = "";
+        uint64_t noticeUntil = 0;
+        TextBoard statusText{{.x=28, .y=24, .textFunc=[this]{ return status; }, .font{.size=15, .color=colorf::WHITE_A255}}};
+        TextBoard roleText{{.x=28, .y=46, .textFunc=[this]{ return role; }, .font{.size=15, .color=colorf::WHITE_A255}}};
+        TextBoard reasonText{{.x=28, .y=66, .textFunc=[this]{ return reason; }, .font{.size=15, .color=colorf::WHITE_A255}}};
+        TextButton enable{{.x=28, .y=90, .textFunc=to_cstr(u8"开启 / 恢复"), .font{.size=15}}};
+        TextButton pause{{.x=180, .y=90, .textFunc=to_cstr(u8"暂停 AI"), .font{.size=15}}};
+
+        explicit Impl(Client &c): client(c) {}
+
+        MyHero *hero() const
+        {
+            if(auto run = client.getProcess<ProcessRun>()){
+                return dynamic_cast<MyHero *>(run->findUID(run->getMyHeroUID(), false));
+            }
+            return nullptr;
+        }
+
+        std::vector<std::string> stopIntent()
+        {
+            if(intentOperation.empty()){ return {}; }
+            auto kind = std::exchange(intentKind, {});
+            intentOperation.clear();
+            auto focus = std::exchange(intentFocus, {});
+            if(auto run = client.getProcess<ProcessRun>(); run && run->getMyHeroUID() == intentRole){
+                if(auto h = hero(); h && h->cancelAiIntent()){
+                    for(const auto &[type, uid]: focus){
+                        if(run->getFocusUID(type) == uid){ run->setFocusUID(type, 0); }
+                    }
+                    return kind=="queued" ? std::vector<std::string>{"queued"} : std::vector<std::string>{kind,"queued"};
+                }
+            }
+            return {};
+        }
+
+        void refreshPanel()
+        {
+            if(!controller){ return; }
+            switch(controller->controlState()){
+                case ControlState::Disabled: status = "AI：未启用"; break;
+                case ControlState::ReadOnly: status = "AI：只读"; break;
+                case ControlState::Active: status = "AI：控制中"; break;
+                case ControlState::Paused: status = "AI：已暂停"; break;
+            }
+            role = "角色：未进入游戏";
+            if(auto h = hero()){
+                // TextBoard renders plain text, including names containing XML metacharacters.
+                role = "角色：[" + std::to_string(h->UID()) + "] " + h->knownName();
+            }
+            const auto why = controller->pauseReason();
+            if(SDL_GetTicks() < noticeUntil){ return; }
+            if(why == "manual_input"){ reason = "原因：玩家操作"; }
+            else if(why == "death"){ reason = "原因：角色死亡"; }
+            else if(why == "map_changed"){ reason = "原因：地图已切换，请重新授权"; }
+            else if(why == "session_changed"){ reason = "原因：角色会话已改变"; }
+            else if(why == "transport_lost"){ reason = "原因：AI 连接已断开"; }
+            else if(why == "paused_by_user"){ reason = "原因：手动暂停"; }
+            else if(why == "stop_requested"){ reason = "原因：收到停止请求"; }
+            else if(why == "shutdown"){ reason = "原因：正在退出"; }
+            else if(why == "controller_error"){ reason = "控制器故障，请重新启动桥接"; }
+            else if(!why.empty()){ reason = "原因：" + why; }
+            else { reason = transport.authenticated() ? "仅窗口按钮可授权控制" : "等待 AI 连接并读取会话"; }
+        }
+    };
+
+    AiBridgeRuntime::AiBridgeRuntime(Client &client): m_impl(std::make_unique<Impl>(client)) {}
+    AiBridgeRuntime::~AiBridgeRuntime(){ shutdown(); }
+
+    void AiBridgeRuntime::start(const AiBridgeTransport::Options &options)
+    {
+        auto &s = *m_impl;
+        try{
+            s.transport.start(options);
+            ControllerOptions config;
+            config.instanceId = s.transport.instance()->instance_id;
+            config.build = s.transport.instance()->build;
+            config.policy = *s.transport.policy();
+            config.auditDirectory = options.directory / ("audit-" + config.instanceId);
+            s.controller = std::make_unique<AiBridgeController>(std::move(config));
+            s.controller->setStopHook([&s]{ return s.stopIntent(); });
+            s.game = std::make_unique<AiGameAdapter>(s.client, *this);
+            s.game->registerTools();
+            s.combat = std::make_unique<AiCombatAdapter>(s.client, *this);
+            s.combat->registerTools();
+            s.npc = std::make_unique<AiNpcAdapter>(s.client, *this);
+            s.npc->registerTools();
+            s.trade = std::make_unique<AiTradeAdapter>(s.client, *this);
+            s.trade->registerTools();
+            s.shop = std::make_unique<AiShopAdapter>(s.client, *this);
+            s.shop->registerTools();
+            s.auction = std::make_unique<AiAuctionAdapter>(s.client, *this);
+            s.auction->registerTools();
+            s.refreshPanel();
+        }
+        catch(...){
+            s.transport.close();
+            s.controller.reset();
+            s.status = "AI：未启用";
+            s.reason = "初始化失败，请检查桥接配置";
+            throw;
+        }
+    }
+
+    void AiBridgeRuntime::shutdown() noexcept
+    {
+        auto &s = *m_impl;
+        if(s.closed){ return; }
+        s.closed = true;
+        try{ s.status = "AI：未启用"; s.reason = "桥接已关闭"; }catch(...){}
+        s.gesture.reset();
+        s.pending.clear();
+        try{ if(s.controller){ s.controller->shutdown(); } }catch(...){}
+        try{ s.stopIntent(); }catch(...){}
+        s.transport.close();
+    }
+
+    bool AiBridgeRuntime::closeOnFault() noexcept
+    {
+        auto &s = *m_impl;
+        if(s.closed){ return true; }
+        try{
+            if(!*s.callbackFault && (!s.controller || s.controller->pauseReason() != "controller_error")){ return false; }
+        }
+        catch(...){}
+        shutdown();
+        try{
+            s.reason = "桥接内部错误，已关闭；请重新启动客户端";
+            g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge closed after controller or receipt failure");
+        }
+        catch(...){}
+        return true;
+    }
+
+    void AiBridgeRuntime::observe(const RuntimeState &state)
+    {
+        auto &s = *m_impl;
+        if(closeOnFault() || !s.controller){ return; }
+        if(s.state.phase != state.phase || s.state.roleUid != state.roleUid || s.state.mapUid != state.mapUid || s.state.alive != state.alive){
+            s.gesture.reset();
+            s.controller->observe(state);
+            if(closeOnFault()){ return; }
+            if(s.controller->controlState() != ControlState::Active){ s.stopIntent(); }
+            s.state = state;
+        }
+        s.refreshPanel();
+    }
+
+    void AiBridgeRuntime::poll()
+    {
+        auto &s = *m_impl;
+        if(closeOnFault() || !s.controller){ return; }
+        try{
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(2);
+            s.transport.pollBudget(16, std::chrono::milliseconds(1));
+            for(const auto id: s.transport.takeDisconnected()){
+                s.controller->onDisconnected(id);
+                if(closeOnFault()){ return; }
+                s.stopIntent();
+                std::erase_if(s.pending, [id](const auto &request){ return request.connectionId == id; });
+            }
+            // Safety deadlines cannot be deferred by a saturated ordinary-work budget.
+            s.controller->checkDeadlines();
+            if(closeOnFault()){ return; }
+            if(s.game){ s.game->beginPoll(); }
+            const auto respond = [this, &s](const BridgeRequest &request)
+            {
+                const auto response = s.controller->handleRequest(request);
+                if(closeOnFault()){ return false; }
+                if(!s.transport.sendResponse(request.connectionId, response)){
+                    s.controller->onDisconnected(request.connectionId);
+                    s.stopIntent();
+                }
+                return !closeOnFault();
+            };
+            size_t processed = 0;
+            auto incoming=s.transport.takeRequests(8);
+            for(const auto &request: incoming){
+                if(request.message.at("method") == "game_stop"){
+                    // A stop must overtake even the bounded work deferred from an earlier poll.
+                    if(!respond(request)){ return; }
+                    ++processed;
+                }
+            }
+            bool advanced=false;
+            if(s.controller->activeOperation() && std::chrono::steady_clock::now()<deadline){
+                s.controller->advance(); advanced=true;
+                if(closeOnFault()){ return; }
+            }
+            // Reserve one service slot for old work before fresh overflow can fill the response budget.
+            if(!s.pending.empty() && processed<8){
+                auto request=std::move(s.pending.front()); s.pending.pop_front();
+                if(!respond(request)){ return; }
+                ++processed;
+            }
+            for(auto &request:incoming){
+                if(request.message.at("method")=="game_stop"){ continue; }
+                if(s.pending.size()<8){ s.pending.push_back(std::move(request)); }
+                else{
+                    ++processed;
+                    if(!s.transport.sendResponse(request.connectionId,errorResponse(request.message.at("id"),"busy",s.controller->context()))){
+                        s.controller->onDisconnected(request.connectionId); s.stopIntent();
+                    }
+                }
+            }
+            // One bounded request may exceed the soft budget; observation cannot starve the queue.
+            while(!s.pending.empty() && processed < 8 && (processed==0 || std::chrono::steady_clock::now() < deadline)){
+                auto request = std::move(s.pending.front());
+                s.pending.pop_front();
+                if(!respond(request)){ return; }
+                ++processed;
+            }
+            s.controller->checkDeadlines();
+            if(closeOnFault()){ return; }
+            if(!advanced && std::chrono::steady_clock::now() < deadline){ s.controller->advance(); }
+            if(closeOnFault()){ return; }
+            if(s.game){ s.game->observe(); }
+            if(s.trade){ s.trade->observe(); }
+            if(s.shop){ s.shop->observe(); }
+            if(s.auction){ s.auction->observe(); }
+            if(s.npc){ s.npc->observe(); }
+            if(closeOnFault()){ return; }
+            s.refreshPanel();
+        }
+        catch(...){
+            shutdown();
+            s.status = "AI：未启用";
+            s.reason = "桥接运行失败，已关闭";
+            g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge stopped after runtime failure");
+        }
+    }
+
+    bool AiBridgeRuntime::processEvent(const SDL_Event &event)
+    {
+        auto &s = *m_impl;
+        if(closeOnFault() || !s.controller){ return false; }
+        if(!ControlGesture::gameWindowEvent(event, SDL_GetWindowID(SDL_GetRenderWindow(g_sdlDevice->getRenderer())))){ return false; }
+        // The panel is drawn in RUN, above every game widget and modal.
+        if(s.client.getProcess<ProcessRun>()){
+            const SDL_FRect enable{28, 90, float(s.enable.w()), float(s.enable.h())};
+            const SDL_FRect pause{180, 90, float(s.pause.w()), float(s.pause.h())};
+            const auto routed = s.gesture.route(event, enable, pause, s.controller->context().dump());
+            s.enable.setState(s.gesture.pendingButton() == 1 ? BEVENT_DOWN : BEVENT_OFF);
+            s.pause.setState(s.gesture.pendingButton() == 2 ? BEVENT_DOWN : BEVENT_OFF);
+            switch(routed){
+                case ControlGesture::Result::Enable:
+                    if(!s.controller->enableByUser()){
+                        s.reason = "需进入游戏、存活且 AI 已读取会话";
+                        s.noticeUntil = SDL_GetTicks() + 2500;
+                    }
+                    else { s.noticeUntil = 0; s.refreshPanel(); }
+                    closeOnFault();
+                    return true;
+                case ControlGesture::Result::Pause:
+                    s.controller->pauseByUser(); s.stopIntent(); if(!closeOnFault()){ s.refreshPanel(); } return true;
+                case ControlGesture::Result::Consumed: return true;
+                case ControlGesture::Result::Pass: break;
+            }
+        }
+        if(ControlGesture::manual(event)){
+            s.controller->manualInput();
+            s.stopIntent();
+            if(!closeOnFault()){ s.refreshPanel(); }
+        }
+        return false;
+    }
+
+    void AiBridgeRuntime::drawPanel() const
+    {
+        const auto &s = *m_impl;
+        g_sdlDevice->fillRectangle(colorf::RGBA(18, 28, 34, 235), 16, 16, 440, 102);
+        g_sdlDevice->drawRectangle(colorf::RGBA(102, 170, 145, 255), 16, 16, 440, 102);
+        SDLDeviceHelper::EnableRenderCropRectangle crop(16, 16, 440, 102);
+        s.statusText.drawRoot({}); s.roleText.drawRoot({}); s.reasonText.drawRoot({});
+        if(s.controller && !s.closed){ s.enable.drawRoot({}); s.pause.drawRoot({}); }
+    }
+
+    AiBridgeController *AiBridgeRuntime::controller() noexcept { return m_impl->controller.get(); }
+    AiGameAdapter *AiBridgeRuntime::game() noexcept { return m_impl->game.get(); }
+    AiNpcAdapter *AiBridgeRuntime::npc() noexcept { return m_impl->closed ? nullptr : m_impl->npc.get(); }
+    AiTradeAdapter *AiBridgeRuntime::trade() noexcept { return m_impl->closed ? nullptr : m_impl->trade.get(); }
+    AiShopAdapter *AiBridgeRuntime::shop() noexcept { return m_impl->closed ? nullptr : m_impl->shop.get(); }
+    AiAuctionAdapter *AiBridgeRuntime::auction() noexcept { return m_impl->closed ? nullptr : m_impl->auction.get(); }
+    const Policy *AiBridgeRuntime::policy() const noexcept { return m_impl->transport.policy(); }
+    void AiBridgeRuntime::npcServerPanel(NpcPanelKind kind,uint64_t uid) noexcept
+    {
+        try{ if(auto adapter=npc()){ adapter->serverPanel(kind,uid); } }
+        catch(...){
+            shutdown();
+            try{
+                m_impl->reason="NPC 观察失败，桥接已关闭";
+                g_mir2xLog->addLog(LOGTYPE_WARNING,"AI bridge closed after NPC panel observation failure");
+            }catch(...){}
+        }
+    }
+
+    void AiBridgeRuntime::tradeServerEvent(TradeEvent event,uint64_t uid,uint32_t error,uint64_t generation) noexcept
+    {
+        try{ if(auto adapter=trade()){ adapter->serverEvent(event,uid,error,generation); } }
+        catch(...){
+            shutdown();
+            try{ g_mir2xLog->addLog(LOGTYPE_WARNING,"AI bridge closed after trade observation failure"); }catch(...){}
+        }
+    }
+    void AiBridgeRuntime::shopBuyResult(uint64_t uid,uint32_t item,uint32_t seq,int error) noexcept
+    {
+        try{ if(auto adapter=shop()){ adapter->buyResult(uid,item,seq,error); } }
+        catch(...){
+            shutdown();
+            try{ g_mir2xLog->addLog(LOGTYPE_WARNING,"AI bridge closed after shop observation failure"); }catch(...){}
+        }
+    }
+
+    bool AiBridgeRuntime::claimIntent(std::string_view operationId, std::string_view kind)
+    {
+        auto &s = *m_impl;
+        if(s.closed || !s.controller || s.controller->controlState() != ControlState::Active
+            || s.controller->activeOperation() != operationId || (kind != "move" && kind != "attack" && kind != "follow" && kind != "queued")) { return false; }
+        auto h = s.hero();
+        if(!h || h->dead().value_or(true)){ return false; }
+        if(s.intentOperation == operationId){ return true; }
+        s.stopIntent();
+        h->beginAiIntent();
+        s.intentOperation = operationId;
+        s.intentKind = kind;
+        s.intentRole = h->UID();
+        return true;
+    }
+
+    void AiBridgeRuntime::releaseIntent(std::string_view operationId)
+    {
+        if(m_impl->intentOperation == operationId){ m_impl->stopIntent(); }
+    }
+
+    bool AiBridgeRuntime::setIntentFocus(std::string_view operationId, int type, uint64_t uid)
+    {
+        auto &s = *m_impl;
+        if(s.closed || !s.controller || s.intentOperation != operationId || s.controller->controlState() != ControlState::Active
+            || (type != FOCUS_ATTACK && type != FOCUS_FOLLOW && type != FOCUS_MAGIC)){ return false; }
+        if(auto run = s.client.getProcess<ProcessRun>(); run && run->getMyHeroUID() == s.intentRole){
+            run->setFocusUID(type, uid);
+            s.intentFocus[type] = uid;
+            return true;
+        }
+        return false;
+    }
+
+    uint64_t AiBridgeRuntime::sendScoped(const OperationView &operation, const ClientMsgBuf &message, ReceiptDecoder decode)
+    {
+        auto &s = *m_impl;
+        auto controller = s.controller.get();
+        if(s.closed || !controller || !decode || controller->controlState() != ControlState::Active
+            || controller->activeOperation() != operation.operationId || controller->context() != operation.context){
+            throw ProtocolError("stale_context", "Operation is no longer current");
+        }
+        const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        if(operation.deadlineMs <= uint64_t(now)){ throw ProtocolError("timeout", "Operation deadline passed"); }
+        const auto life = controller->lifetime();
+        const auto fault = s.callbackFault;
+        const auto id = operation.operationId;
+        const auto responseId = s.client.sendScoped(message, operation.deadlineMs - uint64_t(now),
+            [life, fault, controller, id, decode=std::move(decode)](uint8_t code, const uint8_t *data, size_t size)
+            {
+                if(const auto held = life.lock(); held && !*fault){
+                    // The controller retains terminal records and records late evidence without restarting work.
+                    OperationUpdate result;
+                    try{ result = decode(code, data, size); }
+                    catch(...){
+                        result.outcome = OperationOutcome::Unknown;
+                        result.error = OperationError{"unavailable", "Receipt could not be decoded", Json::object()};
+                    }
+                    result.submitted = true;
+                    try{ controller->report(id, result); }
+                    catch(...){ *fault = true; }
+                }
+            },
+            [life, fault, controller, id](ResponseCallbacks::CancelReason reason)
+            {
+                if(const auto held = life.lock(); held && !*fault){
+                    OperationUpdate result;
+                    result.submitted = reason != ResponseCallbacks::CancelReason::SendFailed;
+                    result.outcome = result.submitted ? OperationOutcome::Unknown : OperationOutcome::Failed;
+                    result.error = OperationError{reason == ResponseCallbacks::CancelReason::Timeout ? "timeout" : "unavailable", "Response scope ended", Json::object()};
+                    try{ controller->report(id, result); }
+                    catch(...){ *fault = true; }
+                }
+            });
+        controller->report(id, OperationUpdate{.submitted=true});
+        return responseId;
+    }
+}

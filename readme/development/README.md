@@ -1,8 +1,11 @@
 # mir2x 开发知识库
+最后修改时间: 2026-11-01 19:26:21
 
 这组文档用于在当前仓库上持续开发客户端、服务端和游戏内容。先按实际代码解释现有行为，再说明修改入口、验证方式和仍未确认的部分。
 
 初次整理：2026-10-31。源码基线为 `bb6a22287abcd9f248d2aba755074c254c68787a`，另有本地注册、改密按钮修复。后续代码变化时，这个提交号只表示初始调研版本，不表示文档永远与 HEAD 一致。
+
+2026-11-01 已补当前角色 AI/MCP 实现入口。该功能以 `b1ddda8` 加未提交工作区为基线，7 项局部交付已接受，最终 C++ 定向检查 166/166；T07 和整体实机验收仍未完成。完整已做/待做状态见[验证清单](../../docs/verification/20261031-ai-character-mcp.md)。
 
 ## 阅读顺序
 
@@ -15,6 +18,9 @@
 | [内容与 Lua 脚本](content-and-scripting.md) | 地图、刷怪、NPC、商店、任务和资源的修改方式 |
 | [开发与测试流程](workflow-and-testing.md) | 日常改动、针对性测试、数据库与协议兼容性检查 |
 | [排障与验证基线](troubleshooting-and-baseline.md) | 本次问题、已通过的检查、日志和后续验证缺口 |
+| [当前角色 MCP 使用](ai-mcp.md) | 构建/配置、人工开启与接管、动作结果、经济恢复和限制 |
+| [AI 桥接协议与实现](ai-bridge-protocol.md) | 契约、调度、上下文/句柄、预算、回调及新增能力的入口 |
+| [AI/MCP 验证清单](../../docs/verification/20261031-ai-character-mcp.md) | 35 工具、全部已完成证据与尚未完成的实机/性能/平台事项 |
 
 ## 按开发目标查找
 
@@ -29,6 +35,7 @@
 | 调整刷怪 | `server/script/map/` | [地图与刷怪](content-and-scripting.md#地图与刷怪) |
 | 修改背包、金币或交易 | `server/src/playernet.cpp`、`inventorydb.cpp`、`golddb.cpp` | [经济与持久化](domain-and-data.md#经济与持久化) |
 | 排查移动、传送或场景同步 | `server/src/charobject.cpp`、`servermapop.cpp` | [运行时分工](code-map.md#运行时分工) |
+| 启用 MCP 或扩展 AI 当前角色能力 | `client/src/aibridge/`、`tools/mir2x-mcp/`、`contracts/ai-bridge/v1/` | [使用说明](ai-mcp.md)、[协议与实现](ai-bridge-protocol.md)及[验证清单](../../docs/verification/20261031-ai-character-mcp.md) |
 
 ## 如何使用这份知识库
 

@@ -11,7 +11,9 @@
 #include "processrun.hpp"
 #include "inputstringboard.hpp"
 #include "cbleft.hpp"
+#include "client.hpp"
 
+extern Client *g_client;
 extern PNGTexDB *g_progUseDB;
 extern SDLDevice *g_sdlDevice;
 
@@ -253,7 +255,7 @@ CBLeft::CBLeft(
           .onTrigger = [this](Widget *, int)
           {
               if(auto inputBoard = dynamic_cast<InputStringBoard *>(m_processRun->getWidget("InputStringBoard"))){
-                  inputBoard->waitChoice(u8R"###(<layout><par>确认退出游戏吗？</par></layout>)###", true, +[]{ std::exit(0); }, +[]{});
+                  inputBoard->waitChoice(u8R"###(<layout><par>确认退出游戏吗？</par></layout>)###", true, +[]{ g_client->requestQuit(); }, +[]{});
               }
           },
 

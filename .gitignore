@@ -3,3 +3,5 @@ build
 vcpkg
 .vcpkg
 __pycache__
+/.runtime/
+/tools/mir2x-mcp/.venv/

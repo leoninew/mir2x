@@ -134,6 +134,7 @@ class InputLine: public Widget
         void deleteChar();
         void insertChar(char);
         void setInput(const char *);
+        bool setValidatedInput(const std::string &);
         void insertUTF8String(const char *);
 
     public:

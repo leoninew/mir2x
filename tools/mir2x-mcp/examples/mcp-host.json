@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "mir2x": {
+      "command": "D:/SourceCodes/opensource/mir2x/tools/mir2x-mcp/.venv/Scripts/python.exe",
+      "args": [
+        "-m",
+        "mir2x_mcp",
+        "--bridge-dir",
+        "D:/SourceCodes/opensource/mir2x/.runtime/ai-bridge"
+      ],
+      "env": {
+        "PYTHONUTF8": "1"
+      }
+    }
+  }
+}

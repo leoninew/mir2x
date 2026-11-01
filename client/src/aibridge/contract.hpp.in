@@ -1,0 +1,5 @@
+#pragma once
+namespace aibridge
+{
+    inline constexpr char contractText[] = R"BRIDGESCHEMA(@AI_BRIDGE_CONTRACT_TEXT@)BRIDGESCHEMA";
+}
