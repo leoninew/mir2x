@@ -31,7 +31,11 @@ class MainWindow {} {
     Fl_Window m_window {
       label Server
       callback {{
-	// do nothing
+        // Auto-launched instances also accept the runtime manager's normal close request.
+        extern ServerArgParser *g_serverArgParser;
+        if(g_serverArgParser->masterConfig().autoLaunch){
+            exit(0);
+        }
 }}
       xywh {0 0 720 400} type Double resizable visible
     } {

@@ -1,5 +1,5 @@
 # 使用 Python MCP 操作当前角色
-最后修改时间: 2026-11-01 20:13:14
+最后修改时间: 2026-11-01 21:19:34
 
 [返回知识库](README.md) · [完整验证清单](../../docs/verification/20261031-ai-character-mcp.md) · [协议与实现](ai-bridge-protocol.md)
 
@@ -10,51 +10,33 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 - [x] 当前源码接入 35 个实际工具、6 个 Python 只读资源；完整名称见 [Python 项目说明](../../tools/mir2x-mcp/README.md#工具与资源)。
 - [x] Windows 定向 C++ 回归 166/166、Python 76/76 及 ruff 通过；T01/T08/T02/T03/T04/T05/T06 局部实现已接受。
 - [x] T04 当时最终二进制完成 19 能力的真实 SDK→Python→C++ 只读互通。
-- [ ] T05 最终 35 能力二进制的完整 stdio 冒烟、真实登录角色和逐类操作效果仍待验证。
+- [x] 后续运行管理版本已完成独立 EXE→真实 C++ 未 RUN stdio：35 工具/6 资源/35 能力、查询/events/stop/正常关闭凭据清理。
+- [ ] 实际 LLM 宿主、真实登录角色和逐类操作效果仍待验证。
 - [ ] T07 集成与整体 Verification 未开始；POSIX 和完整主线程耗时未验证。
 
-上述自动检查对应 `MCP-T05-001/r3/delivery2` 交付快照，构建标识 `VENGINEERING-20261101174437`。用户此后已编译，当前生成标识为 `VENGINEERING-20261101192035`，build/install 的客户端、服务端 EXE 分别一致；新哈希见验证清单。尚无新产物复测或真实运行效果证据，不能将原日志当作新二进制的实测结果。
+原 166/76 项自动检查对应 `MCP-T05-001/r3/delivery2` 交付快照，构建标识 `VENGINEERING-20261101174437`。用户此后已编译，当前生成标识为 `VENGINEERING-20261101192035`，build/install 的客户端、服务端 EXE 分别一致；新哈希见验证清单。本轮窄修后的客户端/服务器已补运行管理与真实未 RUN stdio 检查，详见[独立记录](../../docs/verification/20261101-runtime-launcher.md)；原 166 项日志仍保留历史版本，实际角色效果未验证。
 
-## 构建与准备
+## 启动游戏与连接 LLM
 
-在仓库根目录的 MSYS2 UCRT64 中，按 [Windows 开发环境](windows-development.md)完成依赖/配置后执行：
-
-```bash
-cmake --build build --target client server --parallel 8
-cmake --install build --config Release
-```
-
-构建不会自动更新 install。运行同一次配置安装的两端，保留版本检查；下载包不含当前桥接，不能混用。资源、服务端工作目录和数据库的含义见 Windows 文档。后续消耗/双角色验证使用独立 `.runtime/mcp-e2e/` 数据库及端口；正式准备脚本仍待 T07，不将用户存档作为测试库。
-
-在仓库根目录 PowerShell 中安装 Python 锁定依赖：
+在仓库根目录或安装目录的 PowerShell 执行：
 
 ```powershell
-$env:UV_CACHE_DIR = Join-Path $PWD '.runtime/uv-cache'
-$env:UV_PYTHON_INSTALL_DIR = Join-Path $PWD '.runtime/uv-python'
-uv sync --project tools/mir2x-mcp --locked --group dev
+./mir2x.cmd doctor
+./mir2x.cmd up
+./mir2x.cmd mcp register
 ```
 
-虚拟环境在 `tools/mir2x-mcp/.venv/`。不向全局 Python 安装，不在 MCP 宿主启动期间重新解析/安装依赖。
+发行版自带独立 `mir2x.exe`、默认配置、三种策略、中文速查与 `.agents/skills/mir2x-runtime/SKILL.md`，无需 Python；源码入口使用 uv，自动定位 `install/`。首次不需要准备策略文件或输入绝对路径。`up` 等待本地服务器就绪后打开可见客户端。
 
-## 策略与启用
+注册后在当前目录重新开启 Codex，会话中用 `/mcp` 查看连接。**与 LLM 的对话发生在 Codex 或其他 MCP 宿主中，游戏窗口没有 LLM 对话框。** 向 Codex 说明角色目标，LLM 通过既有 `game_*` 工具交互。其他宿主使用 `./mir2x.cmd mcp config` 生成 JSON；Codex TOML 可用 `mcp config --format toml`。MCP 子进程由宿主通过 stdio 启动，不需要额外的模型 key。
 
-由人准备 `.runtime/ai-policy.json`。只读样例为 [policy-readonly.json](../../contracts/ai-bridge/v1/policy-readonly.json)，完整有限权限样例为 [policy-example.json](../../contracts/ai-bridge/v1/policy-example.json)。已有本地策略先检查，不直接覆盖。
+`status`、`logs server/client`、`client/server restart`、`stop` 管理登记进程；默认正常关闭，`--force` 仅在明确需要强停时使用。完整命令、搬迁后重新注册、可选本地覆盖和使用边界见[随包速查](../../tools/mir2x-mcp/src/mir2x_mcp/runtime_assets/QUICKSTART.md)。
 
-完整样例也有金币/物品额度，默认不授权其他玩家 UID。`allow_pvp` 与 `allowed_peer_uids` 都须满足；有害范围技能会保守检查所有当前可见玩家。NPC 脚本授权独立，金额上限不保证覆盖脚本未披露的消耗。
+默认 standard 策略随包可用：现有普通动作与有限经济权限，单次金币 1000、会话金币 10000、单次数量 10；PVP 关闭，其他玩家白名单为空。`client restart --policy readonly` 或 `movement` 切换已提供的预设；恢复默认用 `standard`。策略在客户端启动时冻结，人工开启/恢复控制继续由游戏窗口完成。
 
-客户端增加以下参数，两个路径均须绝对路径：
-
-```text
---enable-ai-bridge
---ai-bridge-dir=D:/SourceCodes/opensource/mir2x/.runtime/ai-bridge
---ai-policy=D:/SourceCodes/opensource/mir2x/.runtime/ai-policy.json
-```
-
-默认不启用时不监听、不生成实例凭据。启用后只绑定本机环回，实例文件和审计目录由 C++ 检查/保护。不要把 token 写入宿主配置或聊天。策略在本进程桥接启动时冻结，登出不重载策略；要改策略，正常退出客户端、修改后重新启动。
+需要编译时按[Windows 开发环境](windows-development.md)执行 client/server 构建和安装。Windows 默认启用 `mir2x_runtime` 目标；独立 EXE/配置/skill 由 runtime 安装组件输出。客户端与服务器保持版本一致，保留版本检查。真实钱物/双角色验证继续使用独立测试环境，见原验证清单；运行管理检查不代替角色验收。
 
 ## 连接与人工控制
-
-宿主配置参考 [mcp-host.json](../../tools/mir2x-mcp/examples/mcp-host.json)，使用项目虚拟环境的 `python.exe -m mir2x_mcp --bridge-dir <绝对目录>`。stdout 只用于 MCP，诊断走 stderr。手动启动后等待 stdin，没有命令行提示属于正常现象。
 
 1. 调用 `game_get_session`，核对实例、阶段、角色、控制状态、capabilities 和策略。代码已注册能力不等于当前角色满足前提或策略允许。
 2. 单个可认证实例可自动选择；多个时配置 `--instance-id`，不能自动挑窗口。实例退出不会改连其它客户端；换角色需重新绑定 MCP 并重新人工授权。

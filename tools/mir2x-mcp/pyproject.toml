@@ -9,17 +9,22 @@ description = "mir2x 当前窗口角色的本机 MCP 桥接"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "mcp==2.3.0", "pydantic>=2.12,<3", "jsonschema>=4.26,<5",
-    "pywin32>=312; sys_platform == 'win32'",
+    "pywin32>=312; sys_platform == 'win32'", "psutil>=7,<8",
 ]
 
 [project.scripts]
 mir2x-mcp = "mir2x_mcp.__main__:main"
+mir2x = "mir2x_mcp.runtime_cli:main"
 
 [dependency-groups]
-dev = ["pytest>=9,<10", "pytest-asyncio>=1,<2", "ruff>=0.15,<1"]
+dev = ["pytest>=9,<10", "pytest-asyncio>=1,<2", "ruff>=0.15,<1", "pyinstaller>=6,<7"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mir2x_mcp"]
+artifacts = ["src/mir2x_mcp/*.json", "src/mir2x_mcp/runtime_assets/*"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/", "scripts/", "tests/", "examples/", "README.md", "pyproject.toml", "uv.lock"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

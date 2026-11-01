@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "../../src/aibridge/runtime.hpp"
 #include "../../src/aibridge/runtime.intent.hpp"
+#include "../../src/clientargparser.hpp"
 
 namespace
 {
@@ -18,6 +19,29 @@ namespace
         e.button.windowID = window;
         return e;
     }
+}
+
+TEST_CASE("Client bridge paths preserve UTF-8 command line arguments")
+{
+    const auto root = std::filesystem::current_path() / std::filesystem::path(u8"\u4E2D\u6587 space");
+    const auto directory = root / "bridge";
+    const auto policy = root / "policy.json";
+    const auto utf8 = [](const std::filesystem::path &path)
+    {
+        const auto text = path.u8string();
+        return std::string(text.begin(), text.end());
+    };
+    std::vector<std::string> values{
+        "client", "--enable-ai-bridge", "--ai-bridge-dir=" + utf8(directory),
+        "--ai-policy=" + utf8(policy),
+    };
+    std::vector<char *> argv;
+    for(auto &value: values){ argv.push_back(value.data()); }
+    argv.push_back(nullptr);
+    const argf::parser parser(static_cast<int>(values.size()), argv.data());
+    const ClientArgParser parsed(parser);
+    REQUIRE(parsed.aiBridgeDir == directory);
+    REQUIRE(parsed.aiPolicy == policy);
 }
 
 TEST_CASE("Only a complete control button gesture is exempt from manual takeover")
@@ -49,7 +73,7 @@ TEST_CASE("Only the main game window may affect AI control")
 TEST_CASE("Panel background and right clicks still reach the original game event path")
 {
     Gate gate;
-    for(const auto e: {button(SDL_EVENT_MOUSE_BUTTON_DOWN, 20, 20), button(SDL_EVENT_MOUSE_BUTTON_DOWN, 30, 92, SDL_BUTTON_RIGHT)}){
+    for(const auto &e: {button(SDL_EVENT_MOUSE_BUTTON_DOWN, 20, 20), button(SDL_EVENT_MOUSE_BUTTON_DOWN, 30, 92, SDL_BUTTON_RIGHT)}){
         REQUIRE(gate.route(e, enableRect, pauseRect, "epoch1") == Gate::Result::Pass);
         REQUIRE(Gate::manual(e));
     }
@@ -61,7 +85,7 @@ TEST_CASE("Panel background and right clicks still reach the original game event
 
 TEST_CASE("Control press cannot grant another window context or release target")
 {
-    for(const auto release: {button(SDL_EVENT_MOUSE_BUTTON_UP, 30, 92, SDL_BUTTON_LEFT, 2), button(SDL_EVENT_MOUSE_BUTTON_UP, 181, 92), button(SDL_EVENT_MOUSE_BUTTON_UP, 5, 5)}){
+    for(const auto &release: {button(SDL_EVENT_MOUSE_BUTTON_UP, 30, 92, SDL_BUTTON_LEFT, 2), button(SDL_EVENT_MOUSE_BUTTON_UP, 181, 92), button(SDL_EVENT_MOUSE_BUTTON_UP, 5, 5)}){
         Gate gate;
         gate.route(button(SDL_EVENT_MOUSE_BUTTON_DOWN, 30, 92), enableRect, pauseRect, "epoch1");
         REQUIRE(gate.route(release, enableRect, pauseRect, "epoch1") == Gate::Result::Consumed);

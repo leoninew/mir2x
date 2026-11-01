@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <SDL3/SDL_main.h>
 #include "log.hpp"
 #include "client.hpp"
 #include "pngtexdb.hpp"
@@ -40,7 +41,7 @@ IMEBoard          *g_imeBoard        = nullptr; //
 MessageStackBoard *g_notifyBoard     = nullptr;
 Client            *g_client          = nullptr; // gobal instance
 
-int main(int argc, char *argv[])
+static int runClient(int argc, char *argv[])
 {
     std::srand((unsigned int)std::time(nullptr));
     try{
@@ -111,4 +112,16 @@ int main(int argc, char *argv[])
         g_mir2xLog->addLog(LOGTYPE_FATAL, "Caught unknown exception");
     }
     return 0;
+}
+
+int main(int argc, char *argv[])
+{
+#ifdef _WIN32
+    (void)argc;
+    (void)argv;
+    // SDL reads the native wide command line and supplies UTF-8 arguments.
+    return SDL_RunApp(0, nullptr, runClient, nullptr);
+#else
+    return runClient(argc, argv);
+#endif
 }

@@ -1,60 +1,55 @@
-# mir2x Python MCP
-最后修改时间: 2026-11-01 19:26:21
+# mir2x Python CLI 与 MCP
+最后修改时间: 2026-11-01 21:17:13
 
 通过官方 Python MCP SDK 的 stdio 接口访问本机 mir2x 客户端桥接。AI 操作的是该客户端当前登录的角色，游戏窗口仍可由人操作。Python 不连接游戏数据库，不发送原始游戏报文，不提供脚本、文件路径或模拟键鼠工具。
 
-这是总计划中的 T06。Python 注册全部 35 个固定工具、6 个只读资源；客户端当前实际实现与策略权限以 `game_get_session` 返回的 `capabilities` 为准。模拟桥接测试不能证明真实游戏能力已完成；真实窗口联调在 T07 汇合。
+角色 MCP 部分是总计划中的 T06，运行管理作为独立 runtime-launcher 增量交付。Python 注册全部 35 个固定工具、6 个只读资源；客户端当前实际实现与策略权限以 `game_get_session` 返回的 `capabilities` 为准。模拟桥接测试不能证明真实游戏能力已完成；真实窗口联调在 T07 汇合。
 
 ## 当前完成与待办
 
 - [x] T01/T08/T02/T03/T04/T05/T06 局部实现已接受，当前 C++ 源码已接入全部 35 工具，Python 提供 6 资源。
 - [x] T05 delivery2 的 Windows C++ 定向回归 166/166、Python 76/76 与 ruff 通过；Python SDK stdio 的游戏桥接为 fake。
 - [x] 至 T04 最终 19 能力二进制取得官方 SDK→Python→真实 C++ 只读互通/停止/退出证据。
-- [ ] 最终 T05 35 能力二进制完整 stdio、实际宿主、登录角色及各类游戏效果仍待验证。
+- [x] 后续运行管理版本已完成独立 EXE→真实 C++ 未 RUN stdio，35 工具/6 资源/35 能力，退出清凭据。
+- [ ] 实际宿主、登录角色及各类游戏效果仍待验证。
 - [ ] T07、整体 Verification、POSIX 与完整主线程耗时未完成。
 
-版本/证据和全部逐项清单统一见[验证文档](../../docs/verification/20261031-ai-character-mcp.md)。客户端构建、启用和实际结果限制见[中文使用说明](../../readme/development/ai-mcp.md)，主线程/协议入口见[协议说明](../../readme/development/ai-bridge-protocol.md)。本次只维护文档，不重跑上述检查；历史 T06 manifest 保留交付时 README 哈希。
+版本/证据和全部逐项清单统一见[验证文档](../../docs/verification/20261031-ai-character-mcp.md)。客户端构建、启用和实际结果限制见[中文使用说明](../../readme/development/ai-mcp.md)，主线程/协议入口见[协议说明](../../readme/development/ai-bridge-protocol.md)。原交付记录保持历史版本；本轮运行管理新增检查见单独验证记录，历史 T06 manifest 保留交付时 README 哈希。
 
-## 环境与安装
+## 开箱使用
 
-需要 Windows Python 3.13、uv，以及包含本功能的客户端。原下载制品没有桥接，不能通过安装本项目补上。客户端和游戏服务器仍需版本一致，不关闭游戏的版本检查。
-
-在仓库根目录的 PowerShell 中执行一次：
+在仓库或发行目录执行短命令：
 
 ```powershell
-$env:UV_CACHE_DIR = Join-Path $PWD '.runtime/uv-cache'
-$env:UV_PYTHON_INSTALL_DIR = Join-Path $PWD '.runtime/uv-python'
-uv sync --project tools/mir2x-mcp --locked --group dev
+./mir2x.cmd doctor
+./mir2x.cmd up
+./mir2x.cmd mcp register
 ```
 
-运行依赖固定官方 `mcp==2.3.0`，Pydantic v2、jsonschema、Windows pywin32 的实际版本由 `uv.lock` 锁定。虚拟环境在本项目 `.venv/`，不向全局 Python 安装依赖。开发缓存、凭据、日志和测试数据留在仓库内。
+发行版提供独立 `mir2x.exe`，无需 Python/uv；源码入口由 uv 使用本项目的锁定环境，自动选择 `install/` 中的游戏。默认配置和 standard/readonly/movement 策略已经提供，首次无需手写 JSON、长路径或桥接参数。C++ 负责安全创建本实例凭据，CLI 不写 token。
 
-客户端必须显式启用，并传入绝对路径：
+在 Codex 里与 LLM 对话，重新开启会话并用 `/mcp` 确认连接；游戏窗口用于登录和人工开启/恢复 AI 控制。其他宿主用 `mcp config` 生成当前位置配置，stdio 子进程由宿主启动。`mcp register` 是显式注册命令，会写入本机 Codex 配置；本次开发检查不代替用户执行注册。
 
-```text
---enable-ai-bridge
---ai-bridge-dir=D:/SourceCodes/opensource/mir2x/.runtime/ai-bridge
---ai-policy=D:/SourceCodes/opensource/mir2x/.runtime/ai-policy.json
-```
+`status`、`logs client/server`、`client/server restart`、`stop` 负责进程管理。默认 standard 策略为有限授权：PVP 关闭、其他玩家白名单空、金币单次 1000/会话 10000、单次数量 10。动作仍须窗口人工开启；`client restart --policy readonly/movement/standard` 切换预置文件。
 
-策略样例位于仓库 `contracts/ai-bridge/v1/policy-readonly.json` 和 `policy-example.json`。本地策略应由人检查并配置，完整样例仍有有限金额和数量上限，玩家对手默认未授权。Python 不创建、放宽或修改客户端策略。启用桥接本身只授予查询权限；动作必须由人在游戏窗口开启 AI 控制。
+详见[随包中文速查](src/mir2x_mcp/runtime_assets/QUICKSTART.md)与[运行管理检查](../../docs/verification/20261101-runtime-launcher.md)。用户本地覆盖可写 `mir2x.local.toml`，安装不会覆盖它；路径按发行目录解析，搬迁后重新注册 MCP。
 
-## 宿主配置
+## 开发与打包
 
-`examples/mcp-host.json` 使用本工作区绝对路径，可作为支持 stdio 的宿主配置依据。安装完成后，宿主直接启动 `.venv/Scripts/python.exe -m mir2x_mcp`。不要把 token 写入宿主配置，也不要让模型提供发现目录。
-
-手动启动命令用于检查宿主启动配置；启动后等待 MCP stdin 输入，没有交互提示是正常行为：
+Python 3.13、Hatchling、官方 `mcp==2.3.0` 和其它依赖由 `uv.lock` 固定；虚拟环境位于本项目 `.venv/`。在仓库根目录：
 
 ```powershell
-& tools/mir2x-mcp/.venv/Scripts/python.exe -m mir2x_mcp `
-  --bridge-dir D:/SourceCodes/opensource/mir2x/.runtime/ai-bridge
+uv sync --project tools/mir2x-mcp --locked --all-groups
+uv run --project tools/mir2x-mcp --locked pytest
+# 构建后将 MIR2X_FROZEN_EXE 设为生成的 mir2x.exe，可额外覆盖冻结包真实凭据认证。
+uv run --project tools/mir2x-mcp --locked ruff check tools/mir2x-mcp
+uv build --project tools/mir2x-mcp
+python tools/mir2x-mcp/scripts/build_runtime.py
 ```
 
-等效 uv 启动方式为 `uv run --locked --no-sync --project D:/SourceCodes/opensource/mir2x/tools/mir2x-mcp python -m mir2x_mcp --bridge-dir ...`。首次安装和宿主启动分开，避免运行期间下载或修改依赖。stdout 仅用于 MCP，诊断写 stderr。
+最后一个命令在 Windows 生成 `build/runtime-launcher/` 下的 wheel/sdist、独立 EXE 和 stage。CMake 的 `mir2x_runtime` 目标执行相同构建，`cmake --install build --component runtime` 只安装该运行管理组件，正常全量安装也包含它。构建端需要 uv，最终 EXE 运行端不需要 Python。可用 `-DMIR2X_BUILD_RUNTIME=OFF` 禁用 Windows 便携管理器构建；POSIX Python wheel 保留，POSIX 运行尚未实测。
 
-发现目录内仅有一个可认证实例时自动绑定；有多个存活或无法排除的实例时返回 `ambiguous_instance`，应在启动参数增加 `--instance-id <32位小写十六进制ID>`。实例退出后不自动连接另一个窗口。首次观察到角色后保持角色 UID 绑定；换到另一角色需要重启此 MCP 进程并由人在游戏窗口重新授权。查询可以展示角色已经改变，旧动作不会因此改为操作新角色。
-
-凭据由 C++ 创建，Python 检查文件身份、硬链接、重解析点及权限。Windows 只接受当前用户与 SYSTEM 的受保护 ACL；POSIX 代码要求目录 0700、文件 0600。只有 Windows 分支在本机执行过，不能据此声称 Linux/macOS 已验证。此机制不隔离同一操作系统用户启动的恶意程序。
+原 `mir2x-mcp --bridge-dir <绝对目录> [--instance-id ...]` 低层 stdio 入口仍保留。通常使用新入口自动传递目录；多个实例需明确绑定，实例退出不改连其它窗口。stdout 只承载 MCP，诊断走 stderr；同 OS 用户恶意进程不在凭据隔离保证内。
 
 ## 工具与资源
 

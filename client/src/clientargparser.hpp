@@ -40,8 +40,8 @@ struct ClientArgParser
     const std::string resPath;             // "--res-path"
     const std::string inputScript;         // "--input-script"
     const bool enableAiBridge;
-    const std::string aiBridgeDir;
-    const std::string aiPolicy;
+    const std::filesystem::path aiBridgeDir;
+    const std::filesystem::path aiPolicy;
 
     const std::optional<std::pair<std::string, std::string>> autoLogin; // "--auto-login"
 
@@ -78,8 +78,8 @@ struct ClientArgParser
         , resPath    (parseString(parser, "--res-path",     argf::OPT).value_or("res"))
         , inputScript(parseString(parser, "--input-script", argf::OPT).value_or(std::string{}))
         , enableAiBridge(argf::parseInteger<bool>(parseString(parser, "--enable-ai-bridge", argf::OPT, true), "enable-ai-bridge", argf::checkPass<bool>, false, true).first)
-        , aiBridgeDir(parseString(parser, "--ai-bridge-dir", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{}))
-        , aiPolicy(parseString(parser, "--ai-policy", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{}))
+        , aiBridgeDir(utf8Path(parseString(parser, "--ai-bridge-dir", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{})))
+        , aiPolicy(utf8Path(parseString(parser, "--ai-policy", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{})))
 
         , autoLogin([&parser]() -> std::optional<std::pair<std::string, std::string>>
           {
@@ -95,9 +95,14 @@ struct ClientArgParser
               return std::nullopt;
           }())
     {
-        if(enableAiBridge && (!std::filesystem::path(aiBridgeDir).is_absolute() || !std::filesystem::path(aiPolicy).is_absolute())){
+        if(enableAiBridge && (!aiBridgeDir.is_absolute() || !aiPolicy.is_absolute())){
             throw fflpanic("--ai-bridge-dir and --ai-policy must be absolute paths");
         }
+    }
+
+    static std::filesystem::path utf8Path(const std::string &text)
+    {
+        return std::filesystem::path(std::u8string(text.begin(), text.end()));
     }
 
     static int checkScreenMode(const char *, int screenMode)

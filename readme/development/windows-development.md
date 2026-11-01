@@ -1,13 +1,13 @@
 # Windows 开发环境
-最后修改时间: 2026-11-01 20:13:14
+最后修改时间: 2026-11-01 21:12:06
 
 [返回知识库](README.md)
 
 本机已经用 MSYS2 UCRT64 完整编译、安装客户端、服务端和资源。所有开发命令都可以从 `D:\SourceCodes\opensource\mir2x` 发起。
 
-上述安装事实来自已有开发环境；不表示每次新源码构建都会自动更新 install。当前 AI/MCP delivery2 的 client/server 已链接、166 项定向回归通过，最终完整 stdio 和真实角色仍未验证，见[验证清单](../../docs/verification/20261031-ai-character-mcp.md)。MCP 启用与人工控制步骤见[使用说明](ai-mcp.md)，本次文档更新没有执行构建、安装或启动。
+上述安装事实来自已有开发环境；不表示每次新源码构建都会自动更新 install。当前 AI/MCP delivery2 的 client/server 已链接、166 项定向回归通过，最终完整 stdio 和真实角色仍未验证，见[验证清单](../../docs/verification/20261031-ai-character-mcp.md)。MCP 启用与人工控制步骤见[使用说明](ai-mcp.md)，本轮另有运行管理增量构建/安装与隔离开发检查，见运行管理验证记录。
 
-用户随后已自行编译；目前生成标识为 `VENGINEERING-20261101192035`，build/install 中 client/server EXE 的哈希已分别核对相同。新产物版本已单独登记到验证清单，原 166 项检查不改标为新 EXE 已复测；实际资源/握手/运行效果仍待反馈。
+用户随后已自行编译；目前生成标识为 `VENGINEERING-20261101192035`，build/install 中 client/server EXE 的哈希已分别核对相同。该用户编译快照保留在原验证清单；本轮又对 Windows 路径与 auto-launch 正常退出做了窄修，build/install 当前对应和实际检查范围在运行管理验证记录，原 166 项日志不改作新入口的通过证据。
 
 ## 工具链与目录约定
 
@@ -107,41 +107,27 @@ cmake --install build --config Release
 
 ## 从根目录启动游戏
 
-PowerShell 保持在仓库根目录，但为两个进程分别设置工作目录。资源、脚本、日志和数据库包含相对路径，运行进程不能随意继承根目录。
-
-先启动服务端：
+在仓库根目录或安装目录的 PowerShell 执行：
 
 ```powershell
-Start-Process -FilePath .\install\server\server.exe `
-    -WorkingDirectory .\install\server `
-    -ArgumentList '--auto-launch'
+./mir2x.cmd doctor
+./mir2x.cmd up
+./mir2x.cmd status
 ```
 
-等待服务端日志出现 `Master server listens players on port 7000`，然后启动客户端：
+CLI 自动选择游戏工作目录、等待本工具登记的服务器持有玩家监听端口，再打开可见客户端。默认玩家端口 7000、节点端口 8000；桥接和 standard 策略已提供，首次不用手填 JSON/绝对路径。游戏账号按原界面登录，已有数据库不一定包含新建数据库的默认测试账号，CLI 不保存或自动填入密码。
 
 ```powershell
-Start-Process -FilePath .\install\client\client.exe `
-    -WorkingDirectory .\install\client `
-    -ArgumentList '--server-ip=127.0.0.1','--auto-login=test:123456'
+./mir2x.cmd client restart --policy readonly
+./mir2x.cmd logs server
+./mir2x.cmd stop
 ```
 
-`--auto-launch` 会启动服务；只打开服务端窗口而未 Launch，不等于已经监听玩家连接。默认测试账号由全新数据库初始化逻辑创建，已有数据库不一定有相同内容。
+正常关闭超时先处理窗口提示，明确需要强停时才用 `stop --force`；只管理工具登记并核对身份的进程。需要远端服务时配置可选的 `mir2x.local.toml`，只使用 `client start`。端口也可在该 local TOML 的 network 节覆盖，更新安装保留此文件。
 
-需要与另一套本地服务隔离时，改用一对独立端口：
+Windows 构建默认增加 `mir2x_runtime` 便携 EXE 目标，client 构建会带上它；正常安装会输出运行入口/配置/skill/文档，单独安装命令为 `cmake --install build --component runtime`。构建端需要 uv；安装制品中的独立 EXE 运行端无需 Python。
 
-```powershell
-# 服务端：玩家端口 7100，服务端节点端口 8100。
-Start-Process -FilePath .\install\server\server.exe `
-    -WorkingDirectory .\install\server `
-    -ArgumentList '--auto-launch','--client-port=7100','--peer-port=8100'
-
-# 等服务端完成监听后再执行。
-Start-Process -FilePath .\install\client\client.exe `
-    -WorkingDirectory .\install\client `
-    -ArgumentList '--server-ip=127.0.0.1','--server-port=7100'
-```
-
-端口参数依据：[ServerArgParser](../../server/src/serverargparser.hpp)、[ClientArgParser](../../client/src/clientargparser.hpp)、[默认端口](../../common/src/argf.hpp)。默认玩家端口为 **7000**，默认主节点端口为 **8000**。
+LLM 对话与 MCP 注册见[使用说明](ai-mcp.md)和[随包速查](../../tools/mir2x-mcp/src/mir2x_mcp/runtime_assets/QUICKSTART.md)。本轮运行管理的编译、真实只读/关闭范围与当前哈希见[独立检查记录](../../docs/verification/20261101-runtime-launcher.md)，原 166 项历史回归不改标为新客户端入口已复测。
 
 ## 制品与存档的区别
 

@@ -71,7 +71,7 @@ target_compile_definitions(test_ai_bridge_controller PRIVATE
 mir2x_add_unit_test(
     NAME ai_bridge_runtime
     SOURCES test_ai_bridge_runtime.cpp
-    LIBS mir2x_ai_bridge SDL3::SDL3
+    LIBS mir2x_ai_bridge SDL3::SDL3 common
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
 

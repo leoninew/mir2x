@@ -1,0 +1,23 @@
+# Paths are relative to this distribution, never to the caller's current directory.
+[network]
+host = "127.0.0.1"
+client_port = 7000
+peer_port = 8000
+
+[launcher]
+policy = "standard"
+bridge = true
+state_dir = ".runtime/manager"
+bridge_dir = ".runtime/ai-bridge"
+start_timeout = 45
+stop_timeout = 10
+
+[server]
+executable = "auto"
+workdir = "auto"
+args = []
+
+[client]
+executable = "auto"
+workdir = "auto"
+args = []

@@ -209,6 +209,7 @@ add_subdirectory(common)
 add_subdirectory(tools )
 add_subdirectory(server)
 add_subdirectory(client)
+include("${CMAKE_SOURCE_DIR}/cmake/Mir2xRuntime.cmake")
 
 # The top-level test/ directory holds cross-module integration tests, such as server and client scenarios.
 # It must be added after all modules so mir2x_finalize_tests() sees every registered test.
