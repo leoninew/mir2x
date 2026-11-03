@@ -13,6 +13,7 @@ from conftest import FIXTURES, arguments
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
+from mir2x_mcp.contract import validate
 from mir2x_mcp.runtime_cli import main
 from mir2x_mcp.supervision import Binding, run_with_session
 
@@ -429,10 +430,45 @@ class SafetySession(FakeSession):
         self.shop_pending = 1
         self.shop_delivers = True
         self.quote_overrides = {}
+        self.goods = {}
+        self.purchase_quotes = {}
+        self.current_quote = None
+        self.post_purchase_fault = None
+        self.spent = 0
+        self.policy = {
+            "allowed_actions": ["game_shop_buy"],
+            "allow_pvp": False,
+            "allow_npc_dialogue": True,
+            "max_gold_per_operation": "1000",
+            "max_gold_per_session": "10000",
+            "max_item_count_per_operation": 10,
+            "remaining_gold_budget": "10000",
+            "economic_uncertain": False,
+        }
 
     async def call_tool(self, name, arguments):
         if name in {"game_get_session", "game_get_state"}:
             result = await super().call_tool(name, arguments)
+            if name == "game_get_session":
+                capabilities = {
+                    "protocol_version": 1,
+                    "build": "synthetic-test",
+                    "tools": [
+                        "game_shop_buy",
+                        "game_move_to",
+                        "game_attack",
+                        "game_use_item",
+                        "game_stop",
+                    ],
+                    "supported_skills": [],
+                    "policy": copy.deepcopy(self.policy),
+                    "limitations": [],
+                }
+                result.structured_content["data"]["capabilities"] = capabilities
+                capabilities["policy"]["remaining_gold_budget"] = str(
+                    max(0, int(self.policy["remaining_gold_budget"]) - self.spent)
+                )
+                validate(result.structured_content["data"], "session")
             if name == "game_get_state":
                 result.structured_content["data"].update(
                     position=dict(self.position),
@@ -441,6 +477,15 @@ class SafetySession(FakeSession):
                     map_uid=self.map_uid,
                     gold=str(self.gold),
                 )
+                if self.spent and self.post_purchase_fault == "gold_error":
+                    return SimpleNamespace(
+                        is_error=True,
+                        structured_content={
+                            "ok": False,
+                            "context": copy.deepcopy(self.context),
+                            "error": {"code": "unavailable"},
+                        },
+                    )
             return result
         self.calls.append((name, time.monotonic(), copy.deepcopy(arguments)))
         if name in self.hold:
@@ -449,6 +494,15 @@ class SafetySession(FakeSession):
         if name == "game_list_nearby":
             data = {"items": [copy.deepcopy(self.target)], "next_cursor": None}
         elif name == "game_get_inventory":
+            if self.spent and self.post_purchase_fault == "inventory_error":
+                return SimpleNamespace(
+                    is_error=True,
+                    structured_content={
+                        "ok": False,
+                        "context": copy.deepcopy(self.context),
+                        "error": {"code": "unavailable"},
+                    },
+                )
             data = {
                 "items": [
                     {
@@ -465,6 +519,21 @@ class SafetySession(FakeSession):
                 "next_cursor": None,
                 "unavailable_fields": [],
             }
+            data["items"].extend(
+                {
+                    "item_id": item,
+                    "seq_id": 1,
+                    "count": count,
+                    "reserved_count": 0,
+                    "location": "inventory",
+                    "name": "synthetic ordinary item",
+                }
+                for item, count in self.goods.items()
+            )
+            if self.spent and self.post_purchase_fault == "incomplete":
+                data["next_cursor"] = "more-inventory"
+            elif self.spent and self.post_purchase_fault == "unavailable":
+                data["unavailable_fields"] = ["inventory"]
         elif name == "game_get_map_region":
             data = {
                 "map_uid": self.map_uid,
@@ -483,7 +552,7 @@ class SafetySession(FakeSession):
                 else [
                     {
                         "quote_handle": "fresh-quote",
-                        "item_id": 6,
+                        "item_id": arguments["item_id"],
                         "seq_id": 0,
                         "unit_count": 1,
                         "gold": "80",
@@ -498,6 +567,8 @@ class SafetySession(FakeSession):
                 "last_query_error": None,
                 "unavailable_fields": [],
             }
+            if data["items"]:
+                self.current_quote = copy.deepcopy(data["items"][0])
         elif name in {"game_attack", "game_use_item", "game_move_to", "game_shop_buy"}:
             self.write_entered.set()
             if self.write_release is not None:
@@ -526,6 +597,8 @@ class SafetySession(FakeSession):
                 "arguments": arguments,
             }
             data = {"operation_id": operation, "state": "accepted"}
+            if name == "game_shop_buy":
+                self.purchase_quotes[operation] = copy.deepcopy(self.current_quote)
         elif name == "game_get_operation":
             if self.operation_release is not None:
                 await self.operation_release.wait()
@@ -553,8 +626,13 @@ class SafetySession(FakeSession):
                     data["completion_scope"] = "server_ack"
                     data["result"]["delivery_pending"] = not self.shop_delivers
                     if self.shop_delivers:
-                        self.potions += 1
-                        self.gold -= 80
+                        quote = self.purchase_quotes[data["operation_id"]]
+                        if quote["item_id"] == 6:
+                            self.potions += 1
+                        else:
+                            self.goods[quote["item_id"]] = self.goods.get(quote["item_id"], 0) + 1
+                        self.gold -= int(quote["gold"])
+                        self.spent += int(quote["gold"])
         elif name == "game_stop":
             self.control = "paused"
             self.context["control_epoch"] = str(int(self.context["control_epoch"]) + 1)
@@ -630,6 +708,12 @@ class SafetyHarness:
             "context": copy.deepcopy(self.session.context),
             "map_uid": "2",
             "potions": [{"item_id": 6, "seq_id": 1}],
+            "safety": {
+                "reserve_doses": 3,
+                "low_hp_percent": 80,
+                "rapid_loss_percent": 5,
+                "rapid_loss_window_ms": 1000,
+            },
             "retreat": [{"x": 3, "y": 1}, {"x": 2, "y": 1}, {"x": 1, "y": 1}],
         }
 
@@ -707,11 +791,6 @@ async def test_purchase_refreshes_and_buys_three_separate_doses_without_llm_quot
             lambda row: row.get("reason") == "purchase_intent_already_seen_or_limit_reached",
         )
         assert len(test.writes()) == 3
-        await test.queue.put(test.purchase_command(4))
-        await wait_for(
-            test.events, lambda row: row.get("reason") == "purchase_three_single_attempt_limit"
-        )
-        assert len(test.writes()) == 3
         starts = [stamp for _, stamp, _ in test.session.calls]
         assert all(sum(start <= stamp < start + 1 for stamp in starts) <= 16 for start in starts)
         states = [stamp for name, stamp, _ in test.session.calls if name == "game_get_state"]
@@ -729,9 +808,8 @@ async def test_purchase_refreshes_and_buys_three_separate_doses_without_llm_quot
         "wrong_item",
         "context",
         "count",
-        "cap",
+        "invalid_budget",
         "monster",
-        "low_hp",
     ],
 )
 async def test_purchase_rejects_unsafe_or_nonmatching_preparation_without_writes(case):
@@ -752,12 +830,10 @@ async def test_purchase_rejects_unsafe_or_nonmatching_preparation_without_writes
             command["context"]["control_epoch"] = "9"
         elif case == "count":
             command["count"] = 3
-        elif case == "cap":
-            command["max_total_gold"] = "81"
+        elif case == "invalid_budget":
+            command["max_total_gold"] = "18446744073709551616"
         elif case == "monster":
             test.session.target["kind"] = "monster"
-        elif case == "low_hp":
-            test.session.hp = 200
         await asyncio.sleep(0.3)
         await test.queue.put(command)
         await wait_for(test.events, lambda row: row["event"] == "command_rejected")
@@ -804,6 +880,153 @@ async def test_purchase_quote_wait_keeps_monitor_live_and_manual_pause_prevents_
         test.session.control = "paused"
         await asyncio.sleep(0.3)
         test.session.release.set()
+        await wait_for(test.events, lambda row: row["event"] == "command_rejected")
+        assert not test.writes()
+
+
+async def test_generic_purchase_accepts_caller_item_budget_and_four_explicit_intents_at_low_hp():
+    async with SafetyHarness() as test:
+        await test.town()
+        test.session.hp = 150
+        test.session.shop_pending = 0
+        test.session.quote_overrides = {"gold": "1"}
+        await asyncio.sleep(0.3)
+        for number in range(1, 5):
+            command = test.purchase_command(number)
+            command.update(item_id=826, max_total_gold="1")
+            await test.queue.put(command)
+            await wait_for(
+                test.events,
+                lambda row, intent=command["intent_id"]: (
+                    row["event"] == "purchase_result" and row["intent_id"] == intent
+                ),
+                seconds=5,
+            )
+        assert test.session.goods[826] == 4 and test.session.gold == 996
+        assert len(test.writes()) == 4 and test.session.potions == 0 and test.session.hp == 150
+        command = test.purchase_command(5)
+        command.update(item_id=7, max_total_gold="175")
+        test.session.quote_overrides = {"gold": "150"}
+        await test.queue.put(command)
+        await wait_for(
+            test.events,
+            lambda row: (
+                row["event"] == "purchase_result" and row["intent_id"] == command["intent_id"]
+            ),
+            seconds=5,
+        )
+        assert test.session.goods[7] == 1 and test.session.gold == 846
+        assert test.writes()[-1][1]["max_total_gold"] == "175"
+
+
+@pytest.mark.parametrize(
+    "case", ["request_cap", "operation_cap", "remaining", "uncertain", "denied", "count_policy"]
+)
+async def test_generic_purchase_respects_request_and_native_frozen_policy_bounds(case):
+    async with SafetyHarness() as test:
+        await test.town()
+        test.session.shop_pending = 0
+        command = test.purchase_command()
+        if case == "request_cap":
+            command["max_total_gold"] = "79"
+        elif case == "operation_cap":
+            test.session.policy["max_gold_per_operation"] = "79"
+        elif case == "remaining":
+            test.session.policy["remaining_gold_budget"] = "79"
+        elif case == "uncertain":
+            test.session.policy["economic_uncertain"] = True
+        elif case == "denied":
+            test.session.policy["allowed_actions"] = []
+        else:
+            test.session.policy["max_item_count_per_operation"] = 0
+        await asyncio.sleep(0.3)
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row["event"] == "command_rejected")
+        assert not test.writes()
+
+
+async def test_generic_purchase_policy_session_budget_limits_successive_explicit_purchases():
+    async with SafetyHarness() as test:
+        await test.town()
+        test.session.policy["remaining_gold_budget"] = "80"
+        await asyncio.sleep(0.3)
+        await test.queue.put(test.purchase_command())
+        await wait_for(test.events, lambda row: row["event"] == "purchase_result", seconds=5)
+        await asyncio.sleep(0.3)
+        await test.queue.put(test.purchase_command(2))
+        await wait_for(
+            test.events, lambda row: row.get("reason") == "purchase_quote_terms_not_allowed"
+        )
+        assert len(test.writes()) == 1 and test.session.spent == 80
+
+
+@pytest.mark.parametrize("fault", ["inventory_error", "incomplete", "unavailable", "gold_error"])
+async def test_unconfirmed_purchase_delivery_survives_read_failure_and_locks_new_intents(fault):
+    async with SafetyHarness() as test:
+        await test.town()
+        test.session.shop_pending = 0
+        test.session.post_purchase_fault = fault
+        await test.queue.put(test.purchase_command())
+        await wait_for(test.events, lambda row: row["event"] == "command_rejected", seconds=5)
+        test.session.post_purchase_fault = None
+        await asyncio.sleep(0.3)
+        await test.queue.put(test.purchase_command(2))
+        await asyncio.sleep(1.3)
+        assert len(test.writes()) == 1
+        assert any(
+            row["event"] == "plan_invalidated" and row.get("writes_locked") for row in test.events
+        )
+        await test.queue.put({"command": "observe"})
+        await wait_for(test.events, lambda row: row["event"] == "status")
+        status = next(row for row in test.events if row["event"] == "status")
+        assert status["unconfirmed_purchase"]["operation"]["state"] == "succeeded"
+        assert status["unconfirmed_purchase"]["operation"]["request_id"]
+
+
+async def test_caller_safety_reserve_and_threshold_replace_test_role_constants():
+    async with SafetyHarness() as test:
+        await test.prepare()
+        test.session.potions = 2
+        command = test.arm_command()
+        command["safety"].update(reserve_doses=1, low_hp_percent=60, rapid_loss_percent=50)
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row["event"] == "armed")
+        test.session.hp = 230
+        await asyncio.sleep(0.6)
+        assert not any(row["event"] == "hunting_locked" for row in test.events)
+        test.session.hp = 170
+        await wait_for(test.events, lambda row: row["event"] == "retreat_finished", seconds=9)
+        assert test.writes()[0][0] == "game_use_item"
+
+
+async def test_caller_rapid_loss_window_uses_health_history_beyond_default_observer_second():
+    async with SafetyHarness() as test:
+        await test.prepare()
+        command = test.arm_command()
+        command["safety"].update(low_hp_percent=10, rapid_loss_percent=5, rapid_loss_window_ms=2000)
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row["event"] == "armed")
+        test.session.hp = 290
+        await wait_for(test.events, lambda row: row["event"] == "health" and row["hp"] == 290)
+        await asyncio.sleep(1.1)
+        assert not any(row["event"] == "hunting_locked" for row in test.events)
+        test.session.hp = 280
+        await wait_for(test.events, lambda row: row["event"] == "hunting_locked")
+
+
+@pytest.mark.parametrize("case", ["missing", "reserve", "threshold", "window"])
+async def test_arming_rejects_absent_or_invalid_caller_safety_task(case):
+    async with SafetyHarness() as test:
+        command = test.arm_command()
+        if case == "missing":
+            command.pop("safety")
+        elif case == "reserve":
+            command["safety"]["reserve_doses"] = 0
+        elif case == "threshold":
+            command["safety"]["low_hp_percent"] = 100
+        else:
+            command["safety"]["rapid_loss_window_ms"] = 10001
+        await test.queue.put(command)
         await wait_for(test.events, lambda row: row["event"] == "command_rejected")
         assert not test.writes()
 
@@ -1098,7 +1321,7 @@ async def test_scout_cannot_move_without_three_verified_doses():
         await test.queue.put(command)
         await wait_for(
             test.events,
-            lambda event: event.get("reason") == "at_least_three_verified_doses_required",
+            lambda event: event.get("reason") == "task_potion_reserve_not_met",
         )
         assert not test.writes()
 

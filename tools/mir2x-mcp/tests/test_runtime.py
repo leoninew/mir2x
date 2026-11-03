@@ -98,6 +98,14 @@ def test_supervise_short_entry_is_explicit_and_uses_existing_root(tmp_path, monk
     assert not (tmp_path / ".runtime").exists()
 
 
+def test_supervise_help_describes_caller_budget_and_explicit_safety_plan(capsys):
+    with pytest.raises(SystemExit) as result:
+        main(["mcp", "supervise", "--help"])
+    assert result.value.code == 0
+    output = capsys.readouterr().out
+    assert "调用者预算" in output and "显式安全计划" in output
+
+
 def test_managed_bridge_optout_overrides_native_automatic_default(tmp_path):
     (tmp_path / "mir2x.local.toml").write_text("[launcher]\nbridge=false\n", "utf-8")
     manager = Manager(load_settings(tmp_path))

@@ -223,13 +223,16 @@ class Observer:
             else:
                 now = time.monotonic()
                 self.health.append((now, hp))
-                while self.health and self.health[0][0] < now - 1:
+                while self.health and self.health[0][0] < now - 10:
                     self.health.popleft()
                 if hp <= maximum * 0.8:
                     self.alert("low_hp", hp=hp, max_hp=maximum, urgent=hp <= maximum * 0.5)
                 if hp <= maximum * 0.5:
                     self.alert("critical_hp", hp=hp, max_hp=maximum)
-                if max(value for _, value in self.health) - hp >= maximum * 0.05:
+                if (
+                    max(value for stamp, value in self.health if stamp >= now - 1) - hp
+                    >= maximum * 0.05
+                ):
                     self.alert("rapid_hp_loss", hp=hp, max_hp=maximum)
             self.event(
                 "health",
@@ -361,6 +364,31 @@ def distance(a, b):
     return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
 
 
+def gold_amount(value):
+    if (
+        not isinstance(value, str)
+        or not re.fullmatch(r"0|[1-9][0-9]{0,19}", value)
+        or int(value) > 2**64 - 1
+    ):
+        raise ValueError("invalid_gold_amount")
+    return int(value)
+
+
+def task_safety(value):
+    bounds = {
+        "reserve_doses": (1, 2**32 - 1),
+        "low_hp_percent": (1, 99),
+        "rapid_loss_percent": (1, 100),
+        "rapid_loss_window_ms": (250, 10000),
+    }
+    if not isinstance(value, dict) or set(value) != set(bounds):
+        raise ValueError("explicit_task_safety_required")
+    for key, (minimum, maximum) in bounds.items():
+        if type(value[key]) is not int or not minimum <= value[key] <= maximum:
+            raise ValueError("invalid_task_safety")
+    return dict(value)
+
+
 class ArmedSupervisor(Observer):
     """The only writer; the inherited poller/watchdog never wait on this worker."""
 
@@ -380,7 +408,7 @@ class ArmedSupervisor(Observer):
         self.wake = asyncio.Event()
         self.attack_intents = set()
         self.purchase_intents = set()
-        self.purchase_submissions = 0
+        self.unconfirmed_purchase = None
         self.last_attack = {}
         self.trail_scope = None
         self.visited = {}
@@ -390,6 +418,7 @@ class ArmedSupervisor(Observer):
         self.walk_edge = None
 
     def invalidate(self, reason, *, lock=False):
+        lock = lock or self.unconfirmed_purchase is not None
         had_plan = self.plan is not None
         self.plan = None
         self.hunting = self.recover = False
@@ -400,7 +429,11 @@ class ArmedSupervisor(Observer):
             self.work.get_nowait()
         if had_plan or lock:
             self.event(
-                "plan_invalidated", reason=reason, writes_locked=self.locked, operation=self.pending
+                "plan_invalidated",
+                reason=reason,
+                writes_locked=self.locked,
+                operation=self.pending,
+                unconfirmed_purchase=self.unconfirmed_purchase,
             )
         self.wake.set()
 
@@ -453,10 +486,12 @@ class ArmedSupervisor(Observer):
             raise ValueError("plan_no_longer_valid")
         return state, nearby
 
-    def danger(self, state):
+    def danger(self, state, safety=None):
+        safety = self.plan["safety"] if safety is None else safety
         hp, maximum = state["hp"], state["max_hp"]
-        return hp <= maximum * 0.8 or any(
-            stamp >= time.monotonic() - 1 and value - hp >= maximum * 0.05
+        return hp * 100 <= maximum * safety["low_hp_percent"] or any(
+            stamp >= time.monotonic() - safety["rapid_loss_window_ms"] / 1000
+            and (value - hp) * 100 >= maximum * safety["rapid_loss_percent"]
             for stamp, value in self.health
         )
 
@@ -560,6 +595,7 @@ class ArmedSupervisor(Observer):
                 hunting_enabled=self.hunting,
                 plan_loaded=self.plan is not None,
                 writes_locked=self.locked,
+                unconfirmed_purchase=self.unconfirmed_purchase,
             )
         elif kind in ("quit", "disarm", "stop"):
             self.invalidate(kind)
@@ -656,9 +692,10 @@ class ArmedSupervisor(Observer):
         self.invalidate("explicit_rearm")
         state, _ = self.world()
         scouting = command["command"] == "scout"
+        safety = task_safety(command.get("safety"))
         if command.get("context") != self.context or command.get("map_uid") != state["map_uid"]:
             raise ValueError("arm_context_or_map_mismatch")
-        if self.danger(state) or state.get("action") != "idle":
+        if self.danger(state, safety) or state.get("action") != "idle":
             raise ValueError("arm_requires_stopped_healthy_state")
         route = (
             (grid(state["position"]), grid(command.get("destination")))
@@ -677,14 +714,15 @@ class ArmedSupervisor(Observer):
             "map_uid": state["map_uid"],
             "route": route,
             "potions": keys,
+            "safety": safety,
             "phase": "scout" if scouting else "arming",
         }
         version = self.version
         await self.budget.room(self.stop, 3 if scouting else 2)
         data = await self.query("game_get_inventory", {}, version)
         doses = sum(count for _, count in self.available_potions(data, keys))
-        if doses < 3:
-            raise ValueError("at_least_three_verified_doses_required")
+        if doses < safety["reserve_doses"]:
+            raise ValueError("task_potion_reserve_not_met")
         await self.check_route(route, version, witnessed=not scouting)
         state, _ = self.guard(version)
         if self.danger(state):
@@ -709,6 +747,7 @@ class ArmedSupervisor(Observer):
             "armed",
             write_enabled=True,
             doses=doses,
+            safety=safety,
             retreat=[list(p) for p in route],
             attack_mode="once",
             attack_timeout_ms=2000,
@@ -761,8 +800,8 @@ class ArmedSupervisor(Observer):
                 raise ValueError("write_preflight_expired")
         if name == "game_shop_buy":
             self.purchase_guard(version)
-            if self.purchase_submissions >= 3:
-                raise ValueError("purchase_three_single_attempt_limit")
+            if gold_amount(self.plan["quote"]["gold"]) > self.purchase_budget():
+                raise ValueError("purchase_native_budget_changed")
             if int(self.plan["quote"]["expires_at"]) <= time.time() * 1000 + 2000:
                 raise ValueError("purchase_quote_expiring")
         if name == "game_attack":
@@ -789,8 +828,6 @@ class ArmedSupervisor(Observer):
             "timeout_ms": 2000,
         }
         validate_arguments(name, arguments)
-        if name == "game_shop_buy":
-            self.purchase_submissions += 1
         self.pending_since = time.monotonic()
         self.pending = {
             "method": name,
@@ -874,16 +911,29 @@ class ArmedSupervisor(Observer):
         state, nearby = self.guard(version)
         if self.plan["phase"] != "purchase" or state.get("action") != "idle":
             raise ValueError("purchase_requires_stopped_preparation")
-        if self.danger(state) or any(row.get("kind") == "monster" for row in nearby["items"]):
+        if any(row.get("kind") == "monster" for row in nearby["items"]):
             raise ValueError("purchase_requires_safe_surroundings")
-        gold = state.get("gold")
-        if (
-            not isinstance(gold, str)
-            or not re.fullmatch(r"0|[1-9][0-9]{0,19}", gold)
-            or "gold" in state.get("unavailable_fields", [])
-        ):
+        gold_amount(state.get("gold"))
+        if "gold" in state.get("unavailable_fields", []):
             raise ValueError("purchase_gold_unknown")
+        self.purchase_budget()
         return state
+
+    def purchase_budget(self):
+        policy = (
+            self.snapshots["game_get_session"][0]["data"].get("capabilities", {}).get("policy", {})
+        )
+        if (
+            "game_shop_buy" not in policy.get("allowed_actions", [])
+            or policy.get("economic_uncertain") is not False
+            or type(policy.get("max_item_count_per_operation")) is not int
+            or policy["max_item_count_per_operation"] < 1
+        ):
+            raise ValueError("purchase_native_policy_unavailable_or_denied")
+        return min(
+            gold_amount(policy.get("max_gold_per_operation")),
+            gold_amount(policy.get("remaining_gold_budget")),
+        )
 
     @staticmethod
     def purchased_count(data, item_id):
@@ -913,16 +963,14 @@ class ArmedSupervisor(Observer):
             raise ValueError("invalid_purchase_fields")
         if (
             type(command["item_id"]) is not int
-            or command["item_id"] != 6
+            or not 1 <= command["item_id"] <= 2**32 - 1
             or type(command["count"]) is not int
             or command["count"] != 1
-            or not isinstance(command["max_total_gold"], str)
-            or not re.fullmatch(r"[1-9][0-9]?", command["max_total_gold"])
-            or int(command["max_total_gold"]) > 80
             or not isinstance(command["shop_handle"], str)
             or not 1 <= len(command["shop_handle"]) <= 128
         ):
-            raise ValueError("purchase_only_item6_count1_up_to80gold")
+            raise ValueError("invalid_single_item_purchase")
+        maximum_gold = gold_amount(command["max_total_gold"])
         intent = command["intent_id"]
         if not isinstance(intent, str) or not re.fullmatch(
             r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", intent
@@ -930,8 +978,6 @@ class ArmedSupervisor(Observer):
             raise ValueError("explicit_purchase_intent_id_required")
         if intent in self.purchase_intents or len(self.purchase_intents) >= 4096:
             raise ValueError("purchase_intent_already_seen_or_limit_reached")
-        if self.purchase_submissions >= 3:
-            raise ValueError("purchase_three_single_attempt_limit")
         state, _ = self.world()
         if command["context"] != self.context:
             raise ValueError("purchase_context_mismatch")
@@ -976,13 +1022,13 @@ class ArmedSupervisor(Observer):
                 quote.get("direction") != "buy"
                 or quote.get("unit_count") != 1
                 or quote.get("materials") != []
-                or int(quote["gold"]) > min(int(command["max_total_gold"]), int(state["gold"]))
-                or int(quote["gold"]) < 0
+                or gold_amount(quote["gold"])
+                > min(maximum_gold, gold_amount(state["gold"]), self.purchase_budget())
                 or int(quote["expires_at"]) <= time.time() * 1000 + 2000
             ):
                 raise ValueError("purchase_quote_terms_not_allowed")
             self.plan["quote"] = quote
-            gold_before = int(state["gold"])
+            gold_before = gold_amount(state["gold"])
             self.event(
                 "purchase_quote_selected",
                 intent_id=intent,
@@ -999,7 +1045,17 @@ class ArmedSupervisor(Observer):
                 version,
             )
             break
+        if (operation or {}).get("state") == "succeeded":
+            self.unconfirmed_purchase = {
+                "operation": operation,
+                "item_id": command["item_id"],
+                "quote_handle": quote["quote_handle"],
+                "inventory_before": before_count,
+                "gold_before": str(gold_before),
+            }
         if self.locked or self.plan is None:
+            if self.unconfirmed_purchase is not None:
+                self.invalidate("purchase_delivery_plan_invalidated", lock=True)
             return
         # Server acknowledgement and delivered inventory/gold are separate facts.
         deadline = time.monotonic() + 2
@@ -1008,7 +1064,7 @@ class ArmedSupervisor(Observer):
             state = await self.query("game_get_state", {}, version)
             self.purchase_guard(version)
             after_count = self.purchased_count(inventory, command["item_id"])
-            gold_after = int(state["gold"])
+            gold_after = gold_amount(state["gold"])
             delivered = after_count - before_count == 1 and gold_before - gold_after == int(
                 quote["gold"]
             )
@@ -1035,6 +1091,8 @@ class ArmedSupervisor(Observer):
             healing_attributed=False,
             automatic_retries=0,
         )
+        if confirmed:
+            self.unconfirmed_purchase = None
         self.invalidate(
             "purchase_finished" if confirmed else "purchase_not_confirmed",
             lock=bool(operation and not confirmed),
@@ -1074,8 +1132,11 @@ class ArmedSupervisor(Observer):
         # Recheck reserves and the witnessed retreat before every single attack.
         await self.budget.room(self.stop, 3)
         data = await self.query("game_get_inventory", {}, version)
-        if sum(count for _, count in self.available_potions(data, self.plan["potions"])) < 3:
-            raise ValueError("potion_reserve_below_three")
+        if (
+            sum(count for _, count in self.available_potions(data, self.plan["potions"]))
+            < self.plan["safety"]["reserve_doses"]
+        ):
+            raise ValueError("task_potion_reserve_not_met")
         await self.check_route(self.plan["route"], version)
         state, nearby = self.guard(version)
         current = next((row for row in nearby["items"] if row.get("uid") == target["uid"]), {})

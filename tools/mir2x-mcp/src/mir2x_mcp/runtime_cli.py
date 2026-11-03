@@ -65,7 +65,7 @@ def parser() -> argparse.ArgumentParser:
     item.add_argument("--no-reconnect", action="store_true", help="连接丢失后锁闭，不重新认证")
     for name, help_text in (
         ("observe", "唯一官方 SDK 宿主持续只读监督，不执行角色动作"),
-        ("supervise", "持续监督；purchase 单件备药，arm 校验药品和已走退路后允许短攻击与安全动作"),
+        ("supervise", "持续监督；按调用者预算 purchase 单件物品，按显式安全计划 arm 短动作"),
     ):
         item = actions.add_parser(name, help=help_text, description=help_text)
         item.add_argument("--instance-id", required=True)

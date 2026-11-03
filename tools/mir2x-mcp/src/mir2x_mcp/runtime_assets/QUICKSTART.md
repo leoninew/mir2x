@@ -49,7 +49,7 @@ JSON 用于接受 `mcpServers` 的宿主；TOML 用于 Codex 的 `mcp_servers` �
 
 需要连续只读生命观察时，可使用 `./mir2x.cmd mcp observe --instance-id <明确实例ID> --character-uid <角色UID> --report <JSONL路径>`。它是独立的官方 SDK 宿主，先协调结束旧连接，不能并开；连接丢失后锁闭、不重新认证。保持输入打开时每250ms安排观察，超过500ms未更新即告警；输入 `{"command":"quit"}` 或 EOF 退出。此阶段拒绝角色写操作，不自动用药、撤退或恢复 AI，不能把监控或 game_stop 当成脱战保护。完整输入与 SDK 接口见源码 `readme/development/ai-mcp.md` 的“持续只读监督”。
 
-显式选择 `mcp supervise`（同样必填 instance-id/character-uid/report）可使用安全计划，默认仍仅观察。准备期可用显式 purchase 命令从当前真实 shop_handle 买 item6/count1/最多80金币小药，每份新 intent_id；不要求已有药品，同一调度刷新报价后立即购买，随后核对终态及库存/金币，未知不重试。仅未武装、无怪且健康停住时开放；完整 JSONL 含当前 context，见源码说明。核对至少3次 HP 药品剂量后，在同一调度器内用 `scout` 逐格准备并实际确认退路，再明确 `arm`；只接受相邻已知存活怪物的单次2000ms攻击，不自动续击。低血/快速掉血锁住狩猎，精确用一瓶药后逐段重检退路；消费和实际HP增长分别报告。unknown/响应丢失锁住全部自动写入，暂停/上下文变化/死亡撤销计划，不自动恢复；`game_stop` 会整体暂停，不能据其后继续撤退。完整 JSONL 输入和 SDK 复用前提见源码“带安全计划的监督”；这些准备门槛未满足时不开始狩猎。
+显式选择 `mcp supervise`（同样必填 instance-id/character-uid/report）可使用调用者安全计划，默认仍仅观察。`purchase` 接受当前真实 shop_handle、item_id、count1、本笔 max_total_gold、完整 context 和新 intent_id；同次调度刷新精确报价后立即购买，随后分别核对终态/库存/金币，未知不重试。预算受原生冻结策略单笔/会话上限和剩余预算约束；不硬编码测试的药品/80金币/三笔次数，也不自主循环购买。准备不要求已有药品，须新鲜已知存活 active、停住及完整附近无怪。`arm`/`scout` 的药品实例、储备、路线和 safety 阈值均由调用者给出；缺少显式条件会拒绝。进攻仅相邻已知存活怪物的单次2000ms动作；任务低血/快速掉血条件触发后锁住进攻，精确用一份选中药品后逐段重检已走退路，不自动续击或恢复。消费与实际 HP 增长分开记录。unknown/响应丢失锁闭写入，暂停/上下文变化/死亡撤销计划；`game_stop` 是全局暂停，之后不能继续撤退。完整 JSONL 与字段校验见源码 readme/development/ai-mcp.md 的“带安全计划的监督”。
 
 ```powershell
 ./mir2x.cmd status
