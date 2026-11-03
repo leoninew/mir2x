@@ -188,6 +188,79 @@ TEST_CASE("Shop GUI discards late details across timeout and panel replacement")
     CHECK_FALSE(board.submitBuy(44,ports.item,0,1));
 }
 
+TEST_CASE("Shop GUI repeatable packable stock survives unit purchase success")
+{
+    GuiFixture fixture;
+    ShopPorts ports;
+    REQUIRE(ports.item==6);
+    REQUIRE(DBCOM_ITEMRECORD(ports.item).packable());
+    PurchaseBoard board(nullptr,nullptr,false,ports.access());
+    board.loadSell(33,{ports.item}); board.setShow(true);
+    REQUIRE(board.queryDetails(ports.item)==aibridge::ShopQuery::Start::Sent);
+    auto reply=ports.reply();
+    reply.list.front().costList={{DBCOM_ITEMID(u8"金币（小）"),80}};
+    board.setSellItemList(std::move(reply));
+    REQUIRE(board.detailQuery().accepted());
+    const auto received=board.detailCache().at(ports.item).receivedAt;
+    const auto revision=board.detailsRevision();
+    for(unsigned bought=1; bought<=3; ++bought){
+        REQUIRE(board.submitBuy(33,ports.item,0,1));
+        CHECK(ports.buys==bought);
+        CHECK(ports.bought==1);
+        board.onBuySucceed(33,ports.item,0);
+        REQUIRE(board.details().list.size()==1);
+        const auto &cached=board.detailCache().at(ports.item);
+        REQUIRE(cached.value.list.size()==1);
+        const auto &row=cached.value.list.front();
+        CHECK(row.item.itemID==ports.item);
+        CHECK(row.item.seqID==0);
+        CHECK(row.item.count==1);
+        REQUIRE(row.costList.size()==1);
+        CHECK(row.costList.front().itemID==DBCOM_ITEMID(u8"金币（小）"));
+        CHECK(row.costList.front().count==80);
+        CHECK(cached.receivedAt==received);
+        CHECK(board.detailsRevision()==revision);
+        CHECK(board.catalog()==std::vector<uint32_t>{ports.item});
+        CHECK(ports.queries==1);
+        ports.now+=100;
+    }
+    ports.now=received+30000;
+    CHECK_FALSE(board.submitBuy(33,ports.item,0,1));
+    CHECK(ports.buys==3);
+}
+
+TEST_CASE("Shop GUI nonpackable success removes only the purchased exact stock")
+{
+    GuiFixture fixture;
+    ShopPorts ports;
+    ports.item=DBCOM_ITEMID(u8"木剑");
+    REQUIRE_FALSE(DBCOM_ITEMRECORD(ports.item).packable());
+    PurchaseBoard board(nullptr,nullptr,false,ports.access());
+    board.loadSell(33,{ports.item}); board.setShow(true);
+    REQUIRE(board.queryDetails(ports.item)==aibridge::ShopQuery::Start::Sent);
+    const auto coin=DBCOM_ITEMID(u8"金币（小）");
+    board.setSellItemList({.npcUID=33,.list={
+        {.item={.itemID=ports.item,.seqID=7,.count=1},.costList={{coin,1}}},
+        {.item={.itemID=ports.item,.seqID=8,.count=1},.costList={{coin,1}}},
+    }});
+    REQUIRE(board.detailQuery().accepted());
+    REQUIRE(board.detailCache().at(ports.item).value.list.size()==2);
+    REQUIRE(board.submitBuy(33,ports.item,7,1));
+    board.onBuySucceed(33,ports.item,7);
+    REQUIRE(board.detailCache().at(ports.item).value.list.size()==1);
+    REQUIRE(board.details().list.size()==1);
+    CHECK(board.detailCache().at(ports.item).value.list.front().item.seqID==8);
+    CHECK(board.details().list.front().item.seqID==8);
+    CHECK_FALSE(board.submitBuy(33,ports.item,7,1));
+    REQUIRE(board.submitBuy(33,ports.item,8,1));
+    board.onBuySucceed(33,ports.item,8);
+    CHECK(board.detailCache().at(ports.item).value.list.empty());
+    CHECK(board.details().list.empty());
+    CHECK_FALSE(board.submitBuy(33,ports.item,8,1));
+    CHECK(ports.buys==2);
+    CHECK(ports.queries==1);
+}
+
 TEST_CASE("Shop GUI manual overlap withdraws the old AI watch receipt qualification")
 {
     GuiFixture fixture;

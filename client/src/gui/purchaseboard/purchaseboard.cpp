@@ -799,6 +799,10 @@ void PurchaseBoard::onBuySucceed(uint64_t npcUID, uint32_t itemID, uint32_t seqI
         return;
     }
 
+    if(DBCOM_ITEMRECORD(itemID).packable()){
+        return;
+    }
+
     if(auto cached = m_detailCache.find(itemID); cached != m_detailCache.end()){
         auto &rows = cached->second.value.list;
         std::erase_if(rows, [&](const auto &row){ return row.item.itemID == itemID && row.item.seqID == seqID; });
@@ -806,10 +810,6 @@ void PurchaseBoard::onBuySucceed(uint64_t npcUID, uint32_t itemID, uint32_t seqI
     }
 
     if(npcUID != m_sdSellItemList.npcUID){
-        return;
-    }
-
-    if(DBCOM_ITEMRECORD(itemID).packable()){
         return;
     }
 
