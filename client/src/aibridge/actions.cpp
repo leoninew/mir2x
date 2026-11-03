@@ -29,13 +29,16 @@ namespace aibridge
     }
 
     ActionProgress::ActionProgress(ActionKind kind, const Json &context, uint64_t startedMs,
-        uint64_t timeoutMs, uint32_t itemId, uint32_t seqId, uint32_t count)
+        uint64_t timeoutMs, uint32_t itemId, uint32_t seqId, uint32_t count, int equipmentSlot, uint64_t equipmentGeneration)
         : m_kind(kind), m_context(context), m_startedMs(startedMs), m_timeoutMs(timeoutMs),
-          m_itemId(itemId), m_seqId(seqId), m_count(count)
+          m_itemId(itemId), m_seqId(seqId), m_count(count), m_equipmentSlot(equipmentSlot), m_equipmentGeneration(equipmentGeneration)
     {
         validateDefinition(context, "context");
         if(!timeoutMs || timeoutMs > 30000 || !count || count > 65535){
             throw ProtocolError("invalid_argument", "动作期限或数量无效");
+        }
+        if(kind == ActionKind::EquipWear && (count != 1 || !itemId || !seqId || equipmentSlot < 0 || !equipmentGeneration)){
+            throw ProtocolError("invalid_argument", "Equipment requires one exact instance, slot and send generation");
         }
     }
 
@@ -114,6 +117,14 @@ namespace aibridge
         }
         else if(m_kind == ActionKind::UseItem && m_submitted && consumed){
             success("observed_postcondition", "inventory_delta", "指定物品实例数量减少到请求后置条件；不保证治疗或学会技能");
+        }
+        else if(m_kind == ActionKind::EquipWear && m_submitted && s.equipment
+            && s.equipment->itemId == m_itemId && s.equipment->seqId == m_seqId
+            && s.equipment->slot == m_equipmentSlot && s.equipment->generation == m_equipmentGeneration){
+            const auto description = "Equipment state observed item_id=" + std::to_string(m_itemId)
+                + ", seq_id=" + std::to_string(m_seqId) + " in slot=" + std::to_string(m_equipmentSlot)
+                + "; does not imply consumption or a request-correlated acknowledgement";
+            success("observed_postcondition", "action", description.c_str());
         }
         else if(m_kind == ActionKind::PickUp && m_submitted && s.correlatedReceipt){
             success("server_ack", "server_ack", "收到与本次拾取严格关联的成功回执", true);

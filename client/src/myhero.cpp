@@ -919,6 +919,11 @@ void MyHero::setBelt(int slot, SDItem item, bool playSound)
 
 bool MyHero::canWear(uint32_t itemID, int wltype) const
 {
+    return canWearForGender(itemID, wltype, gender());
+}
+
+bool MyHero::canWearForGender(uint32_t itemID, int wltype, bool characterGender)
+{
     fflassert(itemID, itemID);
     fflassert(wltype >= WLG_BEGIN, wltype);
     fflassert(wltype <  WLG_END  , wltype);
@@ -932,7 +937,7 @@ bool MyHero::canWear(uint32_t itemID, int wltype) const
         return false;
     }
 
-    if(wltype == WLG_DRESS && (!ir.clothGender().has_value() || ir.clothGender().value() != gender())){
+    if(wltype == WLG_DRESS && (!ir.clothGender().has_value() || ir.clothGender().value() != characterGender)){
         return false;
     }
 

@@ -210,6 +210,7 @@ class MyHero: public Hero
 
     public:
         bool canWear(uint32_t, int) const;
+        static bool canWearForGender(uint32_t, int, bool);
 
     public:
         void setMagicCastTime(uint32_t);

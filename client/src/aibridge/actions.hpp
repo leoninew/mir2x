@@ -9,7 +9,13 @@ namespace aibridge
     std::optional<OperationError> validateCombatPeers(const Policy &, const std::vector<uint64_t> &affectedUids);
     std::optional<OperationError> validateCastTarget(std::string_view actionType, bool beneficial,
         bool hasTarget, bool hasGrid, bool targetIsSelf = false);
-    enum class ActionKind { PickUp, UseItem, AttackOnce, AttackUntilDead, Cast, Toggle };
+    enum class ActionKind { PickUp, UseItem, AttackOnce, AttackUntilDead, Cast, Toggle, EquipWear };
+    struct EquipmentObservation
+    {
+        uint32_t itemId = 0, seqId = 0;
+        int slot = -1;
+        uint64_t generation = 0;
+    };
     struct ItemChange
     {
         uint32_t itemId = 0, seqId = 0, before = 0, after = 0;
@@ -23,6 +29,7 @@ namespace aibridge
         bool actionStarted = false, actionFinished = false;
         bool targetVisible = true, targetDead = false;
         std::optional<bool> toggleEnabled;
+        std::optional<EquipmentObservation> equipment;
         std::vector<ItemChange> itemChanges;
         std::optional<uint64_t> goldBefore, goldAfter;
         // Uncorrelated inventory/gold/ground changes are evidence only.
@@ -33,7 +40,7 @@ namespace aibridge
     {
         public:
             ActionProgress(ActionKind, const Json &context, uint64_t startedMs, uint64_t timeoutMs,
-                uint32_t itemId = 0, uint32_t seqId = 0, uint32_t count = 1);
+                uint32_t itemId = 0, uint32_t seqId = 0, uint32_t count = 1, int equipmentSlot = -1, uint64_t equipmentGeneration = 0);
             OperationUpdate observe(const ActionObservation &, uint64_t nowMs);
             OperationUpdate cancel(bool submitted);
         private:
@@ -41,6 +48,8 @@ namespace aibridge
             Json m_context;
             uint64_t m_startedMs, m_timeoutMs;
             uint32_t m_itemId, m_seqId, m_count;
+            int m_equipmentSlot;
+            uint64_t m_equipmentGeneration;
             bool m_submitted = false, m_actionStarted = false;
             std::optional<OperationUpdate> m_terminal;
     };

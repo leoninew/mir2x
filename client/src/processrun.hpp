@@ -15,6 +15,7 @@
 #include "message.hpp"
 #include "focustype.hpp"
 #include "aibridge/controller.hpp"
+#include "aibridge/equipment.hpp"
 #include "ascendstr.hpp"
 #include "guimanager.hpp"
 #include "wilanitimer.hpp"
@@ -80,6 +81,7 @@ class ProcessRun: public Process
         uint64_t m_aiServerRevision = 0;
         uint64_t m_aiPickupSendSequence = 0;
         uint64_t m_aiConsumeSendSequence = 0;
+        aibridge::EquipmentRequests m_equipmentRequests;
         uint64_t m_aiPickupErrorSequence = 0;
         uint32_t m_aiPickupFailedItem = 0;
         bool m_aiSkillsKnown = false;
@@ -194,6 +196,7 @@ class ProcessRun: public Process
         uint64_t aiServerRevision() const noexcept { return m_aiServerRevision; }
         uint64_t aiPickupSendSequence() const noexcept { return m_aiPickupSendSequence; }
         uint64_t aiConsumeSendSequence() const noexcept { return m_aiConsumeSendSequence; }
+        const aibridge::EquipmentRequests &equipmentRequests() const noexcept { return m_equipmentRequests; }
         uint64_t aiPickupErrorSequence() const noexcept { return m_aiPickupErrorSequence; }
         uint32_t aiPickupFailedItem() const noexcept { return m_aiPickupFailedItem; }
         bool aiSkillsKnown() const noexcept { return m_aiSkillsKnown; }
@@ -531,7 +534,16 @@ class ProcessRun: public Process
         void requestBuy(uint64_t, uint32_t, uint32_t, size_t);
         void requestMakeItem(uint32_t, size_t);
         void requestConsumeItem(uint32_t, uint32_t, size_t);
-        void requestEquipWear(uint32_t, uint32_t, int);
+        bool requestEquipWear(uint32_t, uint32_t, int, aibridge::EquipmentOrigin = aibridge::EquipmentOrigin::Manual);
+        aibridge::EquipmentSelection prepareInventoryWear(uint32_t, uint32_t, uint32_t count = 1,
+            aibridge::EquipmentOrigin = aibridge::EquipmentOrigin::Manual) const;
+        bool requestInventoryWear(const aibridge::EquipmentSelection &,
+            aibridge::EquipmentOrigin = aibridge::EquipmentOrigin::Manual, const std::function<bool()> &guard = {});
+
+    private:
+        aibridge::EquipmentAccess equipmentAccess() const;
+
+    public:
         void requestGrabWear(int);
         void requestEquipBelt(uint32_t, uint32_t, int);
         void requestGrabBelt(int);

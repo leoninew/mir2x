@@ -8865,7 +8865,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
-      "description": "使用背包中的药品或技能书"
+      "description": "使用药品/技能书或穿戴背包装备（装备count=1，普通槽位选择；真实槽位精确实例为穿戴证据）"
     },
     "game_shop_list": {
       "action": false,

@@ -454,6 +454,7 @@ namespace
             case ActionKind::Cast: state.actionStarted = state.actionFinished = true; break;
             case ActionKind::AttackUntilDead: state.targetDead = true; break;
             case ActionKind::Toggle: state.toggleEnabled = false; break;
+            case ActionKind::EquipWear: state.equipment = EquipmentObservation{10,11,2,1}; break;
         }
     }
 }
@@ -510,6 +511,61 @@ TEST_CASE("use item requires exact instance decrease and never treats rewards as
     CHECK(exact.observe(state, 1).outcome == OperationOutcome::Running);
     state.submitted = true;
     CHECK(exact.observe(state, 2).outcome == OperationOutcome::Succeeded);
+}
+
+TEST_CASE("equipment action needs an exact slot identity and its own send generation")
+{
+    ActionProgress progress(ActionKind::EquipWear, context(), 0, 1000, 10, 11, 1, 2, 5);
+    auto state = actionObservation(); state.submitted = true;
+    state.itemChanges = {{10,11,1,0}}; state.correlatedReceipt = true;
+    CHECK(progress.observe(state, 1).outcome == OperationOutcome::Running);
+    state.itemChanges.clear();
+    for(const auto equipment: {EquipmentObservation{10,12,2,5}, EquipmentObservation{12,11,2,5},
+        EquipmentObservation{10,11,3,5}, EquipmentObservation{10,11,2,4}, EquipmentObservation{10,11,2,0}}){
+        state.equipment = equipment;
+        CHECK(progress.observe(state, 2).outcome == OperationOutcome::Running);
+    }
+    state.equipment = EquipmentObservation{10,11,2,5};
+    ActionProgress unsent(ActionKind::EquipWear, context(), 0, 1000, 10, 11, 1, 2, 5);
+    state.submitted = false;
+    CHECK(unsent.observe(state, 3).outcome == OperationOutcome::Running);
+    state.submitted = true;
+    const auto result = progress.observe(state, 4);
+    REQUIRE(result.outcome == OperationOutcome::Succeeded);
+    CHECK(result.completionScope == "observed_postcondition");
+    REQUIRE(result.evidence.size() == 1);
+    CHECK(result.evidence.at(0).at("kind") == "action");
+    CHECK(result.evidence.at(0).at("source") == "client");
+    CHECK_FALSE(result.result.contains("item_changes"));
+    validateDefinition(result.result, "actionResult");
+    validateDefinition(result.evidence.at(0), "evidence");
+}
+
+TEST_CASE("equipment action invalidation keeps submitted uncertainty and terminal late state")
+{
+    for(const bool submitted: {false,true}){
+        for(const auto invalidation: {"session_id","world_epoch","control_epoch","death","timeout","cancel"}){
+            CAPTURE(submitted, invalidation);
+            ActionProgress progress(ActionKind::EquipWear, context(), 0, 1000, 10, 11, 1, 2, 5);
+            auto state = actionObservation(); state.submitted = submitted;
+            state.equipment = EquipmentObservation{10,11,2,5};
+            OperationUpdate result;
+            if(invalidation == std::string("cancel")){ result = progress.cancel(submitted); }
+            else{
+                if(invalidation == std::string("death")){ state.alive = false; }
+                else if(invalidation != std::string("timeout")){ state.context[invalidation] = "changed"; }
+                result = progress.observe(state, invalidation == std::string("timeout") ? 1000 : 1);
+            }
+            CHECK(result.submitted == submitted);
+            CHECK(result.outcome == (submitted ? OperationOutcome::Unknown :
+                invalidation == std::string("timeout") ? OperationOutcome::Failed : OperationOutcome::Cancelled));
+            CHECK_FALSE(result.completionScope);
+            state.context = context(); state.alive = true; state.submitted = true;
+            CHECK(progress.observe(state, 2).outcome == result.outcome);
+        }
+    }
+    errorCode([&]{ ActionProgress invalid(ActionKind::EquipWear, context(), 0, 1000, 10, 11, 2, 2, 5); }, "invalid_argument");
+    errorCode([&]{ ActionProgress invalid(ActionKind::EquipWear, context(), 0, 1000, 10, 11, 1, 2, 0); }, "invalid_argument");
 }
 
 TEST_CASE("combat completion requires own animation and until dead never equates disappearance with death")

@@ -864,7 +864,9 @@ void ProcessRun::on_SM_EQUIPWEAR(const uint8_t *buf, size_t bufSize)
     }
 
     if(auto coPtr = dynamic_cast<Hero *>(findUID(sdEW.uid))){
-        coPtr->setWLItem(sdEW.wltype, std::move(sdEW.item), sdEW.uid == m_myHeroUID);
+        if(coPtr->setWLItem(sdEW.wltype, std::move(sdEW.item), sdEW.uid == m_myHeroUID) && sdEW.uid == m_myHeroUID){
+            m_equipmentRequests.observe(sdEW.wltype, coPtr->getWLItem(sdEW.wltype));
+        }
     }
 }
 
@@ -891,6 +893,7 @@ void ProcessRun::on_SM_WEARITEMDURATION(const uint8_t *buf, size_t)
 void ProcessRun::on_SM_EQUIPWEARERROR(const uint8_t *buf, size_t)
 {
     const auto smEWE = ServerMsg::conv<SMEquipWearError>(buf);
+    m_equipmentRequests.reject(smEWE.itemID, smEWE.seqID);
     switch(smEWE.error){
         case EQWERR_NOITEM:
         case EQWERR_BADITEM:

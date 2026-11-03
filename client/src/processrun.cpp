@@ -2801,7 +2801,42 @@ void ProcessRun::requestMakeItem(uint32_t itemID, size_t count)
     g_client->send({CM_MAKEITEM, cmMI});
 }
 
-void ProcessRun::requestEquipWear(uint32_t itemID, uint32_t seqID, int wltype)
+aibridge::EquipmentAccess ProcessRun::equipmentAccess() const
+{
+    const auto hero = getMyHero();
+    const auto trade = dynamic_cast<const DirectTradeBoard *>(getWidget("DirectTradeBoard"));
+    const auto auction = dynamic_cast<const AuctionRegisterBoard *>(getWidget("AuctionRegisterBoard"));
+    return {
+        .inventory = &hero->getInvPack(),
+        .wear = &hero->getWLDesp().wear,
+        .inventoryKnown = hero->inventoryKnown(),
+        .wearKnown = hero->wearKnown(),
+        .busy = dynamic_cast<const InputStringBoard *>(getWidget("InputStringBoard"))->showModal()
+            || trade->peerUID() || auction->pending()
+            || dynamic_cast<const AuctionBoard *>(getWidget("AuctionBoard"))->pending(),
+        .equipmentPending = m_equipmentRequests.pending(),
+        .reserved = [trade, auction](uint32_t itemId, uint32_t seqId)
+        {
+            const auto matches = [=](const SDItem &item){ return item && item.itemID == itemId && item.seqID == seqId; };
+            if(matches(auction->reservedItem())){ return true; }
+            return std::ranges::any_of(trade->localItemList(), matches);
+        },
+        .canWear = [hero](uint32_t itemId, int slot){ return hero->canWear(itemId, slot); },
+    };
+}
+
+aibridge::EquipmentSelection ProcessRun::prepareInventoryWear(uint32_t itemId, uint32_t seqId, uint32_t count, aibridge::EquipmentOrigin origin) const
+{
+    return aibridge::prepareInventoryWear(equipmentAccess(), itemId, seqId, count, origin);
+}
+
+bool ProcessRun::requestInventoryWear(const aibridge::EquipmentSelection &selection, aibridge::EquipmentOrigin origin, const std::function<bool()> &guard)
+{
+    return aibridge::submitInventoryWear(equipmentAccess(), selection, origin, guard ? guard : []{ return true; },
+        [this, origin](const aibridge::EquipmentSelection &item){ return requestEquipWear(item.itemId, item.seqId, item.slot, origin); });
+}
+
+bool ProcessRun::requestEquipWear(uint32_t itemID, uint32_t seqID, int wltype, aibridge::EquipmentOrigin origin)
 {
     if(!(wltype >= WLG_BEGIN && wltype < WLG_END)){
         throw fflpanic("invalid wltype: {}", wltype);
@@ -2821,7 +2856,7 @@ void ProcessRun::requestEquipWear(uint32_t itemID, uint32_t seqID, int wltype)
     }
 
     if(!getMyHero()->canWear(itemID, wltype)){
-        return;
+        return false;
     }
 
     CMRequestEquipWear cmREW;
@@ -2830,7 +2865,11 @@ void ProcessRun::requestEquipWear(uint32_t itemID, uint32_t seqID, int wltype)
     cmREW.itemID = itemID;
     cmREW.seqID  = seqID;
     cmREW.wltype = wltype;
-    g_client->send({CM_REQUESTEQUIPWEAR, cmREW});
+    return m_equipmentRequests.submit({itemID, seqID, wltype}, origin, [cmREW]
+    {
+        g_client->send({CM_REQUESTEQUIPWEAR, cmREW});
+        return true;
+    });
 }
 
 void ProcessRun::requestGrabWear(int wltype)

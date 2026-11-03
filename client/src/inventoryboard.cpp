@@ -566,49 +566,14 @@ void InventoryBoard::packBinConsume(const PackBin &bin)
         m_processRun->requestConsumeItem(bin.item.itemID, bin.item.seqID, 1);
     }
 
-    else if(to_u8sv(ir.type) == u8"头盔"){
-        InvPack::playItemSoundEffect(bin.item.itemID, true);
-        m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_HELMET);
-    }
-
-    else if(to_u8sv(ir.type) == u8"武器"){
-        InvPack::playItemSoundEffect(bin.item.itemID, true);
-        m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_WEAPON);
-    }
-
-    else if(to_u8sv(ir.type) == u8"衣服"){
-        InvPack::playItemSoundEffect(bin.item.itemID, true);
-        m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_DRESS);
-    }
-
-    else if(to_u8sv(ir.type) == u8"鞋"){
-        InvPack::playItemSoundEffect(bin.item.itemID, true);
-        m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_SHOES);
-    }
-
-    else if(to_u8sv(ir.type) == u8"项链"){
-        InvPack::playItemSoundEffect(bin.item.itemID, true);
-        m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_NECKLACE);
-    }
-
-    else if(to_u8sv(ir.type) == u8"手镯"){
-        InvPack::playItemSoundEffect(bin.item.itemID, true);
-        if(!m_processRun->getMyHero()->getWLDesp().wear.getWLItem(WLG_ARMRING0)){
-            m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_ARMRING0);
+    else if(aibridge::inventoryWearSlot(bin.item.itemID, m_processRun->getMyHero()->getWLDesp().wear)){
+        try{
+            const auto selection = m_processRun->prepareInventoryWear(bin.item.itemID, bin.item.seqID);
+            if(m_processRun->requestInventoryWear(selection)){
+                InvPack::playItemSoundEffect(bin.item.itemID, true);
+            }
         }
-        else{
-            m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_ARMRING1);
-        }
-    }
-
-    else if(to_u8sv(ir.type) == u8"戒指"){
-        InvPack::playItemSoundEffect(bin.item.itemID, true);
-        if(!m_processRun->getMyHero()->getWLDesp().wear.getWLItem(WLG_RING0)){
-            m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_RING0);
-        }
-        else{
-            m_processRun->requestEquipWear(bin.item.itemID, bin.item.seqID, WLG_RING1);
-        }
+        catch(const aibridge::ProtocolError &){}
     }
 }
 

@@ -451,7 +451,7 @@ def register_tools(server, bridge):
 
     @server.tool(
         name="game_use_item",
-        description="使用背包中的药品或技能书；返回操作ID后查询进展，unknown不得自动重试。",
+        description="使用药品/技能书或穿戴背包装备（装备count=1，普通槽位选择；真实槽位精确实例为穿戴证据）；返回操作ID后查询进展，unknown不得自动重试。",
         annotations=ToolAnnotations(
             read_only_hint=False,
             destructive_hint=True,

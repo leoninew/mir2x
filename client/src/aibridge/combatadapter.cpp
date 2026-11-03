@@ -99,6 +99,8 @@ namespace aibridge
         uint64_t started=0, lastProgress=0;
         std::optional<TargetIdentity> target;
         std::optional<GroundIdentity> pickupGround;
+        std::optional<EquipmentSelection> equipment;
+        uint64_t equipmentSequence=0;
         std::set<uint32_t> pickupItemIds;
         bool pickupGold=false;
         GridPoint lastPosition;
@@ -193,9 +195,11 @@ namespace aibridge
                     const auto id=params.at("item_id").get<uint32_t>(), seq=params.at("seq_id").get<uint32_t>();
                     const auto count=params.at("count").get<uint32_t>();
                     const auto &record=DBCOM_ITEMRECORD(id);
-                    if(!record || (to_u8sv(record.type)!=u8"恢复药水" && to_u8sv(record.type)!=u8"强化药水" && to_u8sv(record.type)!=u8"技能书")){
+                    const bool wearable=inventoryWearSlot(id,hero.getWLDesp().wear).has_value();
+                    if(!record || (!wearable && to_u8sv(record.type)!=u8"恢复药水" && to_u8sv(record.type)!=u8"强化药水" && to_u8sv(record.type)!=u8"技能书")){
                         throw ProtocolError("unsupported_item_type","Item does not use the normal consume path");
                     }
+                    if(wearable){ scene.prepareInventoryWear(id,seq,count,EquipmentOrigin::Ai); }
                     if(to_u8sv(record.type)==u8"技能书" && count!=1){ throw ProtocolError("invalid_argument","Books are consumed one at a time"); }
                     const auto items=inventoryCounts(hero);
                     const auto p=items.find({id,seq});
@@ -262,8 +266,11 @@ namespace aibridge
             if(auto scene=client.getProcess<ProcessRun>()){
                 const auto hero=dynamic_cast<MyHero *>(scene->findUID(scene->getMyHeroUID(),false));
                 if(hero && hero->incarnation()==heroIncarnation){
-                    sent |= hero->actionSendSequence()!=actionSequence
-                        || scene->aiPickupSendSequence()!=pickupSequence || scene->aiConsumeSendSequence()!=consumeSequence;
+                    if(equipment){ sent |= scene->equipmentRequests().submitted(equipmentSequence,*equipment); }
+                    else{
+                        sent |= hero->actionSendSequence()!=actionSequence
+                            || scene->aiPickupSendSequence()!=pickupSequence || scene->aiConsumeSendSequence()!=consumeSequence;
+                    }
                 }
             }
             return sent;
@@ -290,6 +297,7 @@ namespace aibridge
                 auto &scene=run(); auto &hero=heroOf(scene);
                 operationId=view.operationId; heroIncarnation=hero.incarnation();
                 target.reset(); pickupGround.reset(); route.clear(); beforeItems.clear(); beforeGold.reset();
+                equipment.reset(); equipmentSequence=0;
                 pickupItemIds.clear(); pickupGold=false;
                 sent=false; actionSent=false; targetDead=false; beforeInventoryKnown=false;
                 actionSequence=hero.actionSendSequence(); attackSequence=hero.actionTypeSendSequence(ACTION_ATTACK);
@@ -301,7 +309,15 @@ namespace aibridge
                 started=lastProgress=monotonicMs(); lastPosition=point(hero);
                 if(started>=view.deadlineMs){ return fail(view,"timeout"); }
                 ActionKind kind=ActionKind::PickUp;
-                if(view.method=="game_use_item"){ kind=ActionKind::UseItem; }
+                if(view.method=="game_use_item"){
+                    kind=ActionKind::UseItem;
+                    const auto id=view.params.at("item_id").get<uint32_t>();
+                    if(inventoryWearSlot(id,hero.getWLDesp().wear)){
+                        equipment=scene.prepareInventoryWear(id,view.params.at("seq_id").get<uint32_t>(),view.params.at("count").get<uint32_t>(),EquipmentOrigin::Ai);
+                        equipmentSequence=scene.equipmentRequests().sequence()+1;
+                        kind=ActionKind::EquipWear;
+                    }
+                }
                 else if(view.method=="game_attack"){
                     kind=view.params.value("mode","once")=="once" ? ActionKind::AttackOnce : ActionKind::AttackUntilDead;
                 }
@@ -312,12 +328,13 @@ namespace aibridge
                 if(view.params.contains("target_handle")){
                     auto &co=resolve(view.params,view.context); target=TargetIdentity{co.UID(),co.incarnation()};
                 }
-                if(view.method=="game_pick_up" || view.method=="game_use_item"){
+                if(view.method=="game_pick_up" || (view.method=="game_use_item" && !equipment)){
                     if(hero.inventoryKnown()){ beforeItems=inventoryCounts(hero); beforeInventoryKnown=true; }
                     if(hero.goldKnown()){ beforeGold=hero.getGold(); }
                 }
                 progress=std::make_unique<ActionProgress>(kind,view.context,started,view.deadlineMs-started,
-                    view.params.value("item_id",0U),view.params.value("seq_id",0U),view.params.value("count",1U));
+                    view.params.value("item_id",0U),view.params.value("seq_id",0U),view.params.value("count",1U),
+                    equipment ? equipment->slot : -1,equipmentSequence);
                 if(!runtime.claimIntent(view.operationId,view.method=="game_attack" ? "attack" : "queued")){
                     return fail(view,"busy");
                 }
@@ -334,7 +351,12 @@ namespace aibridge
                     hero.emplaceAction(ActionPickUp{.x=hero.currMotion()->endX,.y=hero.currMotion()->endY});
                 }
                 else if(view.method=="game_use_item"){
-                    scene.requestConsumeItem(view.params.at("item_id").get<uint32_t>(),view.params.at("seq_id").get<uint32_t>(),view.params.at("count").get<uint32_t>());
+                    if(equipment){
+                        if(!scene.requestInventoryWear(*equipment,EquipmentOrigin::Ai,[this,view]{ return maySubmit(view); })){ return fail(view,"busy",true); }
+                    }
+                    else{
+                        scene.requestConsumeItem(view.params.at("item_id").get<uint32_t>(),view.params.at("seq_id").get<uint32_t>(),view.params.at("count").get<uint32_t>());
+                    }
                 }
                 else if(view.method=="game_cast"){
                     const auto id=view.params.at("magic_id").get<uint32_t>();
@@ -378,7 +400,16 @@ namespace aibridge
                 if(ProcessRun::supportedMagicCastType(id)==ProcessRun::MagicCastType::Toggle){ observed.toggleEnabled=hero.hasSwingMagic(id); }
             }
             else if(view.method=="game_pick_up"){ actionSent |= hero.actionTypeSendSequence(ACTION_PICKUP)!=pickupActionSequence; }
-            else if(view.method=="game_use_item"){ actionSent |= scene.aiConsumeSendSequence()!=consumeSequence; }
+            else if(view.method=="game_use_item"){
+                if(equipment){
+                    actionSent |= scene.equipmentRequests().submitted(equipmentSequence,*equipment);
+                    if(scene.equipmentRequests().observed(equipmentSequence,*equipment,hero.getWLDesp().wear)){
+                        observed.equipment=EquipmentObservation{equipment->itemId,equipment->seqId,equipment->slot,equipmentSequence};
+                    }
+                    if(scene.equipmentRequests().rejected(equipmentSequence)){ observed.rejection=error("server_rejected"); }
+                }
+                else{ actionSent |= scene.aiConsumeSendSequence()!=consumeSequence; }
+            }
             observed.actionStarted=actionSent;
             observed.actionFinished=actionSent && hero.aiMotionStopped();
             if(target){
@@ -388,7 +419,7 @@ namespace aibridge
                 targetDead |= scene.aiObservedDeath(target->uid,target->incarnation,deathSequence);
                 observed.targetDead=targetDead;
             }
-            if(view.method=="game_pick_up" || view.method=="game_use_item"){
+            if(view.method=="game_pick_up" || (view.method=="game_use_item" && !equipment)){
                 if(beforeInventoryKnown && hero.inventoryKnown()){
                     auto after=inventoryCounts(hero);
                     if(view.method=="game_use_item"){
@@ -424,6 +455,8 @@ namespace aibridge
                 if(!progress || operationId!=view.operationId){ return fail(view,"stale_context",true); }
                 auto &scene=run(); auto &hero=heroOf(scene);
                 if(hero.incarnation()!=heroIncarnation){ return fail(view,"stale_context",true); }
+                if(equipment && (controller().controlState()!=ControlState::Active || controller().context()!=view.context
+                    || controller().activeOperation()!=view.operationId)){ return fail(view,"stale_context",true); }
                 if(scene.aiServerRevision()!=serverRevision){ return fail(view,"unavailable",true); }
                 if(pickupGround && scene.aiPickupSendSequence()==pickupSequence
                     && scene.aiGroundRevision(pickupGround->position.x,pickupGround->position.y)!=pickupGround->revision){
