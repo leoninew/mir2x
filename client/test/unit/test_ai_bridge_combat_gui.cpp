@@ -188,7 +188,7 @@ namespace
             root = std::filesystem::current_path() / ("adapter-" + std::to_string(nonce));
             std::filesystem::create_directory(root);
             const auto policy = root / "policy.json";
-            { std::ofstream out(policy); out << R"({"allowed_actions":["game_attack"]})"; }
+            { std::ofstream out(policy); out << R"({"allowed_actions":["game_attack","game_move_to"]})"; }
             // Only the bridge listener is started, in a dedicated test directory.
             // Requests enter the real controller directly; game NetIO remains unpolled.
             runtime = std::make_unique<aibridge::AiBridgeRuntime>(*fixture.client);
@@ -228,12 +228,63 @@ namespace
             return controller().handleRequest({1, {{"v", 1}, {"id", "status"}, {"method", "game_get_operation"},
                 {"params", {{"operation_id", operation}}}}}).at("data");
         }
+        aibridge::Json move(aibridge::GridPoint destination, int timeout = 30000)
+        {
+            const auto response = controller().handleRequest({1, {
+                {"v", 1}, {"id", "move"}, {"method", "game_move_to"},
+                {"params", {{"x", destination.x}, {"y", destination.y}, {"tolerance", 0}}},
+                {"context", controller().context()}, {"timeout_ms", timeout},
+                {"request_id", "00000000-0000-4000-8000-000000000002"}}});
+            if(response.at("ok") == true){ operation = response.at("data").at("operation_id").get<std::string>(); }
+            return response;
+        }
         void step()
         {
             hero().update(100);
             controller().advance();
         }
     };
+
+    std::vector<aibridge::GridPoint> freeNeighbors(AdapterScene &test)
+    {
+        std::vector<aibridge::GridPoint> result;
+        const auto motion = test.hero().currMotion();
+        for(int dx = -1; dx <= 1; ++dx){
+            for(int dy = -1; dy <= 1; ++dy){
+                if((dx || dy) && test.scene->canMove(true, 2, motion->endX, motion->endY, motion->endX + dx, motion->endY + dy)){
+                    result.push_back({motion->endX + dx, motion->endY + dy});
+                }
+            }
+        }
+        REQUIRE(result.size() >= 2);
+        return result;
+    }
+
+    void enterStationaryHit(AdapterScene &test)
+    {
+        const auto motion = test.hero().currMotion();
+        receive(*test.scene, test.hero().UID(), ActionHitted{
+            .direction = motion->direction, .x = motion->endX, .y = motion->endY});
+        for(int i = 0; i < 10 && test.hero().currMotion()->type != MOTION_HITTED; ++i){ test.hero().update(100); }
+        REQUIRE(test.hero().currMotion()->type == MOTION_HITTED);
+        REQUIRE(test.hero().currMotion()->frame == 0);
+        REQUIRE(test.hero().stayIdle());
+        REQUIRE(test.hero().dead() == false);
+        REQUIRE(test.hero().actionSendSequence() == 0);
+    }
+
+    void rightClickMove(AdapterScene &test, aibridge::GridPoint destination)
+    {
+        const auto [viewX, viewY] = test.scene->getViewShift();
+        SDL_Event event{};
+        event.type = SDL_EVENT_MOUSE_BUTTON_DOWN;
+        event.button.windowID = SDL_GetWindowID(SDL_GetRenderWindow(g_sdlDevice->getRenderer()));
+        event.button.button = SDL_BUTTON_RIGHT;
+        event.button.x = destination.x * SYS_MAPGRIDXP + SYS_MAPGRIDXP / 2 - viewX;
+        event.button.y = destination.y * SYS_MAPGRIDYP + SYS_MAPGRIDYP / 2 - viewY;
+        REQUIRE(test.scene->getFocusUID(FOCUS_MOUSE) == 0);
+        test.scene->processEvent(event);
+    }
 }
 
 TEST_CASE("Combat real client stationary hit preserves the attack correction revision")
@@ -441,4 +492,176 @@ TEST_CASE("Combat actual adapter refuses unknown target health before creating p
     CHECK_FALSE(test.controller().activeOperation());
     CHECK(test.hero().actionSendSequence() == 0);
     CHECK(test.scene->getFocusUID(FOCUS_ATTACK) == 0);
+}
+
+TEST_CASE("Hit movement real GUI right click sends a native move during stationary hit")
+{
+    AdapterScene test(430, 108);
+    const auto destination = freeNeighbors(test).front();
+    enterStationaryHit(test);
+    CHECK_FALSE(test.hero().aiCanStartMove());
+    rightClickMove(test, destination);
+    REQUIRE_FALSE(test.hero().stayIdle());
+    REQUIRE(test.hero().currMotion()->type == MOTION_HITTED);
+    REQUIRE(test.hero().currMotion()->frame == 0);
+    test.hero().update(100);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE) == 1);
+    CHECK(test.hero().currMotion()->type == MOTION_WALK);
+    CHECK(test.hero().currMotion()->endX == destination.x);
+    CHECK(test.hero().currMotion()->endY == destination.y);
+}
+
+TEST_CASE("Hit movement actual adapter queues one native move and waits for stopped arrival")
+{
+    AdapterScene test(430, 108);
+    const auto destination = freeNeighbors(test).front();
+    enterStationaryHit(test);
+    CHECK_FALSE(test.hero().aiCanStartMove());
+    const auto accepted = test.move(destination);
+    CAPTURE(accepted.dump());
+    REQUIRE(accepted.at("ok") == true);
+    test.controller().advance();
+    REQUIRE(test.status().at("state") == "running");
+    REQUIRE_FALSE(test.hero().stayIdle());
+    REQUIRE(test.hero().currMotion()->type == MOTION_HITTED);
+    SECTION("several ticks keep one pending native action"){
+        for(int i = 0; i < 20; ++i){ test.controller().advance(); }
+        CHECK_FALSE(test.hero().stayIdle());
+        CHECK(test.hero().actionSendSequence() == 0);
+    }
+    SECTION("repeated native hit messages do not multiply outgoing moves"){
+        for(int i = 0; i < 3; ++i){
+            const auto motion = test.hero().currMotion();
+            receive(*test.scene, test.hero().UID(), ActionHitted{
+                .direction = motion->direction, .x = motion->endX, .y = motion->endY});
+            test.controller().advance();
+        }
+        CHECK(test.hero().actionSendSequence() == 0);
+    }
+    for(int i = 0; i < 20 && test.hero().actionSendSequence() == 0; ++i){ test.step(); }
+    REQUIRE(test.hero().actionTypeSendSequence(ACTION_MOVE) == 1);
+    CHECK(test.hero().currMotion()->type == MOTION_WALK);
+    CHECK(test.status().at("state") == "running");
+    CHECK(test.status().at("completion_scope").is_null());
+    for(int i = 0; i < 100 && test.status().at("state") == "running"; ++i){ test.step(); }
+    REQUIRE(test.status().at("state") == "succeeded");
+    CHECK(test.status().at("completion_scope") == "observed_postcondition");
+    CHECK(test.hero().aiMotionStopped());
+    CHECK(test.hero().x() == destination.x);
+    CHECK(test.hero().y() == destination.y);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE) == 1);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_ATTACK) == 0);
+}
+
+TEST_CASE("Hit movement actual adapter preserves life forced queue human queue and focus gates")
+{
+    AdapterScene test(430, 108);
+    const auto neighbors = freeNeighbors(test);
+    enterStationaryHit(test);
+    std::string expected = "busy";
+    bool forced = false, humanQueued = false;
+    SECTION("unknown life remains unavailable to an active adapter"){
+        test.hero().getSDHealth().reset();
+        expected = "paused";
+    }
+    SECTION("known death remains paused"){
+        health(*test.scene, test.hero().UID(), 0);
+        test.runtime->observe(test.scene->aiState());
+        expected = "paused";
+    }
+    SECTION("native forced death queue cannot be displaced by movement"){
+        // Isolate the real Hero forced queue before the controller observes death.
+        REQUIRE(test.hero().parseAction(ActionDie{.x = 430, .y = 108}));
+        REQUIRE_FALSE(test.hero().stayIdle());
+        forced = true;
+    }
+    SECTION("a pending ordinary human move is not overwritten"){
+        test.hero().emplaceAction(ActionMove{.speed = SYS_DEFSPEED,
+            .x = 430, .y = 108, .aimX = neighbors[1].x, .aimY = neighbors[1].y});
+        REQUIRE_FALSE(test.hero().stayIdle());
+        humanQueued = true;
+    }
+    SECTION("attack focus remains busy"){
+        test.scene->setFocusUID(FOCUS_ATTACK, test.pig(431, 108));
+    }
+    SECTION("combat admission is unchanged during a hit"){
+        const auto denied = test.attack(test.pig(431, 108));
+        REQUIRE(denied.at("ok") == false);
+        CHECK(denied.at("error").at("code") == "busy");
+        CHECK_FALSE(test.controller().activeOperation());
+        CHECK(test.hero().actionSendSequence() == 0);
+        return;
+    }
+    const auto denied = test.move(neighbors[0]);
+    REQUIRE(denied.at("ok") == false);
+    CHECK(denied.at("error").at("code") == expected);
+    CHECK_FALSE(test.controller().activeOperation());
+    CHECK(test.hero().actionSendSequence() == 0);
+    if(forced){
+        test.hero().update(100);
+        CHECK(test.hero().currMotion()->type == MOTION_DIE);
+        CHECK(test.hero().actionSendSequence() == 0);
+    }
+    if(humanQueued){
+        test.hero().update(100);
+        CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE) == 1);
+        CHECK(test.hero().currMotion()->endX == neighbors[1].x);
+        CHECK(test.hero().currMotion()->endY == neighbors[1].y);
+    }
+}
+
+TEST_CASE("Hit movement actual adapter revokes queued native moves before a send")
+{
+    AdapterScene test(430, 108);
+    const auto destination = freeNeighbors(test).front();
+    enterStationaryHit(test);
+    REQUIRE(test.move(destination, 100).at("ok") == true);
+    test.controller().advance();
+    REQUIRE(test.status().at("state") == "running");
+    REQUIRE_FALSE(test.hero().stayIdle());
+    SECTION("manual takeover cancels pending move"){
+        test.controller().manualInput();
+        CHECK(test.status().at("state") == "cancelled");
+    }
+    SECTION("world epoch change cancels pending move"){
+        auto changed = test.scene->aiState();
+        changed.mapUid = uidf::getBaseMapUID(DBCOM_MAPID(u8"比奇县_0"), 0);
+        test.runtime->observe(changed);
+        CHECK(test.status().at("state") == "cancelled");
+    }
+    SECTION("authoritative correction clears the pending native move"){
+        receive(*test.scene, test.hero().UID(), ActionStand{.direction = DIR_DOWN, .x = 430, .y = 108});
+        test.controller().advance();
+    }
+    SECTION("deadline cancels the pending native move"){
+        SDL_Delay(110);
+        test.controller().checkDeadlines();
+        CHECK(test.status().at("state") == "failed");
+        CHECK(test.status().at("error").at("code") == "timeout");
+    }
+    for(int i = 0; i < 100; ++i){ test.step(); }
+    CHECK(test.hero().actionSendSequence() == 0);
+    CHECK(test.hero().x() == 430);
+    CHECK(test.hero().y() == 108);
+    CHECK(test.status().at("completion_scope").is_null());
+}
+
+TEST_CASE("Hit movement actual adapter does not continue a sent route after correction")
+{
+    AdapterScene test(430, 108);
+    const auto destination = freeNeighbors(test).front();
+    enterStationaryHit(test);
+    REQUIRE(test.move(destination).at("ok") == true);
+    test.controller().advance();
+    test.step();
+    REQUIRE(test.hero().actionTypeSendSequence(ACTION_MOVE) == 1);
+    const auto revision = test.scene->aiServerRevision();
+    receive(*test.scene, test.hero().UID(), ActionStand{.direction = DIR_DOWN, .x = 430, .y = 108});
+    REQUIRE(test.scene->aiServerRevision() != revision);
+    for(int i = 0; i < 100; ++i){ test.step(); }
+    CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE) == 1);
+    CHECK(test.hero().x() == 430);
+    CHECK(test.hero().y() == 108);
+    CHECK(test.status().at("state") != "succeeded");
+    CHECK(test.status().at("completion_scope").is_null());
 }

@@ -336,13 +336,20 @@ namespace aibridge
             }
             return sent;
         }
+        static bool mayQueueMoveDuringHit(const MyHero &hero)
+        {
+            const auto motion=hero.currMotion();
+            // Native hit handling can start a pending move; never replace a queued action or forced motion.
+            return hero.dead()==false && hero.stayIdle() && motion->type==MOTION_HITTED
+                && motion->x==motion->endX && motion->y==motion->endY;
+        }
         bool moveBlocked(const ProcessRun &scene, const MyHero &hero) const
         {
             const auto input=dynamic_cast<const InputStringBoard *>(scene.getWidget("InputStringBoard"));
             const auto trade=dynamic_cast<const DirectTradeBoard *>(scene.getWidget("DirectTradeBoard"));
             const auto auction=dynamic_cast<const AuctionBoard *>(scene.getWidget("AuctionBoard"));
             const auto registration=dynamic_cast<const AuctionRegisterBoard *>(scene.getWidget("AuctionRegisterBoard"));
-            return !hero.aiCanStartMove() || input->showModal() || trade->peerUID()
+            return !(hero.aiCanStartMove() || mayQueueMoveDuringHit(hero)) || input->showModal() || trade->peerUID()
                 || auction->pending() || registration->pending()
                 || scene.getFocusUID(FOCUS_ATTACK) || scene.getFocusUID(FOCUS_FOLLOW) || scene.getFocusUID(FOCUS_MAGIC);
         }
@@ -400,7 +407,7 @@ namespace aibridge
             const auto observed=observation();
             auto update=move->observe(observed,steadyMs(),submitted());
             if(update.outcome!=OperationOutcome::Running){ runtime.releaseIntent(view.operationId); move.reset(); route.clear(); }
-            else if(observed.stopped && !route.empty()){
+            else if((observed.stopped || mayQueueMoveDuringHit(hero)) && !route.empty()){
                 while(nextStep<route.size() && route[nextStep]==observed.position){ ++nextStep; }
                 if(nextStep<route.size()){
                     const auto dst=route[nextStep];
