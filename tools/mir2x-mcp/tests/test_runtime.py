@@ -64,6 +64,40 @@ def test_default_policy_ready_without_local_preparation(tmp_path):
     assert not settings.bridge.exists()
 
 
+def test_supervise_short_entry_is_explicit_and_uses_existing_root(tmp_path, monkeypatch):
+    from mir2x_mcp import supervision
+
+    received = []
+
+    async def supervise(command, binding, report, *, allow_actions=False):
+        received.append((command, binding, report, allow_actions))
+        return 0
+
+    monkeypatch.setattr(supervision, "observe_stdio", supervise)
+    report = tmp_path / "safety.jsonl"
+    with pytest.raises(SystemExit) as result:
+        main(
+            [
+                "--root",
+                str(tmp_path),
+                "mcp",
+                "supervise",
+                "--instance-id",
+                "0" * 32,
+                "--character-uid",
+                "1",
+                "--report",
+                str(report),
+            ]
+        )
+    assert result.value.code == 0
+    command, binding, actual_report, allow_actions = received[0]
+    assert command[-5:] == ["mcp", "serve", "--instance-id", "0" * 32, "--no-reconnect"]
+    assert command[command.index("--root") + 1] == str(tmp_path)
+    assert binding.character_uid == "1" and actual_report == report and allow_actions is True
+    assert not (tmp_path / ".runtime").exists()
+
+
 def test_managed_bridge_optout_overrides_native_automatic_default(tmp_path):
     (tmp_path / "mir2x.local.toml").write_text("[launcher]\nbridge=false\n", "utf-8")
     manager = Manager(load_settings(tmp_path))

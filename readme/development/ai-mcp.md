@@ -77,6 +77,49 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 
 已有官方 SDK 宿主可导入 `mir2x_mcp.supervision.run_with_session(session, binding=Binding(instance_id, character_uid), emit=callback, commands=async_iterator, stop=asyncio.Event())`，它复用调用者的 session，不创建或关闭连接。**其 stdio 服务必须已使用 `--no-reconnect` 启动**；旧宿主不能仅导入函数就获得这个保证。callback 接收结构化事件，可让上层协调器在等待模型期间处理告警；该函数不自行向外部消息服务发送通知。使用 stop Event 正常结束，避免取消正在进行的 SDK 调用。
 
+## 带安全计划的监督
+
+`observe` 始终只读。需要由同一宿主安排普通短攻击、用药和撤退时，使用单独的短入口；先由运行负责人结束旧宿主，不能连接第二个 MCP 会话：
+
+```powershell
+./mir2x.cmd mcp supervise --instance-id $instanceId --character-uid $characterUid --report .runtime/safety.jsonl
+```
+
+该命令复用同一运行根/配置，强制 `--no-reconnect`，不恢复游戏控制。开始时只观察；角色必须已经通过正常窗口进入 alive/active，生命、会话和附近对象都在500ms内有一致观察。原有 SDK 宿主可在同一个 `run_with_session` 调用中传 `allow_actions=True`，仍由调用者持有唯一 session；所有本轮角色写入交给该监督器，不再并开外部写循环。
+
+武装前先正常商店购买、重新读背包确认至少三次可用 HP 药品剂量。药品储备仅接受原物品表的金创药小/中/大/特（item_id 6/7/8/9），同时核对规范名称、精确 seq_id、inventory 位置和未被交易等界面保留的数量；不从名字推断类型，不把装备/腰带当作可消费库存。分页不完整或库存未知会拒绝准备。
+
+准备购买使用显式 `purchase`，不要求已有药品。普通 NPC 界面已打开后，传本轮实读的完整 context 和 shop_handle；示例中的省略号必须替换，epoch 为字符串。当前只开放 item6 小药，每次 count1、最多80金币，不开放衣服或批量数量。本宿主最多尝试三笔，不自动补足；三份药分别发三个不同 intent_id，逐个等待 `purchase_result`，同一 intent 不会重放：
+
+```json
+{"command":"purchase","context":{"instance_id":"...","session_id":"...","world_epoch":"1","control_epoch":"3"},"shop_handle":"本轮商店句柄","item_id":6,"count":1,"max_total_gold":"80","intent_id":"00000000-0000-4000-8000-000000000001"}
+```
+
+它只在 disarmed、无待决动作、新鲜 alive/active、停住且健康>80%、无快速掉血、完整视野无 monster 时执行。唯一调度器在最多8秒内有界读取指定商店和物品，等待真实刷新；只接受唯一匹配的 buy、unit_count1、无材料、余额与预算允许且未接近过期的报价。同一执行内随即发一次公开 `game_shop_buy`，不把 quote 交回 LLM 等下一轮，不延长原30秒 TTL，不猜句柄。所有读取和写入仍受总预算限制，监督不等待输入或交易完成。
+
+操作终态后重新读背包与金币，最多等2秒确认单件增加与实际报价金额扣除；`purchase_result` 分开给出 operation、inventory_before/after、gold_before/after、delivery_observed 和 purchase_confirmed。accepted 或 server_ack 单独不证明已交付，更不证明治疗；`healing_attributed` 始终 false。busy/stale_target 不重试，未知或响应丢失锁闭写入，已受理但交付未确认也锁闭后续自动写入；暂停、危险或上下文变化可使流程提前终止并告警，不能续买。`arm`/`scout` 的三次剂量前提保持不变。
+
+退路必须有本宿主实际观察的行走证据。`trail` 输出本地图最近120秒的已走边：普通单步 walk / mounted walk 的运动和停住终点，或本调度器真实 `game_move_to` 的 submitted、observed_postcondition 及后续新鲜停住观察。相邻静止坐标、猜测坐标和导入旧日志均不能制造一条已走边。
+
+无需第二写者即可准备退路：明确发送 `scout`，提供从当前读数取得的 context/map_uid、药品实例和一个相邻目标格。它在健康>80%、一秒内无≥5%最大HP损失、三次剂量、当前地形/动态占用及附近对象均通过后，最多发一个2000ms普通单步移动；成功且确认停住后只登记该段，不启用狩猎。下面坐标和 context 仅表示输入形状，须替换为本轮实读值：
+
+```json
+{"command":"scout","context":{"instance_id":"...","session_id":"...","world_epoch":"...","control_epoch":"..."},"map_uid":"...","potions":[{"item_id":6,"seq_id":1}],"destination":{"x":2,"y":1}}
+{"command":"trail"}
+{"command":"arm","context":{"instance_id":"...","session_id":"...","world_epoch":"...","control_epoch":"..."},"map_uid":"...","potions":[{"item_id":6,"seq_id":1}],"retreat":[{"x":2,"y":1},{"x":1,"y":1}]}
+{"command":"attack","target_handle":"本轮新鲜目标句柄","intent_id":"00000000-0000-4000-8000-000000000010"}
+```
+
+`arm` 的路线以当前实际位置开头，包含1至4个相邻、已走过的短段。武装、每次进攻和每段撤退都会重新检查本地图 walkable、明确的动态空闲、斜走转角，以及目标路点一格内没有已知存活怪物/玩家/NPC；未知或不完整视野会拒绝。它们是当前客户端观察下的候选退路，不保证怪物不移动，也不证明脱战。角色手工行走的历史可跨同地图 control_epoch 保留，但任何现有计划在暂停或 epoch 变化时立即失效，必须重新明确武装。
+
+每条 `attack` 只接受当前相邻、已知存活的 monster，固定 `mode=once`、timeout=2000ms；拒绝 PVP、远距追击及 until_dead。`intent_id` 必须是本轮新 UUID，同一意图最多尝试一次。已知结束后下一击需要新的目标观察和新的明确意图；没有后台续击。一次 client_state 完成只表示普通本地攻击动作完成，不能据此写成伤害、击杀、经验或升级。
+
+生命≤80%或一秒内损失≥最大HP的5%会锁住狩猎，即使 stdin/LLM 空闲也触发。唯一写调度器优先精确 count=1 用药，再逐段检查并走已验证退路；进行中的短操作须先取得可用终态。药品库存后置条件、消费确认、后续实际HP增长分别记录，HP增长不自动归因于药品。busy 不自动重试；已知未提交的用药拒绝可在计划仍有效时尝试退路，未确认/未知移动不能续段。血量回升和撤退完成都不自动恢复狩猎。
+
+任何 unknown、动作响应丢失、操作身份不匹配或本地2.5秒后仍无确定结果，都会永久锁住本轮后续自动写入，保留 request_id/operation_id 和原始结果，只读监督继续；不会重放，也不能再承诺自动撤退。paused/manual/death、context/map/身份变化、过期观察、EOF 会撤销计划及未发送命令，旧计划不自动恢复。准备和写入共享每秒16次总预算；额外只读 call 在武装期间拒绝，避免抢占药品/操作查询余量。
+
+`disarm` 解除计划。若已有未决动作，或明确输入 `stop`，调度器在能确认当前绑定时尝试一次公开 `game_stop`；它是全局暂停，随后绝不试发药品/撤退。响应仍未知时只告警并锁闭，不能假装已安全停止。`quit`/EOF 同样撤销计划；独立 CLI 退出关闭自己的 stdio，模块接口不关闭调用者 session。系统停顿、工具无响应、暂停或怪物继续攻击时，宿主只能记录 `no_safe_action` / 不确定性并及时交由窗口处理，不能使角色无敌。
+
 ## 结果、重复请求与恢复
 
 | 状态 / 范围 | 使用时的含义 |

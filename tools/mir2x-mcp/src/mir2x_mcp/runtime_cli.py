@@ -63,10 +63,14 @@ def parser() -> argparse.ArgumentParser:
     item = actions.add_parser("serve", help="stdio MCP 服务，由 LLM 宿主自动启动")
     item.add_argument("--instance-id")
     item.add_argument("--no-reconnect", action="store_true", help="连接丢失后锁闭，不重新认证")
-    item = actions.add_parser("observe", help="唯一官方 SDK 宿主持续只读监督，不执行角色动作")
-    item.add_argument("--instance-id", required=True)
-    item.add_argument("--character-uid", required=True)
-    item.add_argument("--report", type=Path, required=True, help="追加 JSONL 观察与告警")
+    for name, help_text in (
+        ("observe", "唯一官方 SDK 宿主持续只读监督，不执行角色动作"),
+        ("supervise", "持续监督；purchase 单件备药，arm 校验药品和已走退路后允许短攻击与安全动作"),
+    ):
+        item = actions.add_parser(name, help=help_text, description=help_text)
+        item.add_argument("--instance-id", required=True)
+        item.add_argument("--character-uid", required=True)
+        item.add_argument("--report", type=Path, required=True, help="追加 JSONL 观察与告警")
     item = actions.add_parser("config", help="生成当前目录对应的宿主配置")
     item.add_argument("--format", choices=("json", "toml"), default="json")
     item = actions.add_parser("register", help="将当前入口登记到本机 Codex MCP 配置")
@@ -201,7 +205,7 @@ def run(args) -> int:
                 transport="stdio"
             )
             return 0
-        if args.action == "observe":
+        if args.action in ("observe", "supervise"):
             import asyncio
 
             from .supervision import Binding, observe_stdio
@@ -212,8 +216,11 @@ def run(args) -> int:
                 args.instance_id,
                 "--no-reconnect",
             ]
+            kwargs = {"allow_actions": True} if args.action == "supervise" else {}
             return asyncio.run(
-                observe_stdio(command, Binding(args.instance_id, args.character_uid), args.report)
+                observe_stdio(
+                    command, Binding(args.instance_id, args.character_uid), args.report, **kwargs
+                )
             )
         command = host_command(settings, args.config)
         if args.action == "config":
