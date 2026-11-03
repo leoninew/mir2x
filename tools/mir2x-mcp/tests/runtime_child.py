@@ -2,14 +2,26 @@
 
 import argparse
 import ctypes
+import hashlib
 import os
 import socket
 import threading
 import time
+from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--client-port", type=int)
+parser.add_argument("--auto-login")
+parser.add_argument("--expect-login-sha256")
+parser.add_argument("--ai-bridge-dir")
+parser.add_argument("--expect-bridge-dir")
 args, _ = parser.parse_known_args()
+if args.expect_login_sha256:
+    assert hashlib.sha256((args.auto_login or "").encode()).hexdigest() == args.expect_login_sha256
+    print("synthetic login argument verified", flush=True)
+if args.expect_bridge_dir:
+    assert Path(args.ai_bridge_dir).resolve() == Path(args.expect_bridge_dir).resolve()
+    print("synthetic bridge argument verified", flush=True)
 listener = None
 if args.client_port:
     listener = socket.socket()

@@ -1,5 +1,5 @@
 # mir2x Python CLI 与 MCP
-最后修改时间: 2026-11-01 21:17:13
+最后修改时间: 2026-11-03 08:57:00
 
 通过官方 Python MCP SDK 的 stdio 接口访问本机 mir2x 客户端桥接。AI 操作的是该客户端当前登录的角色，游戏窗口仍可由人操作。Python 不连接游戏数据库，不发送原始游戏报文，不提供脚本、文件路径或模拟键鼠工具。
 
@@ -11,10 +11,11 @@
 - [x] T05 delivery2 的 Windows C++ 定向回归 166/166、Python 76/76 与 ruff 通过；Python SDK stdio 的游戏桥接为 fake。
 - [x] 至 T04 最终 19 能力二进制取得官方 SDK→Python→真实 C++ 只读互通/停止/退出证据。
 - [x] 后续运行管理版本已完成独立 EXE→真实 C++ 未 RUN stdio，35 工具/6 资源/35 能力，退出清凭据。
-- [ ] 实际宿主、登录角色及各类游戏效果仍待验证。
+- [x] 审查方已确认当前宿主实际提供原生 mir2x 工具；本批不改全局注册。
+- [ ] 本批 `.env` 短入口的真实账号登录与重启后宿主重连，由审查方安装候选后验证。
 - [ ] T07、整体 Verification、POSIX 与完整主线程耗时未完成。
 
-版本/证据和全部逐项清单统一见[验证文档](../../docs/verification/20261031-ai-character-mcp.md)。客户端构建、启用和实际结果限制见[中文使用说明](../../readme/development/ai-mcp.md)，主线程/协议入口见[协议说明](../../readme/development/ai-bridge-protocol.md)。原交付记录保持历史版本；本轮运行管理新增检查见单独验证记录，历史 T06 manifest 保留交付时 README 哈希。
+版本/证据和全部逐项清单统一见[验证文档](../../docs/verification/20261031-ai-character-mcp.md)。客户端构建、启用和实际结果限制见[中文使用说明](../../readme/development/ai-mcp.md)，主线程/协议入口见[协议说明](../../readme/development/ai-bridge-protocol.md)。原交付记录保持历史版本；本轮 `.env` 增量见[独立验证清单](../../docs/verification/20261103-runtime-env-login.md)，历史 T06 manifest 保留交付时 README 哈希。
 
 ## 开箱使用
 
@@ -28,7 +29,13 @@
 
 发行版提供独立 `mir2x.exe`，无需 Python/uv；源码入口由 uv 使用本项目的锁定环境，自动选择 `install/` 中的游戏。默认配置和 standard/readonly/movement 策略已经提供，首次无需手写 JSON、长路径或桥接参数。C++ 负责安全创建本实例凭据，CLI 不写 token。
 
+仓库短入口默认以 `install` 为完整运行根，与 `install/mir2x.exe` 共用配置、管理记录、bridge、策略和 `.env`，因此 `status/up/mcp config/register` 使用同一命名空间。无安装布局会明确报错，不把未登记进程扫描认领。显式 `--root` 使用所选目录、不追加 `install`，优先于 `MIR2X_HOME` 和默认目录；仓库根旧本地覆盖需用 `--config` 明确选择，文件内相对路径按运行根解析。旧仓库根状态不自动合并，用户可明确选择原根，保持原有进程身份校验。
+
 在 Codex 里与 LLM 对话，重新开启会话并用 `/mcp` 确认连接；游戏窗口用于登录和人工开启/恢复 AI 控制。其他宿主用 `mcp config` 生成当前位置配置，stdio 子进程由宿主启动。`mcp register` 是显式注册命令，会写入本机 Codex 配置；本次开发检查不代替用户执行注册。
+
+`up`、`client start/restart` 默认读取游戏目录已有 `.env` 的小写 `username/password`，源码对应 `install/.env`，发行版对应根目录 `.env`。缺文件或缺少任一非空凭据时保留手工登录。`--manual-login` 临时跳过读取，`[login] enabled=false` 持久禁用；`env_file="auto"` 是默认路径。随包 `login.env.example` 不含凭据。解析、长度和错误诊断在运行配置入口集中处理，管理记录/日志/打包不另存密码；实际仍调用原游戏 `--auto-login`，账号认证和角色选择没有改变。原生参数对有本机进程检查权限的程序可见，勿分享含命令行的进程转储。完整格式与限制见随包速查。
+
+每次客户端重启后，先结束宿主旧 MCP 连接并由宿主重启 stdio（或重新开启 Codex 会话），再读 `game_get_session` 核对新的唯一实例/角色/context。旧 stdio 的首次认证绑定不会自动改连新实例；显式实例 ID 须经用户重新指定。新窗口仍需人工开启 AI。注册成功与进程运行均不能代替宿主实际调用工具的连接证据。
 
 `status`、`logs client/server`、`client/server restart`、`stop` 负责进程管理。默认 standard 策略为有限授权：PVP 关闭、其他玩家白名单空、金币单次 1000/会话 10000、单次数量 10。动作仍须窗口人工开启；`client restart --policy readonly/movement/standard` 切换预置文件。
 
@@ -41,7 +48,7 @@ Python 3.13、Hatchling、官方 `mcp==2.3.0` 和其它依赖由 `uv.lock` 固�
 ```powershell
 uv sync --project tools/mir2x-mcp --locked --all-groups
 uv run --project tools/mir2x-mcp --locked pytest
-# 构建后将 MIR2X_FROZEN_EXE 设为生成的 mir2x.exe，可额外覆盖冻结包真实凭据认证。
+# 构建后将 MIR2X_FROZEN_EXE 设为生成的 mir2x.exe，覆盖冻结包 stdio 和合成登录参数。
 uv run --project tools/mir2x-mcp --locked ruff check tools/mir2x-mcp
 uv build --project tools/mir2x-mcp
 python tools/mir2x-mcp/scripts/build_runtime.py
@@ -104,6 +111,7 @@ uv run --project tools/mir2x-mcp --locked --no-sync ruff format --check tools/mi
 | 文件 | 职责 |
 | --- | --- |
 | `config.py`、`__main__.py` | 宿主配置、stdio 入口 |
+| `runtime_config.py`、`runtime_login.py`、`runtime_process.py`、`runtime_cli.py` | 相对配置、可选本地登录、进程管理和短入口；凭据只在客户端创建时使用 |
 | `instances.py` | 安全读取宿主指定目录中的实例凭据 |
 | `contract.py` | 共享 schema、严格 JSON、自定义约束、MCP 参数与输出 schema |
 | `bridge_client.py` | 有界帧、认证、单连接多请求匹配、心跳、实例绑定、断线与取消 |

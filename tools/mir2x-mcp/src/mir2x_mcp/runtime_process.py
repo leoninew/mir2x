@@ -14,6 +14,7 @@ from pathlib import Path
 import psutil
 
 from .runtime_config import RuntimeFailure, Settings
+from .runtime_login import ClientLogin, load_login
 
 
 @contextlib.contextmanager
@@ -173,7 +174,14 @@ class Manager:
         name = hashlib.sha256(content).hexdigest()[:24] + ".json"
         return self.settings.state / "policies" / name, content
 
-    def start(self, role: str, policy: str | None = None) -> dict:
+    def prepare_login(self, manual: bool = False) -> ClientLogin:
+        return load_login(
+            self.settings.login_env, enabled=self.settings.login_enabled and not manual
+        )
+
+    def start(
+        self, role: str, policy: str | None = None, *, login: ClientLogin | None = None
+    ) -> dict:
         current = self.status(role)
         if current["state"] == "running":
             current["already_running"] = True
@@ -183,6 +191,8 @@ class Manager:
         program = getattr(self.settings, role)
         if not program.executable.is_file() or not program.workdir.is_dir():
             raise RuntimeFailure(f"{role} 程序或工作目录不存在，请先构建并安装游戏")
+        if role == "client" and login is None:
+            login = self.prepare_login()
         if role == "server":
             _free_port(self.settings.client_port)
             _free_port(self.settings.peer_port)
@@ -205,14 +215,21 @@ class Manager:
         if logfile.is_file() and logfile.stat().st_size > 5 * 1024 * 1024:
             logfile.replace(logfile.with_suffix(".previous.log"))
         with logfile.open("ab") as output:
-            child = subprocess.Popen(
-                self.command(role, policy),
-                cwd=program.workdir,
-                stdin=subprocess.DEVNULL,
-                stdout=output,
-                stderr=output,
-                **options,
-            )
+            args = self.command(role, policy)
+            if role == "client" and login and login.username:
+                args.append(f"--auto-login={login.username}:{login.password}")
+            try:
+                child = subprocess.Popen(
+                    args,
+                    cwd=program.workdir,
+                    stdin=subprocess.DEVNULL,
+                    stdout=output,
+                    stderr=output,
+                    **options,
+                )
+            except (OSError, ValueError):
+                # Spawn exceptions may carry argv, including the native login argument.
+                raise RuntimeFailure(f"{role} 无法创建进程；检查程序路径和执行权限") from None
         try:
             record = identity(psutil.Process(child.pid))
         except psutil.NoSuchProcess as exc:

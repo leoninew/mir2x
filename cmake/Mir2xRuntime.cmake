@@ -15,6 +15,8 @@ file(GLOB_RECURSE MIR2X_RUNTIME_INPUTS CONFIGURE_DEPENDS
     "${MIR2X_RUNTIME_SOURCE}/tools/mir2x-mcp/src/*.json"
     "${MIR2X_RUNTIME_SOURCE}/tools/mir2x-mcp/src/*.toml"
     "${MIR2X_RUNTIME_SOURCE}/tools/mir2x-mcp/src/*.md"
+    "${MIR2X_RUNTIME_SOURCE}/tools/mir2x-mcp/src/*.example"
+    "${MIR2X_RUNTIME_SOURCE}/tools/mir2x-mcp/tests/*.py"
     "${MIR2X_RUNTIME_SOURCE}/tools/mir2x-mcp/scripts/*.py")
 add_custom_command(
     OUTPUT "${MIR2X_RUNTIME_OUTPUT}/stage/runtime-manifest.json"

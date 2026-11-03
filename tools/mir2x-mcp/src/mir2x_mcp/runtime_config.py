@@ -16,21 +16,30 @@ class RuntimeFailure(Exception):
     pass
 
 
+def _source_install(source: Path) -> Path:
+    installed = source / "install"
+    if not installed.is_dir():
+        raise RuntimeFailure(
+            "源码入口未找到 install 发行目录；请先构建安装，或用 --root 指定运行目录"
+        )
+    return installed
+
+
 def discover_root(explicit: Path | None = None) -> Path:
     if explicit:
         return explicit.resolve()
-    if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent
     if os.environ.get("MIR2X_HOME"):
         return Path(os.environ["MIR2X_HOME"]).resolve()
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
     for directory in (Path.cwd(), *Path.cwd().parents):
-        if (directory / "mir2x.defaults.toml").is_file() or (
-            directory / "tools/mir2x-mcp/pyproject.toml"
-        ).is_file():
+        if (directory / "tools/mir2x-mcp/pyproject.toml").is_file():
+            return _source_install(directory)
+        if (directory / "mir2x.defaults.toml").is_file():
             return directory
     source_root = Path(__file__).resolve().parents[4]
     if (source_root / "CMakeLists.txt").is_file():
-        return source_root
+        return _source_install(source_root)
     raise RuntimeFailure("找不到游戏目录；请在制品目录运行，或设置 MIR2X_HOME")
 
 
@@ -78,6 +87,8 @@ class Settings:
     stop_timeout: int
     server: Program
     client: Program
+    login_enabled: bool
+    login_env: Path
 
     def policy_path(self, name: str | None = None) -> Path:
         name = name or self.policy
@@ -89,6 +100,26 @@ class Settings:
 
 def load_settings(root: Path, override: Path | None = None) -> Settings:
     root = root.resolve()
+    if not root.is_dir():
+        raise RuntimeFailure("运行目录不存在；请先构建安装游戏，或用 --root 指定运行目录")
+    source_install = (
+        root.name == "install" and (root.parent / "tools/mir2x-mcp/pyproject.toml").is_file()
+    )
+    if source_install and not any(
+        path.is_file()
+        for path in (
+            root / "mir2x.defaults.toml",
+            root / "mir2x.local.toml",
+            root / "client/client.exe",
+            root / "client/client",
+            root / "server/server.exe",
+            root / "server/server",
+            *([override] if override else []),
+        )
+    ):
+        raise RuntimeFailure(
+            "install 中没有发行配置或游戏制品；请先安装，或用 --root/--config 指定"
+        )
     defaults = copy.deepcopy(tomllib.loads((ASSETS / "mir2x.defaults.toml").read_text("utf-8")))
     try:
         public = root / "mir2x.defaults.toml"
@@ -112,13 +143,11 @@ def load_settings(root: Path, override: Path | None = None) -> Settings:
         raise RuntimeFailure("launcher.policy 必须为 standard/readonly/movement")
     if type(launcher["bridge"]) is not bool:
         raise RuntimeFailure("launcher.bridge 必须为布尔值")
-    game = (
-        root
-        if public.is_file()
-        or (root / "client" / "client.exe").is_file()
-        or (root / "client" / "client").is_file()
-        else root / "install"
-    )
+    login = defaults["login"]
+    if type(login["enabled"]) is not bool:
+        raise RuntimeFailure("login.enabled 必须为布尔值")
+    login_env = _text(login["env_file"], "login.env_file")
+    game = root
 
     def relative(value, name):
         path = Path(_text(value, name))
@@ -141,9 +170,10 @@ def load_settings(root: Path, override: Path | None = None) -> Settings:
             "--ai-bridge-dir",
             "--ai-policy",
             "--disable-version-check",
+            "--auto-login",
         )
         if any(a.split("=", 1)[0] in reserved for a in args):
-            raise RuntimeFailure(f"{role}.args 不接受受管理端口、桥接或禁用版本检查参数")
+            raise RuntimeFailure(f"{role}.args 不接受受管理端口、桥接、登录或禁用版本检查参数")
         return Program(
             game / role / (role + suffix)
             if executable == "auto"
@@ -166,6 +196,8 @@ def load_settings(root: Path, override: Path | None = None) -> Settings:
         _integer(launcher["stop_timeout"], 1, 120, "stop_timeout"),
         program("server"),
         program("client"),
+        login["enabled"],
+        game / ".env" if login_env == "auto" else relative(login_env, "login.env_file"),
     )
     if settings.state.is_relative_to(settings.bridge):
         raise RuntimeFailure("state_dir 不能位于 bridge_dir 内；凭据目录由客户端安全创建")

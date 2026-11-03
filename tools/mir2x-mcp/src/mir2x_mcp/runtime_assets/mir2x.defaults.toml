@@ -12,6 +12,11 @@ bridge_dir = ".runtime/ai-bridge"
 start_timeout = 45
 stop_timeout = 10
 
+[login]
+enabled = true
+# auto = game directory/.env (source checkout: install/.env; release: .env).
+env_file = "auto"
+
 [server]
 executable = "auto"
 workdir = "auto"

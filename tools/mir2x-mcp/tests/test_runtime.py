@@ -2,9 +2,11 @@ import dataclasses
 import hashlib
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
+import time
 import tomllib
 from pathlib import Path
 
@@ -15,6 +17,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 from mir2x_mcp.contract import METHODS, validate
 from mir2x_mcp.runtime_cli import host_command, host_config, main
 from mir2x_mcp.runtime_config import POLICIES, RuntimeFailure, load_settings
+from mir2x_mcp.runtime_login import ClientLogin
 from mir2x_mcp.runtime_process import Manager, management_lock, owned_process
 
 
@@ -218,3 +221,223 @@ def test_stop_timeout_keeps_record_until_explicit_force(runtime):
     assert manager.status("client")["state"] == "running"
     stopped = manager.stop("client", force=True)
     assert stopped["state"] == "stopped" and stopped["forced"] is True
+
+
+def test_invalid_login_is_validated_before_restart_or_up(runtime, capsys):
+    path = runtime.settings.login_env
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('username=a\npassword="sensitive-unclosed', "utf-8")
+    root = str(runtime.settings.root)
+    with pytest.raises(SystemExit) as result:
+        main(["--root", root, "up"])
+    assert result.value.code == 1
+    assert runtime.status("server")["state"] == "stopped"
+    original = runtime.start("client", login=ClientLogin())
+    for command in (["client", "restart"], ["restart"]):
+        with pytest.raises(SystemExit) as result:
+            main(["--root", root, *command])
+        assert result.value.code == 1
+        assert runtime.status("client")["pid"] == original["pid"]
+    assert "sensitive-unclosed" not in capsys.readouterr().err
+    with pytest.raises(SystemExit) as result:
+        main(["--root", root, "client", "restart", "--manual-login"])
+    assert result.value.code == 0
+    assert runtime.status("client")["pid"] != original["pid"]
+
+
+def test_spawn_error_never_echoes_login_argv(runtime, monkeypatch, capsys):
+    secret = "synthetic-spawn-secret"
+    path = runtime.settings.login_env
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"username=synthetic\npassword={secret}", "utf-8")
+
+    def fail(args, **kwargs):
+        assert args[-1] == f"--auto-login=synthetic:{secret}"
+        raise OSError(f"spawn failed: {args}")
+
+    monkeypatch.setattr(subprocess, "Popen", fail)
+    with pytest.raises(SystemExit) as result:
+        main(["--root", str(runtime.settings.root), "--json", "client", "start"])
+    assert result.value.code == 1
+    output = capsys.readouterr()
+    assert secret not in output.err + output.out
+    assert "无法创建进程" in json.loads(output.err)["error"]
+    assert runtime.read("client") is None
+    assert secret not in repr(runtime.settings)
+    assert secret not in repr(runtime.command("client"))
+
+
+@pytest.mark.parametrize("packaged", [False, True], ids=["source", "frozen"])
+@pytest.mark.parametrize("mode", ["auto", "manual", "missing", "disabled"])
+def test_entry_passes_login_only_to_private_spawn_and_keeps_records_clean(runtime, packaged, mode):
+    secret = "synthetic-test-password:literal $HOME & (literal)"
+    login = f"synthetic-user:{secret}" if mode == "auto" else ""
+    expected = hashlib.sha256(login.encode()).hexdigest()
+    config = runtime.settings.root / "mir2x.local.toml"
+    text = config.read_text("utf-8")
+    # Append the synthetic child's assertion to client args, after the Python script.
+    settings = runtime.settings
+    script_args = [*settings.client.args, f"--expect-login-sha256={expected}"]
+    prefix, _ = text.rsplit("args=", 1)
+    text = prefix + "args=" + json.dumps(script_args)
+    if mode == "disabled":
+        text += "\n[login]\nenabled=false\n"
+    config.write_text(text, "utf-8")
+    path = settings.login_env
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if mode != "missing":
+        path.write_text(f"username=synthetic-user\npassword={secret}", "utf-8")
+    command = [sys.executable, "-m", "mir2x_mcp.runtime_cli"]
+    if packaged:
+        executable = os.environ.get("MIR2X_FROZEN_EXE")
+        if not executable:
+            pytest.skip("Set MIR2X_FROZEN_EXE after building the portable executable")
+        command = [executable]
+    command += ["--root", str(settings.root), "--json", "client", "start"]
+    if mode == "manual":
+        command += ["--manual-login"]
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=30,
+    )
+    assert result.returncode == 0, "synthetic launcher failed"
+    assert json.loads(result.stdout)[0]["state"] == "running"
+    log = settings.state / "logs/client.log"
+    deadline = time.monotonic() + 5
+    while "synthetic login argument verified" not in log.read_text("utf-8"):
+        assert time.monotonic() < deadline
+        time.sleep(0.05)
+    for file in settings.state.rglob("*"):
+        if file.is_file():
+            assert secret.encode() not in file.read_bytes()
+            assert b"synthetic-user" not in file.read_bytes()
+    assert secret not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("with_login", [False, True], ids=["manual-fallback", "local-login"])
+def test_actual_source_and_release_short_entries_share_processes_and_runtime_root(
+    runtime, with_login, monkeypatch, capsys
+):
+    executable = os.environ.get("MIR2X_FROZEN_EXE")
+    if os.name != "nt" or not executable:
+        pytest.skip("Windows short entries require the freshly built MIR2X_FROZEN_EXE")
+    repo = Path(__file__).resolve().parents[3]
+    source = runtime.settings.root / "source space 中文"
+    project = source / "tools/mir2x-mcp"
+    project.mkdir(parents=True)
+    installed = source / "install"
+    installed.mkdir()
+    for name in ("pyproject.toml", "uv.lock"):
+        shutil.copy2(repo / "tools/mir2x-mcp" / name, project / name)
+    for directory in (source, installed):
+        shutil.copy2(repo / "mir2x.cmd", directory / "mir2x.cmd")
+    shutil.copy2(executable, installed / "mir2x.exe")
+    shutil.copy2(
+        repo / "tools/mir2x-mcp/src/mir2x_mcp/runtime_assets/mir2x.defaults.toml",
+        installed / "mir2x.defaults.toml",
+    )
+    # A stale source-root override/login file must not affect the default install namespace.
+    (source / "mir2x.local.toml").write_text("[invalid]\nvalue=true", "utf-8")
+    (source / ".env").write_text('username=wrong\npassword="invalid', "utf-8")
+    config = (runtime.settings.root / "mir2x.local.toml").read_text("utf-8")
+    login = "synthetic-user:synthetic-short-entry" if with_login else ""
+    expected = hashlib.sha256(login.encode()).hexdigest()
+    args = [
+        *runtime.settings.client.args,
+        f"--expect-login-sha256={expected}",
+        f"--expect-bridge-dir={installed / '.runtime/ai-bridge'}",
+    ]
+    prefix, _ = config.rsplit("args=", 1)
+    (installed / "mir2x.local.toml").write_text(prefix + "args=" + json.dumps(args), "utf-8")
+    if with_login:
+        (installed / ".env").write_text(
+            "username=synthetic-user\npassword=synthetic-short-entry", "utf-8"
+        )
+    environment = os.environ.copy()
+    environment.pop("MIR2X_HOME", None)
+    environment.update(
+        UV_PROJECT_ENVIRONMENT=sys.prefix,
+        UV_NO_SYNC="1",  # Exercise the real wrapper/uv without modifying the locked environment.
+        PYTHONUTF8="1",
+    )
+
+    def short(directory, *arguments, ok=True):
+        # All arguments here are fixed test commands or controlled paths, never credentials.
+        invocation = f'""{directory / "mir2x.cmd"}" {subprocess.list2cmdline(arguments)}"'
+        result = subprocess.run(
+            subprocess.list2cmdline([os.environ.get("COMSPEC", "cmd.exe"), "/d", "/s", "/c"])
+            + " "
+            + invocation,
+            cwd=runtime.settings.root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=45,
+        )
+        assert result.returncode == (0 if ok else 1), result.stderr
+        return json.loads(result.stdout) if ok else result
+
+    manager = Manager(load_settings(installed))
+    try:
+        first = short(source, "--json", "up")
+        second = short(installed, "--json", "up")
+        assert [item["pid"] for item in first] == [item["pid"] for item in second]
+        assert all(item["already_running"] for item in second)
+        assert short(source, "--json", "status") == short(installed, "--json", "status")
+        configs = [short(directory, "mcp", "config") for directory in (source, installed)]
+        for config in configs:
+            assert config["mcpServers"]["mir2x"]["args"][-4:] == [
+                "--root",
+                str(installed),
+                "mcp",
+                "serve",
+            ]
+        assert manager.settings.bridge == installed / ".runtime/ai-bridge"
+        assert not (source / ".runtime/manager").exists()
+        assert not (source / ".runtime/ai-bridge").exists()
+        logfile = manager.settings.state / "logs/client.log"
+        assert "synthetic login argument verified" in logfile.read_text("utf-8")
+        assert "synthetic bridge argument verified" in logfile.read_text("utf-8")
+        for file in manager.settings.state.rglob("*"):
+            if file.is_file():
+                assert b"synthetic-short-entry" not in file.read_bytes()
+        # Register shares host_command; intercept only the external global-config mutation.
+        registered = []
+        monkeypatch.setattr(
+            "mir2x_mcp.runtime_cli.register",
+            lambda command, name: registered.append(command) or {"registered": name},
+        )
+        with pytest.raises(SystemExit) as result:
+            main(["--root", str(installed), "mcp", "register"])
+        assert result.value.code == 0
+        capsys.readouterr()
+        assert registered[0][-4:] == ["--root", str(installed), "mcp", "serve"]
+        # Explicit roots override the source wrapper's default and frozen executable directory.
+        for directory in (source, installed):
+            other = short(directory, "--root", str(runtime.settings.root), "--json", "status")
+            assert all(item["state"] == "stopped" for item in other)
+        environment["MIR2X_HOME"] = str(runtime.settings.root)
+        for directory in (source, installed):
+            assert all(item["state"] == "stopped" for item in short(directory, "--json", "status"))
+        environment.pop("MIR2X_HOME")
+        short(source, "--json", "stop")
+        assert all(item["state"] == "stopped" for item in short(installed, "--json", "status"))
+        empty_source = runtime.settings.root / "empty source"
+        empty_project = empty_source / "tools/mir2x-mcp"
+        empty_project.mkdir(parents=True)
+        for name in ("pyproject.toml", "uv.lock"):
+            shutil.copy2(project / name, empty_project / name)
+        shutil.copy2(repo / "mir2x.cmd", empty_source / "mir2x.cmd")
+        missing = short(empty_source, "--json", "status", ok=False)
+        assert "运行目录不存在" in json.loads(missing.stderr)["error"]
+        (empty_source / "install").mkdir()
+        missing = short(empty_source, "--json", "status", ok=False)
+        assert "发行配置" in json.loads(missing.stderr)["error"]
+        assert not (empty_source / "install/.runtime").exists()
+    finally:
+        for role in ("client", "server"):
+            manager.stop(role, force=True)

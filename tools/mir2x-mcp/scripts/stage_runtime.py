@@ -17,6 +17,7 @@ def stage(binary: Path, output: Path):
         ROOT / "mir2x.cmd": "mir2x.cmd",
         ASSETS / "mir2x.defaults.toml": "mir2x.defaults.toml",
         ASSETS / "QUICKSTART.md": "QUICKSTART.md",
+        ASSETS / "login.env.example": "login.env.example",
         ROOT / ".agents/skills/mir2x-runtime/SKILL.md": ".agents/skills/mir2x-runtime/SKILL.md",
     }
     for name in ("standard", "readonly", "movement"):

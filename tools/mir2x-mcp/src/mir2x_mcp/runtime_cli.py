@@ -18,9 +18,11 @@ from .runtime_process import Manager, management_lock, port_open
 
 
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description="mir2x 游戏与 MCP 管理入口")
-    result.add_argument("--root", type=Path, help="发行/仓库目录；通常自动发现")
-    result.add_argument("--config", type=Path, help="可选本地 TOML 覆盖")
+    result = argparse.ArgumentParser(
+        description="mir2x 游戏与 MCP 管理入口；客户端可从游戏目录 .env 读取 username/password"
+    )
+    result.add_argument("--root", type=Path, help="运行根；仓库默认 install，显式指定时使用该目录")
+    result.add_argument("--config", type=Path, help="可选 TOML 文件；字段内相对路径按运行根解析")
     result.add_argument("--json", action="store_true", help="输出结构化结果")
     commands = result.add_subparsers(dest="command", required=True)
     for name in ("up", "restart"):
@@ -28,6 +30,9 @@ def parser() -> argparse.ArgumentParser:
             name, help="启动服务器和客户端" if name == "up" else "重启两端"
         )
         command.add_argument("--policy", choices=POLICIES)
+        command.add_argument(
+            "--manual-login", action="store_true", help="本次跳过 .env，使用原游戏手工登录"
+        )
         if name == "restart":
             command.add_argument("--force", action="store_true")
     command = commands.add_parser("stop", help="先正常关闭客户端，再关闭服务器")
@@ -46,6 +51,9 @@ def parser() -> argparse.ArgumentParser:
                 item.add_argument("--force", action="store_true")
             if role == "client" and action in ("start", "restart"):
                 item.add_argument("--policy", choices=POLICIES)
+                item.add_argument(
+                    "--manual-login", action="store_true", help="本次跳过 .env，使用手工登录"
+                )
     command = commands.add_parser("mcp", help="连接 LLM 宿主；游戏窗口不提供聊天框")
     actions = command.add_subparsers(dest="action", required=True)
     item = actions.add_parser("serve", help="stdio MCP 服务，由 LLM 宿主自动启动")
@@ -209,6 +217,17 @@ def run(args) -> int:
     with management_lock(settings.state):
         force = getattr(args, "force", False)
         policy = getattr(args, "policy", None)
+        login = None
+        starts_client = args.command in ("up", "restart") or (
+            args.command == "client" and args.action in ("start", "restart")
+        )
+        if starts_client and (
+            args.command == "restart"
+            or getattr(args, "action", None) == "restart"
+            or manager.status("client")["state"] != "running"
+        ):
+            # Validate before stopping either process or starting the local server.
+            login = manager.prepare_login(getattr(args, "manual_login", False))
         result = []
         if args.command in ("up", "restart", "stop"):
             if args.command != "up":
@@ -217,12 +236,12 @@ def run(args) -> int:
             if args.command != "stop":
                 result.append(manager.start("server"))
                 manager.wait_server()
-                result.append(manager.start("client", policy))
+                result.append(manager.start("client", policy, login=login))
         else:
             if args.action in ("stop", "restart"):
                 result.append(manager.stop(args.command, force))
             if args.action in ("start", "restart"):
-                result.append(manager.start(args.command, policy))
+                result.append(manager.start(args.command, policy, login=login))
         display(result, args.json)
     return 0
 
