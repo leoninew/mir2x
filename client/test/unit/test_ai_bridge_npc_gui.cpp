@@ -7,6 +7,10 @@
 #include "pngtexdb.hpp"
 #include "layoutboard.hpp"
 #include "inputstringboard.hpp"
+#include "uidf.hpp"
+#include "gui/npcchatboard/npcchatboard.hpp"
+#include "aibridge/controller.hpp"
+#include "dbcomid.hpp"
 class PNGTexDB;
 class EmojiDB;
 class PNGTexOffDB;
@@ -160,4 +164,77 @@ TEST_CASE("generic input and choice replacement revoke NPC input capability")
     board.waitChoice(u8"<layout><par>choice</par></layout>",true,[&]{++called;});
     CHECK_FALSE(board.npcInput().has_value()); CHECK_FALSE(board.submitNpcInput(old,"injected"));
     CHECK(called==0); CHECK(board.showModal());
+}
+
+TEST_CASE("Oversized real NPC menu leaves a submitted operation unknown and the bridge readable")
+{
+    GuiFixture fixture;
+    std::string xml="<layout><par>Monster catalogue</par><par>";
+    size_t choices=0;
+    for(uint32_t id=1; DBCOM_MONSTERRECORD(id); ++id){
+        const auto name=DBCOM_MONSTERRECORD(id).name;
+        const std::u8string_view label(name);
+        if(label==u8"\u672a\u77e5" || (label.back()>=u8'0' && label.back()<=u8'9')){ continue; }
+        xml+="<event id='goto_tag_"+std::to_string(id)+"' single='1' wrap='false'>"
+            +std::string(reinterpret_cast<const char *>(label.data()),label.size())+"</event>";
+        ++choices;
+    }
+    xml+="</par><par><event id='SYS_EXIT' single='1' close='1'>Close</event></par></layout>";
+    REQUIRE(choices>100);
+    NPCChatBoard board(DIR_UPLEFT,0,0,nullptr);
+    board.loadXML(uidf::buildNPCUID(1,1),"SYS_EPDEF",xml.c_str());
+    board.setShow(true);
+    REQUIRE_THROWS_AS(board.dialogue("visible-npc"),std::length_error);
+
+    using namespace aibridge;
+    ControllerOptions options;
+    options.instanceId=std::string(32,'a'); options.build="npc-overflow-test";
+    options.policy=Policy::parse(R"({"allowed_actions":"*","allow_npc_dialogue":true})");
+    options.newSessionId=[]{return std::string(32,'b');};
+    AiBridgeController controller(options);
+    controller.onConnected(1); controller.observe({"run",100,200,true});
+    REQUIRE(controller.enableByUser());
+    size_t sends=0;
+    const auto readPanel=[&]{
+        NpcModel model;
+        try{ model.sync(controller.context(),board.dialogue("visible-npc"),{}); }
+        catch(const std::length_error &){throw ProtocolError("unavailable","NPC dialogue exceeds observation limit");}
+        return model.snapshot({1,1000});
+    };
+    controller.registerQuery("game_get_interaction",[&](const Json &,const Json &){return readPanel();});
+    controller.registerAction("game_npc_open",{
+        [](const Json &,const Json &){return ValidationResult{};},
+        [&](const OperationView &){++sends;return OperationUpdate{.submitted=true};},
+        [&](const OperationView &)->std::optional<OperationUpdate>{
+            return observeNpcReply({1,1000},[&]{
+                readPanel();
+                return Json::object();
+            });
+        },
+        [](const OperationView &view){return OperationUpdate{.outcome=OperationOutcome::Unknown,.submitted=view.submitted};}});
+    const Json request={{"v",1},{"id","open"},{"method","game_npc_open"},{"params",{{"target_handle","visible-npc"}}},
+        {"request_id","00000000-0000-4000-8000-000000000001"},{"context",controller.context()},{"timeout_ms",5000}};
+    const auto accepted=controller.handleRequest({1,request});
+    REQUIRE(accepted.at("ok")==true);
+    const auto id=accepted.at("data").at("operation_id");
+    controller.advance(); controller.advance();
+    const auto operation=controller.handleRequest({1,{{"v",1},{"id","status"},{"method","game_get_operation"},{"params",{{"operation_id",id}}}}});
+    REQUIRE(operation.at("ok")==true);
+    CHECK(operation.at("data").at("state")=="unknown");
+    CHECK(operation.at("data").at("error").at("code")=="unavailable");
+    CHECK(operation.at("data").at("side_effects_possible")==true);
+    CHECK(controller.pauseReason()!="controller_error");
+    CHECK(controller.controlState()==ControlState::Active);
+    CHECK(controller.handleRequest({1,{{"v",1},{"id","session"},{"method","game_get_session"},{"params",Json::object()}}}).at("ok")==true);
+    CHECK(controller.handleRequest({1,request}).at("data").at("operation_id")==id);
+    controller.advance(); CHECK(sends==1); CHECK(board.show());
+    const auto interaction=controller.handleRequest({1,{{"v",1},{"id","interaction"},{"method","game_get_interaction"},{"params",Json::object()}}});
+    CHECK(interaction.at("ok")==false);
+    CHECK(interaction.at("error").at("code")=="unavailable");
+    CHECK(controller.controlState()==ControlState::Active);
+    const auto stop=controller.handleRequest({1,{{"v",1},{"id","stop"},{"method","game_stop"},{"params",{{"operation_id",id}}}}});
+    CHECK(stop.at("ok")==true); CHECK(stop.at("data").at("paused")==true);
+    CHECK(stop.at("data").at("operation").at("state")=="unknown");
+    controller.advance(); CHECK(sends==1);
+    CHECK(controller.pauseReason()=="stop_requested");
 }

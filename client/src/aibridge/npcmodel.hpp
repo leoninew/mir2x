@@ -62,4 +62,5 @@ namespace aibridge
     bool npcInputFits(std::string_view text, size_t maxBytes = 199) noexcept;
     OperationUpdate npcObserved(SnapshotStamp, bool submitted, bool localClose,
         std::string_view description, Json result = Json::object());
+    OperationUpdate observeNpcReply(SnapshotStamp, const std::function<Json()> &readPanel);
 }

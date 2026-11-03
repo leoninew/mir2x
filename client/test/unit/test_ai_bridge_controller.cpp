@@ -385,11 +385,17 @@ TEST_CASE("adapter errors cannot fabricate success or disclose private errors")
     CHECK(op.dump().find("private token")==std::string::npos);
     CHECK(f.controller->controlState()==ControlState::Paused);
     CHECK_FALSE(f.controller->enableByUser());
+    CHECK(f.controller->faultDiagnostic()=="begin/standard");
     Fake g;g.registerAction();
     id=accepted(g.call(g.move(2)));g.controller->advance();
     auto invalid=success();invalid.evidence=Json::array();
     CHECK_THROWS_AS(g.controller->report(id,invalid),ProtocolError);
     CHECK(g.operation(id).at("state")=="running");
+    g.nextTick=invalid;
+    g.controller->advance();
+    CHECK(g.controller->controlState()==ControlState::Paused);
+    CHECK(g.controller->faultDiagnostic()=="tick_result/protocol");
+    CHECK_FALSE(g.controller->enableByUser());
 }
 
 TEST_CASE("event ring reports gaps limits and consistent cursors")

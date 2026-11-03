@@ -42,6 +42,18 @@ namespace aibridge
         {
             return {std::move(code), "操作未完成，请检查当前状态和错误码", Json::object()};
         }
+        std::string_view faultCategory() noexcept
+        {
+            const auto exception = std::current_exception();
+            if(!exception){ return "internal"; }
+            try{ std::rethrow_exception(exception); }
+            catch(const ProtocolError &){ return "protocol"; }
+            catch(const Json::exception &){ return "json"; }
+            catch(const std::length_error &){ return "length"; }
+            catch(const std::out_of_range &){ return "range"; }
+            catch(const std::exception &){ return "standard"; }
+            catch(...){ return "nonstandard"; }
+        }
         bool economicMethod(std::string_view method)
         {
             constexpr std::string_view methods[] = {"game_use_item", "game_pick_up", "game_shop_buy", "game_shop_sell",
@@ -75,6 +87,7 @@ namespace aibridge
         bool closing = false;
         bool stopping = false;
         bool faulted = false;
+        std::string faultDiagnostic;
         std::map<std::string, ActionAdapter, std::less<>> actions;
         std::map<std::string, Query, std::less<>> queries;
         std::map<std::string, OperationRecord, std::less<>> records;
@@ -338,8 +351,9 @@ namespace aibridge
                 interrupt("timeout", true);
             }
         }
-        void abortOnFault()
+        void abortOnFault(std::string_view stage)
         {
+            if(!faulted){ faultDiagnostic = std::string(stage) + "/" + std::string(faultCategory()); }
             faulted = true;
             control = options.enabled ? ControlState::Paused : ControlState::Disabled;
             reason = "controller_error";
@@ -427,7 +441,7 @@ namespace aibridge
         auto &s = *m_impl;
         if(!s.options.enabled || s.closing || s.faulted || !s.inGame()){ return; }
         try{ s.event("snapshot"); }
-        catch(...){ s.abortOnFault(); }
+        catch(...){ s.abortOnFault("snapshot"); }
     }
 
     void AiBridgeController::onConnected(uint64_t id)
@@ -553,7 +567,7 @@ namespace aibridge
             return s.safeError(request, error.code);
         }
         catch(const std::exception &){
-            s.abortOnFault();
+            s.abortOnFault("request");
             return s.safeError(request, "unavailable");
         }
     }
@@ -563,7 +577,7 @@ namespace aibridge
         auto &s = *m_impl;
         if(!s.active || s.stopping || s.closing || s.faulted){ return; }
         try{ s.expire(s.records.at(*s.active)); }
-        catch(...){ s.abortOnFault(); }
+        catch(...){ s.abortOnFault("deadline"); }
     }
 
     void AiBridgeController::advance()
@@ -573,6 +587,7 @@ namespace aibridge
         auto &record = s.records.at(*s.active);
         s.expire(record);
         if(record.terminal()){ return; }
+        std::string_view stage = "validate";
         try{
             if(!record.begun){
                 auto validation = s.validate(record.view.method, record.view.params, record.view.context);
@@ -584,16 +599,22 @@ namespace aibridge
                 }
                 record.begun = true;
                 record.state = "running";
+                stage = "begin";
                 const auto update = s.actions.at(record.view.method).begin(record.view);
+                stage = "begin_result";
                 report(record.view.operationId, update);
             }
-            else if(const auto update = s.actions.at(record.view.method).tick(record.view)){
-                report(record.view.operationId, *update);
+            else{
+                stage = "tick";
+                if(const auto update = s.actions.at(record.view.method).tick(record.view)){
+                    stage = "tick_result";
+                    report(record.view.operationId, *update);
+                }
             }
         }
         catch(...){
             if(record.terminal() && record.begun && s.stopHook){ try{ s.stopHook(); }catch(...){} }
-            s.abortOnFault();
+            s.abortOnFault(stage);
         }
     }
 
@@ -615,6 +636,7 @@ namespace aibridge
     Json AiBridgeController::context() const{ return m_impl->context(); }
     ControlState AiBridgeController::controlState() const{ return m_impl->control; }
     std::string AiBridgeController::pauseReason() const{ return m_impl->reason; }
+    std::string AiBridgeController::faultDiagnostic() const{ return m_impl->faultDiagnostic; }
     std::optional<std::string> AiBridgeController::activeOperation() const{ return m_impl->active; }
     std::weak_ptr<void> AiBridgeController::lifetime() const{ return m_impl->life; }
 }

@@ -146,6 +146,24 @@ TEST_CASE("NPC panel evidence distinguishes local close from observed server-dri
     validateDefinition(observed.evidence.at(0), "evidence");
 }
 
+TEST_CASE("NPC reply boundary preserves unknown outcomes without hiding internal faults")
+{
+    for(const std::string code:{"unavailable","stale_target","not_in_game","stale_context"}){
+        const auto update=observeNpcReply({1,2},[&]()->Json{throw ProtocolError(code,"private NPC text");});
+        CHECK(update.outcome==OperationOutcome::Unknown);
+        CHECK(update.submitted); CHECK_FALSE(update.completionScope.has_value());
+        REQUIRE(update.error.has_value()); CHECK(update.error->code==code);
+        CHECK_FALSE(update.error->message.contains("private NPC text"));
+        validateDefinition(update.error->json(),"error");
+    }
+    CHECK_THROWS_AS(observeNpcReply({1,2},[]()->Json{throw std::runtime_error("internal fault");}),std::runtime_error);
+    errorCode([]{observeNpcReply({1,2},[]()->Json{throw ProtocolError("invalid_argument","malformed adapter output");});},"invalid_argument");
+    const auto observed=observeNpcReply({1,2},[]{return Json{{"dialogue_id","current-panel"}};});
+    CHECK(observed.outcome==OperationOutcome::Succeeded);
+    CHECK(observed.completionScope=="observed_postcondition");
+    CHECK(observed.result.at("dialogue_id")=="current-panel");
+}
+
 TEST_CASE("NPC controller revalidates replaced options and does not replay unknown script events")
 {
     uint64_t now = 0;

@@ -226,12 +226,15 @@ namespace aibridge
             if(operationId != view.operationId){ return failed("stale_context", view.submitted); }
             for(const auto &panel: panels){
                 if(panel && panel->npcUid == pendingNpc && panel->revision > pendingServerRevision){
-                    refresh();
-                    Json result = Json::object();
-                    if(auto handle = model.handle(NpcPanelKind::Dialogue); !handle.empty()){ result["dialogue_id"] = std::move(handle); }
-                    if(auto handle = model.handle(NpcPanelKind::Input); !handle.empty()){ result["input_handle"] = std::move(handle); }
+                    auto update = observeNpcReply(stamp(), [&]{
+                        refresh();
+                        Json result = Json::object();
+                        if(auto handle = model.handle(NpcPanelKind::Dialogue); !handle.empty()){ result["dialogue_id"] = std::move(handle); }
+                        if(auto handle = model.handle(NpcPanelKind::Input); !handle.empty()){ result["input_handle"] = std::move(handle); }
+                        return result;
+                    });
                     operationId.clear();
-                    return npcObserved(stamp(), true, false, "观察到该 NPC 的新交互面板；不表示脚本其他副作用已完成", std::move(result));
+                    return update;
                 }
             }
             return OperationUpdate{.submitted=submitted};

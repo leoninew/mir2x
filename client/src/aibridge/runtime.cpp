@@ -171,7 +171,9 @@ namespace aibridge
         shutdown();
         try{
             s.reason = "桥接内部错误，已关闭；请重新启动客户端";
-            g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge closed after controller or receipt failure");
+            const auto diagnostic = *s.callbackFault ? std::string("receipt_report/internal")
+                : s.controller ? s.controller->faultDiagnostic() : std::string("controller/internal");
+            g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge closed after controller or receipt failure: %s", diagnostic.c_str());
         }
         catch(...){}
         return true;

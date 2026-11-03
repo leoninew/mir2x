@@ -131,4 +131,16 @@ namespace aibridge
                 {"observed_at", std::to_string(stamp.observedAt)}, {"snapshot_seq", std::to_string(stamp.sequence)},
                 {"server_code", nullptr}, {"description", description}}}), .result = std::move(result)};
     }
+    OperationUpdate observeNpcReply(SnapshotStamp stamp, const std::function<Json()> &readPanel)
+    {
+        Json result;
+        try{ result = readPanel(); }
+        catch(const ProtocolError &failure){
+            if(failure.code != "unavailable" && failure.code != "stale_target" && failure.code != "not_in_game"
+                && failure.code != "stale_context"){ throw; }
+            return {.outcome=OperationOutcome::Unknown, .submitted=true,
+                .error=OperationError{failure.code, "NPC reply could not be observed", Json::object()}};
+        }
+        return npcObserved(stamp, true, false, "Observed a new NPC panel; other script effects remain unconfirmed", std::move(result));
+    }
 }

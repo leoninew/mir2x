@@ -60,6 +60,7 @@ namespace aibridge
             Json context() const;
             ControlState controlState() const;
             std::string pauseReason() const;
+            std::string faultDiagnostic() const;
             std::optional<std::string> activeOperation() const;
             std::weak_ptr<void> lifetime() const; // Scoped callbacks lock before report().
         private:
