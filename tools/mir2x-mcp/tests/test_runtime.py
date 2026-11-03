@@ -64,6 +64,18 @@ def test_default_policy_ready_without_local_preparation(tmp_path):
     assert not settings.bridge.exists()
 
 
+def test_managed_bridge_optout_overrides_native_automatic_default(tmp_path):
+    (tmp_path / "mir2x.local.toml").write_text("[launcher]\nbridge=false\n", "utf-8")
+    manager = Manager(load_settings(tmp_path))
+    args = manager.command("client")
+    assert "--enable-ai-bridge=0" in args
+    assert not any(arg.startswith("--ai-policy=") for arg in args)
+    assert not any(arg.startswith("--ai-bridge-dir=") for arg in args)
+    # Startup opt-out must not create credentials or require a policy copy.
+    assert not manager.settings.bridge.exists()
+    assert not manager.settings.state.exists()
+
+
 @pytest.mark.parametrize(
     "text",
     [

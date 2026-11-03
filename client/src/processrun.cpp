@@ -840,7 +840,7 @@ aibridge::RuntimeState ProcessRun::aiState() const
         if(auto h = dynamic_cast<MyHero *>(findUID(m_myHeroUID, false))){
             state.roleUid = h->UID();
             state.mapUid = mapUID();
-            state.alive = !m_aiDeathKnown && !h->dead().value_or(true);
+            state.observeLife(h->dead(), m_aiDeathKnown);
         }
         else { state.phase = "disconnected"; }
     }

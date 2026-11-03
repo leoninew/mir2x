@@ -376,6 +376,7 @@ TEST_CASE("movement never forgets actual submission when later samples omit it")
 TEST_CASE("oversized nearby observation stays a controlled query failure")
 {
     ControllerOptions options; options.instanceId = std::string(32, 'a'); options.build = "actions-test";
+    options.autoEnable = false;
     options.monotonicMs = []{ return 1; }; options.unixMs = []{ return 1000; };
     options.newSessionId = []{ return std::string(32, 'b'); };
     AiBridgeController controller(options); controller.onConnected(1); controller.observe({"run", 100, 200, true});

@@ -87,6 +87,7 @@ namespace aibridge
         bool closing = false;
         bool stopping = false;
         bool faulted = false;
+        bool initialStartupArmed;
         std::string faultDiagnostic;
         std::map<std::string, ActionAdapter, std::less<>> actions;
         std::map<std::string, Query, std::less<>> queries;
@@ -99,7 +100,8 @@ namespace aibridge
         std::shared_ptr<void> life = std::make_shared<int>(0);
 
         explicit Impl(ControllerOptions o)
-            : options(std::move(o)), control(options.enabled ? ControlState::ReadOnly : ControlState::Disabled), audit(options.auditDirectory)
+            : options(std::move(o)), control(options.enabled ? ControlState::ReadOnly : ControlState::Disabled)
+            , initialStartupArmed(options.enabled && options.autoEnable), audit(options.auditDirectory)
         {
             if(!options.monotonicMs){ options.monotonicMs = steadyMs; }
             if(!options.unixMs){ options.unixMs = wallMs; }
@@ -152,7 +154,7 @@ namespace aibridge
                 {"pause_reason", reason.empty() ? Json(nullptr) : Json(reason)},
                 {"capabilities", {{"protocol_version", 1}, {"build", options.build}, {"tools", tools()},
                     {"supported_skills", Json::array()}, {"policy", policy},
-                    {"limitations", Json::array({"仅声明已注册适配器；认证不会自动开启角色控制", "NPC脚本可能有未预告消耗，结构化交易预算不覆盖所有脚本副作用"})}}}};
+                    {"limitations", Json::array({"默认首次有效RUN与认证绑定可自动开启；暂停或关闭后仅窗口恢复", "NPC脚本可能有未预告消耗，结构化交易预算不覆盖所有脚本副作用"})}}}};
             validateDefinition(result, "session");
             return result;
         }
@@ -194,7 +196,7 @@ namespace aibridge
         {
             if(!inGame()){ return failure("not_in_game"); }
             if(scope != context()){ return failure("stale_context"); }
-            if(control != ControlState::Active || !runtime.alive || closing || stopping){ return failure("paused"); }
+            if(control != ControlState::Active || !runtime.knownAlive() || closing || stopping){ return failure("paused"); }
             if(!options.policy.allowsAction(method)){ return failure("policy_denied"); }
             if((method == "game_npc_open" || method == "game_npc_choose" || method == "game_npc_input") && !options.policy.allowNpcDialogue){
                 return failure("policy_denied");
@@ -337,12 +339,22 @@ namespace aibridge
 
         void pause(std::string why)
         {
+            initialStartupArmed = false;
             if(control == ControlState::Disabled){ return; }
             const bool hadControl = control == ControlState::Active;
             increment(controlEpoch);
             control = ControlState::Paused;
             reason = std::move(why);
             interrupt(reason == "transport_lost" ? "transport_lost" : "paused", false, hadControl);
+            event("control");
+        }
+        void initialEnable()
+        {
+            if(!initialStartupArmed || !inGame() || !runtime.knownAlive() || !connection || closing || faulted){ return; }
+            initialStartupArmed = false;
+            increment(controlEpoch);
+            control = ControlState::Active;
+            reason.clear();
             event("control");
         }
         void expire(OperationRecord &record)
@@ -353,6 +365,7 @@ namespace aibridge
         }
         void abortOnFault(std::string_view stage)
         {
+            initialStartupArmed = false;
             if(!faulted){ faultDiagnostic = std::string(stage) + "/" + std::string(faultCategory()); }
             faulted = true;
             control = options.enabled ? ControlState::Paused : ControlState::Disabled;
@@ -409,8 +422,10 @@ namespace aibridge
         const bool newInGame = state.phase == "run" && state.roleUid && state.mapUid;
         const bool sessionChange = wasInGame != newInGame || (newInGame && s.runtime.roleUid != state.roleUid);
         const bool mapChange = wasInGame && newInGame && s.runtime.mapUid != state.mapUid;
-        const bool died = wasInGame && s.runtime.alive && !state.alive;
-        if((sessionChange && wasInGame) || mapChange || died){ s.pause(died ? "death" : mapChange ? "map_changed" : "session_changed"); }
+        const bool lifeLost = wasInGame && newInGame && s.runtime.knownAlive() && !state.knownAlive();
+        if((sessionChange && wasInGame) || mapChange || lifeLost){
+            s.pause(lifeLost ? (state.knownDead() ? "death" : "life_unknown") : mapChange ? "map_changed" : "session_changed");
+        }
         const bool phaseChange = s.runtime.phase != state.phase;
         s.runtime = state;
         if(state.phase == "login" || state.phase == "select_character" || state.phase == "disconnected"){
@@ -433,7 +448,9 @@ namespace aibridge
             }
         }
         else if(mapChange){ increment(s.worldEpoch); }
-        if(sessionChange || mapChange || died || phaseChange){ s.event("session"); }
+        if(sessionChange || mapChange || lifeLost || phaseChange){ s.event("session"); }
+        if(newInGame && state.knownDead() && s.initialStartupArmed){ s.pause("death"); }
+        s.initialEnable();
     }
 
     void AiBridgeController::notifySnapshot()
@@ -454,11 +471,12 @@ namespace aibridge
         s.records.clear(); s.ledger.clear(); s.active.reset();
         increment(s.controlEpoch);
         s.event("control");
+        s.initialEnable();
     }
     void AiBridgeController::onDisconnected(uint64_t id)
     {
         auto &s = *m_impl;
-        if(id != s.connection){ return; }
+        if(!id || id != s.connection){ return; }
         s.pause("transport_lost");
         s.connection = 0;
         s.event("disconnected");
@@ -466,7 +484,8 @@ namespace aibridge
     bool AiBridgeController::enableByUser()
     {
         auto &s = *m_impl;
-        if(!s.options.enabled || s.closing || s.faulted || !s.inGame() || !s.runtime.alive || !s.connection){ return false; }
+        s.initialStartupArmed = false;
+        if(!s.options.enabled || s.closing || s.faulted || !s.inGame() || !s.runtime.knownAlive() || !s.connection){ return false; }
         if(s.control == ControlState::Active){ return true; }
         increment(s.controlEpoch);
         s.control = ControlState::Active;
@@ -474,10 +493,24 @@ namespace aibridge
         s.event("control");
         return true;
     }
+    void AiBridgeController::disableByUser()
+    {
+        auto &s = *m_impl;
+        s.initialStartupArmed = false;
+        if(s.closing || s.faulted || s.control == ControlState::Disabled){ return; }
+        const bool hadControl = s.control == ControlState::Active;
+        increment(s.controlEpoch);
+        s.control = ControlState::Disabled;
+        s.reason = "disabled_by_user";
+        s.interrupt("paused", false, hadControl);
+        s.event("control");
+    }
     void AiBridgeController::pauseByUser(){ m_impl->pause("paused_by_user"); }
     void AiBridgeController::manualInput()
     {
-        if(m_impl->control == ControlState::Active){ m_impl->pause("manual_input"); }
+        if(m_impl->control == ControlState::Active || (m_impl->inGame() && m_impl->initialStartupArmed)){
+            m_impl->pause("manual_input");
+        }
     }
     void AiBridgeController::shutdown()
     {
@@ -511,14 +544,17 @@ namespace aibridge
                 return s.response(request, found->second.json());
             }
             if(method == "game_stop"){
+                s.initialStartupArmed = false;
                 const bool hadControl = s.control == ControlState::Active;
                 auto id = s.active;
                 if(!id && params.contains("operation_id") && s.records.contains(params.at("operation_id").get<std::string>())){
                     id = params.at("operation_id").get<std::string>();
                 }
                 increment(s.controlEpoch);
-                s.control = ControlState::Paused;
-                s.reason = "stop_requested";
+                if(s.control != ControlState::Disabled){
+                    s.control = ControlState::Paused;
+                    s.reason = "stop_requested";
+                }
                 const auto stopped = s.interrupt("paused", false, hadControl);
                 s.event("control");
                 const auto *record = id ? &s.records.at(*id) : nullptr;

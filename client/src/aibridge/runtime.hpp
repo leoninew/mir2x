@@ -9,7 +9,7 @@ struct ClientMsgBuf;
 
 namespace aibridge
 {
-    // Pure input gate: only a matched left-button gesture can grant control.
+    // Input gate for explicit grants; startup uses a separate one-shot controller gate.
     class ControlGesture
     {
         private:

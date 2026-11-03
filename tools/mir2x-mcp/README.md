@@ -31,13 +31,13 @@
 
 仓库短入口默认以 `install` 为完整运行根，与 `install/mir2x.exe` 共用配置、管理记录、bridge、策略和 `.env`，因此 `status/up/mcp config/register` 使用同一命名空间。无安装布局会明确报错，不把未登记进程扫描认领。显式 `--root` 使用所选目录、不追加 `install`，优先于 `MIR2X_HOME` 和默认目录；仓库根旧本地覆盖需用 `--config` 明确选择，文件内相对路径按运行根解析。旧仓库根状态不自动合并，用户可明确选择原根，保持原有进程身份校验。
 
-在 Codex 里与 LLM 对话，重新开启会话并用 `/mcp` 确认连接；游戏窗口用于登录和人工开启/恢复 AI 控制。其他宿主用 `mcp config` 生成当前位置配置，stdio 子进程由宿主启动。`mcp register` 是显式注册命令，会写入本机 Codex 配置；本次开发检查不代替用户执行注册。
+在 Codex 里与 LLM 对话，重新开启会话并用 `/mcp` 确认连接；游戏窗口用于正常登录，以及暂停后的人工恢复；首次有效 RUN 与认证绑定就绪后默认自动开启 AI。其他宿主用 `mcp config` 生成当前位置配置，stdio 子进程由宿主启动。`mcp register` 是显式注册命令，会写入本机 Codex 配置；本次开发检查不代替用户执行注册。
 
-`up`、`client start/restart` 默认读取游戏目录已有 `.env` 的小写 `username/password`，源码对应 `install/.env`，发行版对应根目录 `.env`。缺文件或缺少任一非空凭据时保留手工登录。`--manual-login` 临时跳过读取，`[login] enabled=false` 持久禁用；`env_file="auto"` 是默认路径。随包 `login.env.example` 不含凭据。解析、长度和错误诊断在运行配置入口集中处理，管理记录/日志/打包不另存密码；实际仍调用原游戏 `--auto-login`，账号认证和角色选择没有改变。原生参数对有本机进程检查权限的程序可见，勿分享含命令行的进程转储。完整格式与限制见随包速查。
+`up`、`client start/restart` 默认读取游戏目录已有 `.env` 的小写 `username/password`，源码对应 `install/.env`，发行版对应根目录 `.env`。缺文件或缺少任一非空凭据时保留手工登录。`--manual-login` 临时跳过读取，`[login] enabled=false` 持久禁用；`env_file="auto"` 是默认路径。随包 `login.env.example` 不含凭据。解析、长度和错误诊断在运行配置入口集中处理，管理记录/日志/打包不另存密码；这只是 launcher 的可选输入；原生客户端不读取 `.env`，实际仍调用原游戏 `--auto-login`，缺凭据继续普通登录，账号认证和角色选择没有改变。原生参数对有本机进程检查权限的程序可见，勿分享含命令行的进程转储。完整格式与限制见随包速查。
 
-每次客户端重启后，先结束宿主旧 MCP 连接并由宿主重启 stdio（或重新开启 Codex 会话），再读 `game_get_session` 核对新的唯一实例/角色/context。旧 stdio 的首次认证绑定不会自动改连新实例；显式实例 ID 须经用户重新指定。新窗口仍需人工开启 AI。注册成功与进程运行均不能代替宿主实际调用工具的连接证据。
+每次客户端重启后，先结束宿主旧 MCP 连接并由宿主重启 stdio（或重新开启 Codex 会话），再读 `game_get_session` 核对新的唯一实例/角色/context。旧 stdio 的首次认证绑定不会自动改连新实例；显式实例 ID 须经用户重新指定。新进程首次有效 RUN 与认证就绪后自动开启一次；旧进程暂停或关闭后不会自动恢复。注册成功与进程运行均不能代替宿主实际调用工具的连接证据。
 
-`status`、`logs client/server`、`client/server restart`、`stop` 负责进程管理。默认 standard 策略为有限授权：PVP 关闭、其他玩家白名单空、金币单次 1000/会话 10000、单次数量 10。动作仍须窗口人工开启；`client restart --policy readonly/movement/standard` 切换预置文件。
+`status`、`logs client/server`、`client/server restart`、`stop` 负责进程管理。默认 standard 策略为有限授权：PVP 关闭、其他玩家白名单空、金币单次 1000/会话 10000、单次数量 10。自动启动不扩策略权限；暂停后仍须窗口恢复。`client restart --policy readonly/movement/standard` 切换预置文件。
 
 详见[随包中文速查](src/mir2x_mcp/runtime_assets/QUICKSTART.md)与[运行管理检查](../../docs/verification/20261101-runtime-launcher.md)。用户本地覆盖可写 `mir2x.local.toml`，安装不会覆盖它；路径按发行目录解析，搬迁后重新注册 MCP。
 
@@ -82,7 +82,7 @@ python tools/mir2x-mcp/scripts/build_runtime.py
 `examples/tool-workflow.json` 提供查询、动作、接收、业务失败和 unknown 的脱敏结构示例，已按共享契约校验。示例中的 context 和 UUID 不能直接用于真实动作。
 
 1. 调用 `game_get_session`，核对实例、角色、阶段、控制状态和可用能力。
-2. 由人在游戏窗口开启 AI 控制，再读取最新 `context`。切到 AI 宿主窗口本身不会暂停；游戏窗口内的冲突输入会立即接管。
+2. 首次有效 RUN 与认证宿主绑定后自动开启一次，先读取最新 `context` 和控制状态。显式关闭、暂停、人工接管、换图、死亡或断线后仅窗口按钮恢复。切到 AI 宿主窗口本身不会暂停；游戏窗口内的冲突输入会立即接管。
 3. 每个逻辑动作生成新的 UUID `request_id`，传入当前 `context` 和有界 `timeout_ms`。同一逻辑动作不能用新 UUID 规避去重。
 4. 返回 `accepted` 仅表示取得 `operation_id`。用 `game_get_operation` 查询 `accepted/running/succeeded/failed/cancelled/unknown`，不能将发送成功说成游戏成功。
 5. `succeeded` 附带非空证据及完成范围：`server_ack`、`observed_postcondition` 或 `client_state`。`unknown` 是正常操作状态，仍需保留“可能已有副作用”的语义。

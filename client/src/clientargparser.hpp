@@ -40,12 +40,13 @@ struct ClientArgParser
     const std::string resPath;             // "--res-path"
     const std::string inputScript;         // "--input-script"
     const bool enableAiBridge;
+    const bool aiAutoEnable;
     const std::filesystem::path aiBridgeDir;
     const std::filesystem::path aiPolicy;
 
     const std::optional<std::pair<std::string, std::string>> autoLogin; // "--auto-login"
 
-    ClientArgParser(const argf::parser &parser)
+    ClientArgParser(const argf::parser &parser, const std::filesystem::path &clientDirectory = std::filesystem::current_path())
         : disableProfiler      (argf::parseInteger<bool>(parseString(parser, "--disable-profiler",         argf::OPT, true), "disable-profiler",         argf::checkPass<bool>, false, true).first)
         , disableVersionCheck  (argf::parseInteger<bool>(parseString(parser, "--disable-version-check",    argf::OPT, true), "disable-version-check",    argf::checkPass<bool>, false, true).first)
         , disableAudio         (argf::parseInteger<bool>(parseString(parser, "--disable-audio",            argf::OPT, true), "disable-audio",            argf::checkPass<bool>, false, true).first)
@@ -77,9 +78,14 @@ struct ClientArgParser
 
         , resPath    (parseString(parser, "--res-path",     argf::OPT).value_or("res"))
         , inputScript(parseString(parser, "--input-script", argf::OPT).value_or(std::string{}))
-        , enableAiBridge(argf::parseInteger<bool>(parseString(parser, "--enable-ai-bridge", argf::OPT, true), "enable-ai-bridge", argf::checkPass<bool>, false, true).first)
-        , aiBridgeDir(utf8Path(parseString(parser, "--ai-bridge-dir", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{})))
-        , aiPolicy(utf8Path(parseString(parser, "--ai-policy", enableAiBridge ? argf::REQ : argf::OPT).value_or(std::string{})))
+        , enableAiBridge(argf::parseInteger<bool>(parseString(parser, "--enable-ai-bridge", argf::OPT, true), "enable-ai-bridge", argf::checkPass<bool>, true, true).first)
+        , aiAutoEnable(argf::parseInteger<bool>(parseString(parser, "--ai-auto-enable", argf::OPT, true), "ai-auto-enable", argf::checkPass<bool>, true, true).first)
+        , aiBridgeDir(parseString(parser, "--ai-bridge-dir", argf::OPT).has_value()
+              ? utf8Path(*parseString(parser, "--ai-bridge-dir", argf::OPT))
+              : distributionRoot(clientDirectory) / ".runtime/ai-bridge")
+        , aiPolicy(parseString(parser, "--ai-policy", argf::OPT).has_value()
+              ? utf8Path(*parseString(parser, "--ai-policy", argf::OPT))
+              : distributionRoot(clientDirectory) / "config/policies/standard.json")
 
         , autoLogin([&parser]() -> std::optional<std::pair<std::string, std::string>>
           {
@@ -103,6 +109,13 @@ struct ClientArgParser
     static std::filesystem::path utf8Path(const std::string &text)
     {
         return std::filesystem::path(std::u8string(text.begin(), text.end()));
+    }
+
+    static std::filesystem::path distributionRoot(std::filesystem::path directory)
+    {
+        directory=std::filesystem::absolute(directory).lexically_normal();
+        if(directory.filename().empty()){ directory=directory.parent_path(); }
+        return directory.parent_path();
     }
 
     static int checkScreenMode(const char *, int screenMode)

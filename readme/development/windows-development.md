@@ -115,7 +115,9 @@ cmake --install build --config Release
 ./mir2x.cmd status
 ```
 
-CLI 自动选择游戏工作目录、等待本工具登记的服务器持有玩家监听端口，再打开可见客户端。默认玩家端口 7000、节点端口 8000；桥接和 standard 策略已提供，首次不用手填 JSON/绝对路径。游戏账号按原界面登录，已有数据库不一定包含新建数据库的默认测试账号，CLI 不保存或自动填入密码。
+仓库短入口默认以 `install/` 为完整运行根，与发行入口共用配置、进程状态、bridge 和 `.env`；显式 `--root` 优先于 `MIR2X_HOME` 和入口默认。CLI 等待本工具登记的服务器持有玩家监听端口，再打开可见客户端。默认玩家端口 7000、节点端口 8000；桥接和 standard 策略已提供，首次不用手填 JSON/绝对路径。
+
+`up`、`client start/restart` 可读取所选运行根已有 `.env` 的小写 `username/password`，通过原游戏登录路径认证；缺文件或任一非空值缺失时保留手工登录。本次跳过用 `--manual-login`，持久关闭用 `[login] enabled=false`。凭据不写入 manager 状态、TOML 或日志，不能把真实 `.env` 加入版本库或制品。已有数据库不一定包含新建数据库的默认测试账号；角色选择保持原流程。格式、显式路径和开发证据见[本轮验证记录](../../docs/verification/20261103-runtime-env-login.md)。
 
 ```powershell
 ./mir2x.cmd client restart --policy readonly

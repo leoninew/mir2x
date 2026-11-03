@@ -3,7 +3,7 @@
 
 [返回知识库](README.md) · [完整验证清单](../../docs/verification/20261031-ai-character-mcp.md) · [协议与实现](ai-bridge-protocol.md)
 
-MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正常游戏连接和服务端规则；用户保留操作权，AI 不能自行登录、开启控制、恢复权限或修改策略。
+MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正常游戏连接和服务端规则；用户保留操作权，角色 MCP 不负责登录或改策略；首次有效 RUN 与认证绑定后按产品默认自动开启一次控制，暂停后的恢复仍由用户决定。
 
 ## 当前交付状态
 
@@ -32,20 +32,24 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 
 `status`、`logs server/client`、`client/server restart`、`stop` 管理登记进程；默认正常关闭，`--force` 仅在明确需要强停时使用。完整命令、搬迁后重新注册、可选本地覆盖和使用边界见[随包速查](../../tools/mir2x-mcp/src/mir2x_mcp/runtime_assets/QUICKSTART.md)。
 
-默认 standard 策略随包可用：现有普通动作与有限经济权限，单次金币 1000、会话金币 10000、单次数量 10；PVP 关闭，其他玩家白名单为空。`client restart --policy readonly` 或 `movement` 切换已提供的预设；恢复默认用 `standard`。策略在客户端启动时冻结，人工开启/恢复控制继续由游戏窗口完成。
+默认 standard 策略随包可用：现有普通动作与有限经济权限，单次金币 1000、会话金币 10000、单次数量 10；PVP 关闭，其他玩家白名单为空。`client restart --policy readonly` 或 `movement` 切换已提供的预设；恢复默认用 `standard`。策略在客户端启动时冻结。首次有效 RUN 且认证宿主绑定后默认自动开启一次；暂停或关闭后只由游戏窗口恢复。
 
 需要编译时按[Windows 开发环境](windows-development.md)执行 client/server 构建和安装。Windows 默认启用 `mir2x_runtime` 目标；独立 EXE/配置/skill 由 runtime 安装组件输出。客户端与服务器保持版本一致，保留版本检查。真实钱物/双角色验证继续使用独立测试环境，见原验证清单；运行管理检查不代替角色验收。
 
 ## 连接与人工控制
 
 1. 调用 `game_get_session`，核对实例、阶段、角色、控制状态、capabilities 和策略。代码已注册能力不等于当前角色满足前提或策略允许。
-2. 单个可认证实例可自动选择；多个时配置 `--instance-id`，不能自动挑窗口。实例退出不会改连其它客户端；换角色需重新绑定 MCP 并重新人工授权。
-3. 登录进图并保持角色存活。认证连接先读取会话后，用户在游戏窗口点击“开启 AI 控制”或恢复按钮；仅连上桥接不能执行动作。
+2. 单个可认证实例可自动选择；多个时配置 `--instance-id`，不能自动挑窗口。实例退出不会改连其它客户端；换角色须重新读取会话与 context，不自动恢复旧请求；同进程会话失效后用窗口恢复。
+3. 正常登录进图并保持角色存活；首次有效 RUN 与认证绑定均就绪后默认自动开启 AI，读取会话确认 active 与最新 context。原生 EXE 和 launcher 路径均支持，不需要额外开启点击。
 4. AI 读取最新 context，给每个逻辑动作新的 UUID request_id，提交后查询 operation_id。不要将 accepted 或消息已发送解释为游戏完成。
 5. 人工游戏输入先暂停旧 AI，再按原路径交给游戏。切到 AI 宿主导致的失焦本身不暂停；恢复也只能在游戏窗口操作。
-6. 随时用窗口暂停或 `game_stop` 停止 AI 意图。当前动画可能完成半步，已提交的消耗/交易不能因 stop 撤回。
+6. 右下工具区上方显示准确的连接/启用/关闭/暂停/故障状态，用“关闭 AI”立即撤销旧意图，已认证只读查询仍可用；`game_stop` 同样停止意图。重复观察/重连不覆盖用户关闭。当前动画可能完成半步，已提交的消耗/交易不能因 stop 撤回。
 
 同进程登出保留 instance_id 和策略，只使 session/context 失效。换图、死亡、离开 RUN、断开或人工接管不会自动恢复。内部控制器/回执故障会关闭桥接及本实例凭据并诊断，普通游戏继续；需要重新启动客户端。
+
+原生 `client.exe` 默认启用桥接，取 EXE 所在 `client/` 的上一级作为运行根，默认 `.runtime/ai-bridge` 和 `config/policies/standard.json` 与发行 launcher 一致，不读 `.env`。绝对 `--ai-bridge-dir/--ai-policy` 可覆盖。`--ai-auto-enable=0` 关闭首次自动授权（launcher 可配置 `[client] args=["--ai-auto-enable=0"]`），保留认证只读与窗口开启；`--enable-ai-bridge=0` 或 launcher `[launcher] bridge=false` 关闭整个桥接。缺策略时桥接初始化失败，普通游戏继续，不生成放宽的策略。`.env` 仅为 launcher 可选登录输入，见[运行入口验证记录](../../docs/verification/20261103-runtime-env-login.md)。
+
+当前自动启动/按钮与装备代码的开发验证单独见[本轮检查清单](../../docs/verification/20261103-ai-startup.md)，审查方的[真实练级记录](../../docs/verification/20261103-mcp-leveling.md)与开发回归分别记录。技能书成功消费后仍须重新读取 `game_get_skills`，客户端等级实际增长才支持练级结论；现有原生 canWear 仍有 job/level/weight 等未实现的 TODO，不声称桥接补齐了服务端规则。
 
 ## 结果、重复请求与恢复
 
@@ -71,7 +75,7 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 | 移动 | 当前地图，4096 轮搜索；耗尽 unavailable、已证无路 unreachable，实际位置停止才成功 |
 | 拾取 | 当前格原拾取链；无相关成功 ack 时 unknown，变化仅为观察，不伪造 partial/seq |
 | 攻击/施法 | once/cast 仅确认客户端动作；until_dead 须同身份真实死亡；仅支持已学且适配的分支 |
-| 物品 | 现有药品/技能书；不自动装备、拆分或代替背包整理 |
+| 物品 | 药品/技能书沿原消耗路径；可穿戴装备 count=1，复用普通槽位选择和 canWear，精确实例经真实更新入预定槽才 observed_postcondition，不把移出背包当成功；不拆分或代替整理 |
 | 商店 | 当前堆叠购买扣单次 costList，不乘 count；默认出售一次 1 件，保留原 seq 和属性校验 |
 | 直接交易 | offer/lock 校验权限但零金币支出；commit 才预留报价，完整完成消息才结束 |
 | 拍卖 | 上架按原数量，售价不是支出，当前服务端没有 500 金币上架费；买/撤成功等待投递 |

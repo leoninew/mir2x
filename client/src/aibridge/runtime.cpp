@@ -6,6 +6,8 @@
 #include "tradeadapter.hpp"
 #include "shopadapter.hpp"
 #include "auctionadapter.hpp"
+#include "controlpanel.hpp"
+#include "clientargparser.hpp"
 #include "client.hpp"
 #include "processrun.hpp"
 #include "myhero.hpp"
@@ -19,6 +21,7 @@
 
 extern SDLDevice *g_sdlDevice;
 extern Log *g_mir2xLog;
+extern ClientArgParser *g_clientArgParser;
 
 namespace aibridge
 {
@@ -34,7 +37,6 @@ namespace aibridge
         std::unique_ptr<AiShopAdapter> shop;
         std::unique_ptr<AiAuctionAdapter> auction;
         RuntimeState state;
-        ControlGesture gesture;
         std::string intentOperation;
         std::string intentKind;
         uint64_t intentRole = 0;
@@ -42,15 +44,7 @@ namespace aibridge
         std::deque<BridgeRequest> pending;
         std::shared_ptr<bool> callbackFault = std::make_shared<bool>(false);
         bool closed = false;
-        std::string status = "AI: 未启用";
-        std::string role = "角色：未进入游戏";
-        std::string reason = "";
-        uint64_t noticeUntil = 0;
-        TextBoard statusText{{.x=28, .y=24, .textFunc=[this]{ return status; }, .font{.size=15, .color=colorf::WHITE_A255}}};
-        TextBoard roleText{{.x=28, .y=46, .textFunc=[this]{ return role; }, .font{.size=15, .color=colorf::WHITE_A255}}};
-        TextBoard reasonText{{.x=28, .y=66, .textFunc=[this]{ return reason; }, .font{.size=15, .color=colorf::WHITE_A255}}};
-        TextButton enable{{.x=28, .y=90, .textFunc=to_cstr(u8"开启 / 恢复"), .font{.size=15}}};
-        TextButton pause{{.x=180, .y=90, .textFunc=to_cstr(u8"暂停 AI"), .font{.size=15}}};
+        AiControlPanel panel{[this]{return controller.get();},[this]{return transport.authenticated();}};
 
         explicit Impl(Client &c): client(c) {}
 
@@ -82,30 +76,13 @@ namespace aibridge
         void refreshPanel()
         {
             if(!controller){ return; }
-            switch(controller->controlState()){
-                case ControlState::Disabled: status = "AI：未启用"; break;
-                case ControlState::ReadOnly: status = "AI：只读"; break;
-                case ControlState::Active: status = "AI：控制中"; break;
-                case ControlState::Paused: status = "AI：已暂停"; break;
-            }
-            role = "角色：未进入游戏";
+            std::string role = "角色：未进入游戏";
             if(auto h = hero()){
                 // TextBoard renders plain text, including names containing XML metacharacters.
                 role = "角色：[" + std::to_string(h->UID()) + "] " + h->knownName();
             }
-            const auto why = controller->pauseReason();
-            if(SDL_GetTicks() < noticeUntil){ return; }
-            if(why == "manual_input"){ reason = "原因：玩家操作"; }
-            else if(why == "death"){ reason = "原因：角色死亡"; }
-            else if(why == "map_changed"){ reason = "原因：地图已切换，请重新授权"; }
-            else if(why == "session_changed"){ reason = "原因：角色会话已改变"; }
-            else if(why == "transport_lost"){ reason = "原因：AI 连接已断开"; }
-            else if(why == "paused_by_user"){ reason = "原因：手动暂停"; }
-            else if(why == "stop_requested"){ reason = "原因：收到停止请求"; }
-            else if(why == "shutdown"){ reason = "原因：正在退出"; }
-            else if(why == "controller_error"){ reason = "控制器故障，请重新启动桥接"; }
-            else if(!why.empty()){ reason = "原因：" + why; }
-            else { reason = transport.authenticated() ? "仅窗口按钮可授权控制" : "等待 AI 连接并读取会话"; }
+            panel.setRole(std::move(role));
+            panel.refresh();
         }
     };
 
@@ -121,6 +98,7 @@ namespace aibridge
             config.instanceId = s.transport.instance()->instance_id;
             config.build = s.transport.instance()->build;
             config.policy = *s.transport.policy();
+            config.autoEnable = g_clientArgParser->aiAutoEnable;
             config.auditDirectory = options.directory / ("audit-" + config.instanceId);
             s.controller = std::make_unique<AiBridgeController>(std::move(config));
             s.controller->setStopHook([&s]{ return s.stopIntent(); });
@@ -141,8 +119,7 @@ namespace aibridge
         catch(...){
             s.transport.close();
             s.controller.reset();
-            s.status = "AI：未启用";
-            s.reason = "初始化失败，请检查桥接配置";
+            s.panel.close("初始化失败，请检查桥接配置");
             throw;
         }
     }
@@ -152,8 +129,7 @@ namespace aibridge
         auto &s = *m_impl;
         if(s.closed){ return; }
         s.closed = true;
-        try{ s.status = "AI：未启用"; s.reason = "桥接已关闭"; }catch(...){}
-        s.gesture.reset();
+        try{ s.panel.close("桥接已关闭"); }catch(...){}
         s.pending.clear();
         try{ if(s.controller){ s.controller->shutdown(); } }catch(...){}
         try{ s.stopIntent(); }catch(...){}
@@ -170,7 +146,7 @@ namespace aibridge
         catch(...){}
         shutdown();
         try{
-            s.reason = "桥接内部错误，已关闭；请重新启动客户端";
+            s.panel.close("桥接内部错误，已关闭；请重新启动客户端");
             const auto diagnostic = *s.callbackFault ? std::string("receipt_report/internal")
                 : s.controller ? s.controller->faultDiagnostic() : std::string("controller/internal");
             g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge closed after controller or receipt failure: %s", diagnostic.c_str());
@@ -183,8 +159,8 @@ namespace aibridge
     {
         auto &s = *m_impl;
         if(closeOnFault() || !s.controller){ return; }
-        if(s.state.phase != state.phase || s.state.roleUid != state.roleUid || s.state.mapUid != state.mapUid || s.state.alive != state.alive){
-            s.gesture.reset();
+        if(s.state != state){
+            s.panel.resetGesture();
             s.controller->observe(state);
             if(closeOnFault()){ return; }
             if(s.controller->controlState() != ControlState::Active){ s.stopIntent(); }
@@ -271,8 +247,7 @@ namespace aibridge
         }
         catch(...){
             shutdown();
-            s.status = "AI：未启用";
-            s.reason = "桥接运行失败，已关闭";
+            s.panel.close("桥接运行失败，已关闭");
             g_mir2xLog->addLog(LOGTYPE_WARNING, "AI bridge stopped after runtime failure");
         }
     }
@@ -282,27 +257,10 @@ namespace aibridge
         auto &s = *m_impl;
         if(closeOnFault() || !s.controller){ return false; }
         if(!ControlGesture::gameWindowEvent(event, SDL_GetWindowID(SDL_GetRenderWindow(g_sdlDevice->getRenderer())))){ return false; }
-        // The panel is drawn in RUN, above every game widget and modal.
-        if(s.client.getProcess<ProcessRun>()){
-            const SDL_FRect enable{28, 90, float(s.enable.w()), float(s.enable.h())};
-            const SDL_FRect pause{180, 90, float(s.pause.w()), float(s.pause.h())};
-            const auto routed = s.gesture.route(event, enable, pause, s.controller->context().dump());
-            s.enable.setState(s.gesture.pendingButton() == 1 ? BEVENT_DOWN : BEVENT_OFF);
-            s.pause.setState(s.gesture.pendingButton() == 2 ? BEVENT_DOWN : BEVENT_OFF);
-            switch(routed){
-                case ControlGesture::Result::Enable:
-                    if(!s.controller->enableByUser()){
-                        s.reason = "需进入游戏、存活且 AI 已读取会话";
-                        s.noticeUntil = SDL_GetTicks() + 2500;
-                    }
-                    else { s.noticeUntil = 0; s.refreshPanel(); }
-                    closeOnFault();
-                    return true;
-                case ControlGesture::Result::Pause:
-                    s.controller->pauseByUser(); s.stopIntent(); if(!closeOnFault()){ s.refreshPanel(); } return true;
-                case ControlGesture::Result::Consumed: return true;
-                case ControlGesture::Result::Pass: break;
-            }
+        if(s.client.getProcess<ProcessRun>() && s.panel.processEvent(event)){
+            if(s.controller->controlState()!=ControlState::Active){ s.stopIntent(); }
+            closeOnFault();
+            return true;
         }
         if(ControlGesture::manual(event)){
             s.controller->manualInput();
@@ -314,12 +272,7 @@ namespace aibridge
 
     void AiBridgeRuntime::drawPanel() const
     {
-        const auto &s = *m_impl;
-        g_sdlDevice->fillRectangle(colorf::RGBA(18, 28, 34, 235), 16, 16, 440, 102);
-        g_sdlDevice->drawRectangle(colorf::RGBA(102, 170, 145, 255), 16, 16, 440, 102);
-        SDLDeviceHelper::EnableRenderCropRectangle crop(16, 16, 440, 102);
-        s.statusText.drawRoot({}); s.roleText.drawRoot({}); s.reasonText.drawRoot({});
-        if(s.controller && !s.closed){ s.enable.drawRoot({}); s.pause.drawRoot({}); }
+        m_impl->panel.draw();
     }
 
     AiBridgeController *AiBridgeRuntime::controller() noexcept { return m_impl->controller.get(); }
@@ -335,7 +288,7 @@ namespace aibridge
         catch(...){
             shutdown();
             try{
-                m_impl->reason="NPC 观察失败，桥接已关闭";
+                m_impl->panel.close("NPC 观察失败，桥接已关闭");
                 g_mir2xLog->addLog(LOGTYPE_WARNING,"AI bridge closed after NPC panel observation failure");
             }catch(...){}
         }

@@ -44,6 +44,55 @@ TEST_CASE("Client bridge paths preserve UTF-8 command line arguments")
     REQUIRE(parsed.aiPolicy == policy);
 }
 
+TEST_CASE("Native client startup defaults share the distribution bridge without requiring login input")
+{
+    const auto distribution=std::filesystem::current_path()/"distribution";
+    char name[]="client";
+    char *argv[]={name};
+    const argf::parser parser(1,argv);
+    // SDL_GetBasePath includes a trailing separator; the constructor must handle that form.
+    const ClientArgParser parsed(parser,distribution/"client"/"");
+    CHECK(parsed.enableAiBridge);
+    CHECK(parsed.aiAutoEnable);
+    CHECK(parsed.aiBridgeDir==distribution/".runtime/ai-bridge");
+    CHECK(parsed.aiPolicy==distribution/"config/policies/standard.json");
+    CHECK_FALSE(parsed.autoLogin.has_value());
+    char disabled[]="--enable-ai-bridge=0", manual[]="--ai-auto-enable=0";
+    char *optoutArgv[]={name,disabled,manual};
+    const argf::parser optoutParser(3,optoutArgv);
+    const ClientArgParser optout(optoutParser,distribution/"client");
+    CHECK_FALSE(optout.enableAiBridge);
+    CHECK_FALSE(optout.aiAutoEnable);
+    char relative[]="--ai-policy=relative.json";
+    char *badArgv[]={name,relative};
+    const argf::parser bad(2,badArgv);
+    CHECK_THROWS_AS(ClientArgParser(bad,distribution/"client"),std::exception);
+}
+
+TEST_CASE("client life observations keep unknown distinct from confirmed death and compare knowledge changes")
+{
+    aibridge::RuntimeState unknown{"run",100,11,false};
+    unknown.observeLife(std::nullopt);
+    CHECK_FALSE(unknown.lifeKnown);
+    CHECK_FALSE(unknown.alive);
+    CHECK_FALSE(unknown.knownAlive());
+    CHECK_FALSE(unknown.knownDead());
+    auto dead=unknown;
+    dead.observeLife(true);
+    CHECK(dead.lifeKnown);
+    CHECK(dead.knownDead());
+    CHECK(dead!=unknown); // Runtime must deliver unknown -> known-dead despite unchanged alive=false.
+    auto alive=unknown;
+    alive.observeLife(false);
+    CHECK(alive.knownAlive());
+    CHECK(alive!=unknown);
+    alive.observeLife(false,true);
+    CHECK(alive.knownDead());
+    CHECK_FALSE(alive.alive);
+    alive.observeLife(std::nullopt,true);
+    CHECK(alive.knownDead());
+}
+
 TEST_CASE("Only a complete control button gesture is exempt from manual takeover")
 {
     Gate gate;

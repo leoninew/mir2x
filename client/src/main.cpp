@@ -46,7 +46,9 @@ static int runClient(int argc, char *argv[])
     std::srand((unsigned int)std::time(nullptr));
     try{
         argf::parser cmdParser(argc, argv);
-        g_clientArgParser = new ClientArgParser(cmdParser);
+        const auto basePath = SDL_GetBasePath();
+        if(!basePath){ throw std::runtime_error("Cannot locate client distribution directory"); }
+        g_clientArgParser = new ClientArgParser(cmdParser, ClientArgParser::utf8Path(basePath));
 
         if(g_clientArgParser->disableProfiler){
             logDisableProfiler();

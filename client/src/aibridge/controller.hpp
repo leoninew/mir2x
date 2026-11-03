@@ -14,6 +14,16 @@ namespace aibridge
         std::optional<uint64_t> roleUid;
         std::optional<uint64_t> mapUid;
         bool alive = false;
+        bool lifeKnown = true; // Boolean observations are known; client health uses observeLife().
+
+        void observeLife(std::optional<bool> dead, bool confirmedDeath = false) noexcept
+        {
+            lifeKnown = confirmedDeath || dead.has_value();
+            alive = !confirmedDeath && dead == false;
+        }
+        bool knownAlive() const noexcept { return lifeKnown && alive; }
+        bool knownDead() const noexcept { return lifeKnown && !alive; }
+        bool operator==(const RuntimeState &) const = default;
     };
 
     struct ControllerOptions
@@ -22,6 +32,7 @@ namespace aibridge
         std::string build;
         Policy policy;
         bool enabled = true;
+        bool autoEnable = true; // One initial RUN/authentication grant; never an automatic resume.
         std::filesystem::path auditDirectory; // Empty disables disk audit in pure tests.
         std::function<uint64_t()> monotonicMs;
         std::function<uint64_t()> unixMs;
@@ -48,6 +59,7 @@ namespace aibridge
             void onConnected(uint64_t connectionId);
             void onDisconnected(uint64_t connectionId);
             bool enableByUser(); // Local GUI only; never exposed as an IPC method.
+            void disableByUser(); // Keeps authenticated read-only diagnostics available.
             void pauseByUser();
             void manualInput(); // Before forwarding the original SDL event to GUI/game.
             void shutdown();

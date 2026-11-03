@@ -19,7 +19,11 @@ from .runtime_process import Manager, management_lock, port_open
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
-        description="mir2x 游戏与 MCP 管理入口；客户端可从游戏目录 .env 读取 username/password"
+        description="mir2x 游戏与 MCP 管理入口；.env 仅为 launcher 可选登录输入",
+        epilog=(
+            "首次有效角色与认证宿主绑定后默认自动开启 AI；右下角可关闭，暂停后仅窗口恢复。"
+            "stdio 由宿主启动。"
+        ),
     )
     result.add_argument("--root", type=Path, help="运行根；仓库默认 install，显式指定时使用该目录")
     result.add_argument("--config", type=Path, help="可选 TOML 文件；字段内相对路径按运行根解析")

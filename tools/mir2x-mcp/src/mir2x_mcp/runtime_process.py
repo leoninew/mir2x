@@ -167,6 +167,8 @@ class Manager:
                     f"--ai-bridge-dir={settings.bridge}",
                     f"--ai-policy={self.policy_copy(policy)[0]}",
                 ]
+            else:
+                args += ["--enable-ai-bridge=0"]
         return args
 
     def policy_copy(self, policy: str | None) -> tuple[Path, bytes]:

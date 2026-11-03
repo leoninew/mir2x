@@ -102,6 +102,16 @@ set_property(GLOBAL APPEND PROPERTY MIR2X_TEST_BUILD_TARGETS test_ai_bridge_npc_
 target_compile_definitions(test_ai_bridge_npc_gui PRIVATE
     MIR2X_TEST_DEFAULT_RES_DIR="${CMAKE_INSTALL_PREFIX}/client/res")
 
+file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/.runtime/test-ai-bridge/control-gui")
+add_executable(test_ai_bridge_control_gui EXCLUDE_FROM_ALL test_ai_bridge_control_gui.cpp)
+target_link_libraries(test_ai_bridge_control_gui PRIVATE Catch2::Catch2WithMain client_objs)
+add_dependencies(test_ai_bridge_control_gui zsdbmaker mir2x_resources)
+catch_discover_tests(test_ai_bridge_control_gui TEST_PREFIX "ai_bridge_control_gui/"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.runtime/test-ai-bridge/control-gui"
+    PROPERTIES TIMEOUT 600 ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_RENDER_DRIVER=software")
+set_property(GLOBAL APPEND PROPERTY MIR2X_TEST_BUILD_TARGETS test_ai_bridge_control_gui)
+target_compile_definitions(test_ai_bridge_control_gui PRIVATE MIR2X_TEST_DEFAULT_RES_DIR="${CMAKE_INSTALL_PREFIX}/client/res")
+
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/.runtime/test-ai-bridge/equipment-gui")
 add_executable(test_ai_bridge_equipment_gui EXCLUDE_FROM_ALL test_ai_bridge_equipment_gui.cpp)
 target_link_libraries(test_ai_bridge_equipment_gui PRIVATE Catch2::Catch2WithMain client_objs)

@@ -56,11 +56,12 @@ namespace
         std::function<void()> duringValidate;
         std::unique_ptr<AiBridgeController> controller;
 
-        explicit Fake(bool ready = true, Policy policy = fullPolicy(), bool enabled = true)
+        explicit Fake(bool ready = true, Policy policy = fullPolicy(), bool enabled = true, bool automatic = false)
         {
             ControllerOptions options;
             options.instanceId = std::string(32,'a'); options.build = "controller-test";
             options.policy = std::move(policy); options.enabled = enabled;
+            options.autoEnable = automatic;
             options.monotonicMs = [&]{return now;}; options.unixMs = [&]{return now + 100000;};
             options.newSessionId = [&]{std::ostringstream s;s<<std::hex<<std::setw(32)<<std::setfill('0')<<++sessionCounter;return s.str();};
             controller = std::make_unique<AiBridgeController>(std::move(options));
@@ -170,6 +171,203 @@ TEST_CASE("controller exposes only real registered capabilities and readonly lif
     Fake disabled(false,fullPolicy(),false);
     CHECK(disabled.controller->controlState()==ControlState::Disabled);
     CHECK_FALSE(disabled.controller->enableByUser());
+}
+
+TEST_CASE("initial automatic control requires a live RUN and an authenticated binding in either order")
+{
+    Fake f(false,fullPolicy(),true,true);
+    SECTION("binding first"){
+        f.controller->onConnected(1);
+        CHECK(f.controller->controlState()==ControlState::ReadOnly);
+        f.controller->observe({"run",100,11,false});
+        CHECK(f.controller->controlState()==ControlState::Paused);
+        f.controller->observe({"run",100,11,true});
+        CHECK(f.controller->controlState()==ControlState::Paused); // Death never arms startup again.
+    }
+    SECTION("live RUN first"){
+        f.controller->observe({"run",100,11,true});
+        CHECK(f.controller->controlState()==ControlState::ReadOnly);
+        const auto before=f.controller->context();
+        const auto session=f.call(f.request("game_get_session")).at("data");
+        CHECK(session.at("control_state")=="active");
+        CHECK(session.at("context")!=before);
+        const auto granted=f.controller->context();
+        for(int i=0;i<5;++i){ f.controller->observe({"run",100,11,true}); }
+        CHECK(f.controller->context()==granted);
+    }
+    SECTION("authentication before live RUN"){
+        f.controller->onConnected(1);
+        f.controller->observe({"loading",{},{},false});
+        f.controller->observe({"run",100,11,true});
+        CHECK(f.controller->controlState()==ControlState::Active);
+    }
+}
+
+TEST_CASE("scene readiness waits for known health before the initial authenticated startup grant")
+{
+    Fake f(false,fullPolicy(),true,true);
+    int bindingOrder=0;
+    SECTION("authentication before scene"){ bindingOrder=0; }
+    SECTION("authentication after scene before health"){ bindingOrder=1; }
+    SECTION("authentication after health"){ bindingOrder=2; }
+    if(bindingOrder==0){ f.controller->onConnected(1); }
+    RuntimeState scene{"run",100,11,false};
+    scene.observeLife(std::nullopt);
+    REQUIRE_FALSE(scene.alive);
+    REQUIRE_FALSE(scene.lifeKnown);
+    f.controller->observe(scene);
+    const auto pendingContext=f.controller->context();
+    if(bindingOrder==1){ f.controller->onConnected(1); }
+    for(int i=0;i<3;++i){ f.controller->observe(scene); }
+    CHECK(f.controller->controlState()==ControlState::ReadOnly);
+    CHECK(f.controller->pauseReason().empty());
+    scene.observeLife(false);
+    f.controller->observe(scene);
+    if(bindingOrder==2){ f.controller->onConnected(1); }
+    REQUIRE(f.controller->controlState()==ControlState::Active);
+    CHECK(f.controller->pauseReason().empty());
+    CHECK(f.controller->context().at("session_id")==pendingContext.at("session_id"));
+    const auto granted=f.controller->context();
+    for(int i=0;i<3;++i){ f.controller->observe(scene); }
+    CHECK(f.controller->context()==granted);
+}
+
+TEST_CASE("unknown startup health becoming confirmed dead consumes the grant even after revival")
+{
+    Fake f(false,fullPolicy(),true,true);
+    f.controller->onConnected(1);
+    RuntimeState scene{"run",100,11,false};
+    scene.observeLife(std::nullopt);
+    f.controller->observe(scene);
+    scene.observeLife(false,true); // A genuine death notification overrides a stale live health sample.
+    f.controller->observe(scene);
+    REQUIRE(f.controller->controlState()==ControlState::Paused);
+    CHECK(f.controller->pauseReason()=="death");
+    CHECK_FALSE(f.controller->enableByUser());
+    scene.observeLife(false);
+    for(int i=0;i<3;++i){ f.controller->observe(scene); }
+    CHECK(f.controller->controlState()==ControlState::Paused);
+    CHECK(f.controller->pauseReason()=="death");
+}
+
+TEST_CASE("explicit startup interruption while health is unknown never re-arms on a live sample")
+{
+    Fake f(false,fullPolicy(),true,true);
+    f.controller->onConnected(1);
+    RuntimeState scene{"run",100,11,false};
+    scene.observeLife(std::nullopt);
+    f.controller->observe(scene);
+    bool disabled=false;
+    SECTION("explicit disable"){ f.controller->disableByUser(); disabled=true; }
+    SECTION("manual takeover"){ f.controller->manualInput(); }
+    SECTION("stop"){ f.call(f.request("game_stop")); }
+    SECTION("transport loss"){ f.controller->onDisconnected(1); f.controller->onConnected(2); }
+    scene.observeLife(false);
+    for(int i=0;i<3;++i){ f.controller->observe(scene); }
+    CHECK(f.controller->controlState()==(disabled ? ControlState::Disabled : ControlState::Paused));
+}
+
+TEST_CASE("losing known life after activation stops control without automatically resuming")
+{
+    Fake f;
+    RuntimeState scene{"run",100,11,false};
+    scene.observeLife(std::nullopt);
+    f.controller->observe(scene);
+    CHECK(f.controller->controlState()==ControlState::Paused);
+    CHECK(f.controller->pauseReason()=="life_unknown");
+    CHECK_FALSE(f.controller->enableByUser());
+    scene.observeLife(false);
+    for(int i=0;i<3;++i){ f.controller->observe(scene); }
+    CHECK(f.controller->controlState()==ControlState::Paused);
+}
+
+TEST_CASE("explicit disable cancels work but preserves diagnostics and cannot be undone by observation or stop")
+{
+    Fake f(false,fullPolicy(),true,true);
+    f.registerAction();
+    f.controller->observe({"run",100,11,true});
+    f.controller->onConnected(1);
+    const auto old=f.move();
+    const auto id=accepted(f.call(old));
+    const auto lifetime=f.controller->lifetime().lock();
+    f.controller->disableByUser();
+    CHECK(f.controller->controlState()==ControlState::Disabled);
+    CHECK(f.controller->pauseReason()=="disabled_by_user");
+    CHECK(f.operation(id).at("state")=="cancelled");
+    for(int i=0;i<5;++i){
+        f.controller->observe({"run",100,11,true}); f.controller->advance();
+        CHECK(f.call(f.request("game_get_session")).at("data").at("control_state")=="disabled");
+    }
+    CHECK(f.call(f.request("game_get_events",{{"after_seq","0"}})).at("ok")==true);
+    CHECK(f.call(f.request("game_stop")).at("ok")==true);
+    CHECK(f.controller->controlState()==ControlState::Disabled);
+    CHECK(f.begins==0);
+    CHECK(f.controller->lifetime().lock()==lifetime);
+    REQUIRE(f.controller->enableByUser());
+    auto stale=f.request("game_move_to",{{"x",10},{"y",20}},2);
+    stale["context"]=old.at("context");
+    code(f.call(stale),"stale_context");
+}
+
+TEST_CASE("takeover stop world changes and transport loss consume initial startup rather than resume")
+{
+    Fake f(false,fullPolicy(),true,true);
+    f.controller->observe({"run",100,11,true});
+    SECTION("manual input before host"){
+        f.controller->manualInput();
+        f.controller->onConnected(1);
+    }
+    SECTION("world changes before host"){
+        f.controller->observe({"run",100,12,true});
+        f.controller->onConnected(1);
+    }
+    SECTION("stop before live control"){
+        f.call(f.request("game_stop"));
+    }
+    SECTION("transport lost"){
+        f.controller->onConnected(1);
+        f.controller->onDisconnected(1);
+        f.controller->onConnected(2);
+    }
+    for(int i=0;i<4;++i){ f.controller->observe({"run",100,12,true}); }
+    CHECK(f.controller->controlState()==ControlState::Paused);
+    CHECK(f.stops==0);
+}
+
+TEST_CASE("explicit disable preserves the uncertainty and budget of submitted economic work")
+{
+    Fake f(false,fullPolicy(),true,true);
+    f.cost.gold=40; f.cost.itemCount=1; f.cost.itemIds={1}; f.submitted=true;
+    f.registerAction("game_shop_buy");
+    f.controller->onConnected(1); f.controller->observe({"run",100,11,true});
+    const auto id=accepted(f.call(f.buy())); f.controller->advance();
+    REQUIRE(f.begins==1);
+    f.controller->disableByUser();
+    CHECK(f.operation(id).at("state")=="unknown");
+    CHECK(f.operation(id).at("side_effects_possible")==true);
+    CHECK(f.stops==1);
+    for(int i=0;i<3;++i){ f.controller->observe({"run",100,11,true}); f.controller->advance(); }
+    const auto policy=f.controller->session().at("capabilities").at("policy");
+    CHECK(policy.at("economic_uncertain")==true);
+    CHECK(policy.at("remaining_gold_budget")=="160");
+    CHECK(f.controller->controlState()==ControlState::Disabled);
+    REQUIRE(f.controller->enableByUser());
+    code(f.call(f.buy(2)),"economic_uncertain");
+    CHECK(f.begins==1);
+}
+
+TEST_CASE("automatic startup never reopens an internal fault or a stale accepted intent")
+{
+    Fake f(false,fullPolicy(),true,true);
+    f.registerAction(); f.beginThrows=true;
+    f.controller->onConnected(1); f.controller->observe({"run",100,11,true});
+    const auto id=accepted(f.call(f.move()));
+    f.controller->advance();
+    CHECK(f.operation(id).at("state")=="unknown");
+    for(int i=0;i<3;++i){ f.controller->observe({"run",100,11,true}); f.controller->advance(); }
+    CHECK(f.controller->pauseReason()=="controller_error");
+    CHECK_FALSE(f.controller->enableByUser());
+    CHECK(f.begins==1);
 }
 
 TEST_CASE("manual takeover cancels accepted work before begin and preserves human input")
