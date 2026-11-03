@@ -200,9 +200,14 @@ void ProcessRun::on_SM_ACTION(const uint8_t *bufPtr, size_t)
         // clear all pending action
         // this helps to avoid the motion run back and forth
         if(smA.UID == getMyHeroUID()){
+            const auto motion = getMyHero()->currMotion();
+            // A stationary hit is a reaction, not a rejected action or a position correction.
+            const bool stationaryHit = smA.action.type == ACTION_HITTED
+                && motion->x == motion->endX && motion->y == motion->endY
+                && smA.action.x == motion->endX && smA.action.y == motion->endY;
             getMyHero()->clearActionQueue();
             m_aiServerPosition = std::pair<int, int>{smA.action.x, smA.action.y};
-            ++m_aiServerRevision;
+            if(!stationaryHit){ ++m_aiServerRevision; }
         }
 
         coPtr->parseAction(smA.action);

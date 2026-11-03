@@ -17,6 +17,7 @@ namespace aibridge { class AiBridgeRuntime; struct RuntimeState; }
 class Client final
 {
     private:
+        friend struct AiCombatTestAccess;
         struct SMProcMonitor
         {
             uint64_t procTick  = 0;
