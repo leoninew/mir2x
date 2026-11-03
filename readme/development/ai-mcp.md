@@ -51,6 +51,32 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 
 当前自动启动/按钮与装备代码的开发验证单独见[本轮检查清单](../../docs/verification/20261103-ai-startup.md)，审查方的[真实练级记录](../../docs/verification/20261103-mcp-leveling.md)与开发回归分别记录。技能书成功消费后仍须重新读取 `game_get_skills`，客户端等级实际增长才支持练级结论；现有原生 canWear 仍有 job/level/weight 等未实现的 TODO，不声称桥接补齐了服务端规则。
 
+## 持续只读监督
+
+`mcp observe` 提供一个独立的官方 SDK 宿主。先从已有会话核对 instance_id 和 character_uid，再由当前运行负责人协调结束旧 MCP 连接；同一实例不能同时接第二个宿主。源码短入口使用最新 Python，已安装 EXE 须更新到包含该命令的版本：
+
+```powershell
+./mir2x.cmd mcp observe --instance-id $instanceId --character-uid $characterUid --report .runtime/observe.jsonl
+```
+
+实例和角色参数为必填，不会自动改绑。此入口自动向 stdio 子进程传 `--no-reconnect`；首次连接尝试失败或已认证连接丢失后锁闭，后续只读请求也不重新认证。通用 `mcp serve` 可显式选择同一选项，配合 `--instance-id` 使用。`observe` 不调用恢复、停止或其他角色写工具，paused/death/disabled 保持原状态。
+
+后台每250ms安排会话、生命和附近对象观察；生命/控制/视野任何一项超过500ms未取得有效观察即输出 `monitor_stale`。等待 stdin 或单个工具响应不占用监控锁；未完成读取不会为了赶采样期限而被取消，也不叠加重复轮询。全部工具调用使用每滚动秒16次的上限，其中额外输入最多4次，给既有 heartbeat 留余量。系统或游戏停顿时不能保证硬实时，告警也不能保证角色脱险。
+
+输出同时写 stdout 和指定的追加 JSONL；告警另写 stderr。首轮有效一致观察后有 `monitor_ready`，它只证明只读观察已就绪。HP≤80%、HP≤50%、一秒内损失最大生命5%、死亡、多只近身怪物、未知生命、分页不完整及控制/上下文变化各有明确事件。附近对象没有仇恨字段，多只怪物只是风险线索。角色信息仍限于客户端已知值，不证明最新服务端生命或伤害归因。
+
+输入保持打开时持续观察，可逐行发送：
+
+```json
+{"command":"observe"}
+{"command":"call","name":"game_get_inventory","arguments":{}}
+{"command":"quit"}
+```
+
+所有角色写操作（含 `game_stop`）、`arm` 和未知命令均被拒绝。EOF/quit 退出并关闭此宿主持有的 stdio；连接关闭后的游戏暂停遵从现有 transport_lost 规则。此阶段没有自动用药、取消进攻或撤退功能。`game_stop` 会整体暂停控制，不能把它当作取消攻击后仍能移动的入口。
+
+已有官方 SDK 宿主可导入 `mir2x_mcp.supervision.run_with_session(session, binding=Binding(instance_id, character_uid), emit=callback, commands=async_iterator, stop=asyncio.Event())`，它复用调用者的 session，不创建或关闭连接。**其 stdio 服务必须已使用 `--no-reconnect` 启动**；旧宿主不能仅导入函数就获得这个保证。callback 接收结构化事件，可让上层协调器在等待模型期间处理告警；该函数不自行向外部消息服务发送通知。使用 stop Event 正常结束，避免取消正在进行的 SDK 调用。
+
 ## 结果、重复请求与恢复
 
 | 状态 / 范围 | 使用时的含义 |

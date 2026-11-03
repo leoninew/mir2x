@@ -151,6 +151,7 @@ class BridgeClient:
         self.character_uid = None
         self.current_character_uid = None
         self.closed = False
+        self.connection_attempted = False
 
     async def _authenticate(self, record):
         link = None
@@ -195,6 +196,9 @@ class BridgeClient:
                 raise BridgeError("unavailable", "MCP已关闭")
             if self.link and not self.link.closed:
                 return self.link
+            if self.config.no_reconnect and self.connection_attempted:
+                raise BridgeError("transport_lost", "监督连接已锁闭；不会自动重新认证")
+            self.connection_attempted = True
             if self.link:
                 await self.link.close()
                 self.link = None

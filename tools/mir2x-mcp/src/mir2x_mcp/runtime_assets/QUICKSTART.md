@@ -47,6 +47,8 @@ JSON 用于接受 `mcpServers` 的宿主；TOML 用于 Codex 的 `mcp_servers` �
 
 ## 日常管理
 
+需要连续只读生命观察时，可使用 `./mir2x.cmd mcp observe --instance-id <明确实例ID> --character-uid <角色UID> --report <JSONL路径>`。它是独立的官方 SDK 宿主，先协调结束旧连接，不能并开；连接丢失后锁闭、不重新认证。保持输入打开时每250ms安排观察，超过500ms未更新即告警；输入 `{"command":"quit"}` 或 EOF 退出。此阶段拒绝角色写操作，不自动用药、撤退或恢复 AI，不能把监控或 game_stop 当成脱战保护。完整输入与 SDK 接口见源码 `readme/development/ai-mcp.md` 的“持续只读监督”。
+
 ```powershell
 ./mir2x.cmd status
 ./mir2x.cmd client restart

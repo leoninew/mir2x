@@ -53,6 +53,38 @@ async def test_heartbeat_and_eof(fake, client, monkeypatch):
     await asyncio.wait_for(fake.disconnected.wait(), 1)
 
 
+async def test_no_reconnect_latches_silent_eof_and_queued_readers(fake):
+    client = BridgeClient(Config(fake.directory, fake.instance_id, no_reconnect=True))
+    try:
+        await client.call("game_get_session", {})
+        for writer in fake.clients:
+            writer.close()
+        await asyncio.wait_for(client.link.reader_task, 1)
+        assert client.link.closed
+        results = await asyncio.gather(
+            *(client.call("game_get_session", {}) for _ in range(5)), return_exceptions=True
+        )
+        assert all(
+            isinstance(value, BridgeError) and value.code == "transport_lost" for value in results
+        )
+        assert fake.auths == 1
+    finally:
+        await client.close()
+
+
+async def test_no_reconnect_does_not_retry_failed_initial_selection(tmp_path):
+    with pytest.raises(ValueError, match="instance-id"):
+        Config(tmp_path, no_reconnect=True)
+    client = BridgeClient(Config(tmp_path / "missing", "0" * 32, no_reconnect=True))
+    try:
+        with pytest.raises(BridgeError, match="unavailable"):
+            await client.call("game_get_session", {})
+        with pytest.raises(BridgeError, match="transport_lost"):
+            await client.call("game_get_session", {})
+    finally:
+        await client.close()
+
+
 async def test_multiple_instances_require_explicit_selection(fake):
     other = await FakeBridge(fake.directory, "1" * 32).start()
     client = BridgeClient(Config(fake.directory))
