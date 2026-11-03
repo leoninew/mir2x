@@ -1,7 +1,6 @@
 #pragma once
 #include "runtime.hpp"
 #include "textboard.hpp"
-#include "textbutton.hpp"
 
 namespace aibridge
 {
@@ -13,21 +12,12 @@ namespace aibridge
             std::function<bool()> m_connected;
             ControlGesture m_gesture;
             bool m_closed = false;
+            bool m_active = false;
             std::string m_status;
-            std::string m_role = "角色：未进入游戏";
-            std::string m_reason;
-            uint64_t m_noticeUntil = 0;
             TextBoard m_statusText;
-            TextBoard m_roleText;
-            TextBoard m_reasonText;
-            TextButton m_enable;
-            TextButton m_disable;
         public:
             AiControlPanel(std::function<AiBridgeController *()>, std::function<bool()> connected);
             SDL_FRect bounds() const;
-            SDL_FRect enableBounds() const;
-            SDL_FRect disableBounds() const;
-            void setRole(std::string text) { m_role = std::move(text); }
             void resetGesture() { m_gesture.reset(); }
             void close(std::string reason);
             void refresh();

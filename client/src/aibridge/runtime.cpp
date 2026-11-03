@@ -75,13 +75,6 @@ namespace aibridge
 
         void refreshPanel()
         {
-            if(!controller){ return; }
-            std::string role = "角色：未进入游戏";
-            if(auto h = hero()){
-                // TextBoard renders plain text, including names containing XML metacharacters.
-                role = "角色：[" + std::to_string(h->UID()) + "] " + h->knownName();
-            }
-            panel.setRole(std::move(role));
             panel.refresh();
         }
     };
