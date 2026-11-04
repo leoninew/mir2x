@@ -776,7 +776,19 @@ async def test_runtime_entry_real_stdio_sdk_without_game(fake, tmp_path, package
         async with ClientSession(read, write, read_timeout_seconds=15) as session:
             assert (await session.initialize()).server_info.name == "mir2x"
             assert {tool.name for tool in (await session.list_tools()).tools} == set(METHODS)
-            assert len((await session.list_resources()).resources) == 6
+            resources = (await session.list_resources()).resources
+            assert {str(resource.uri) for resource in resources} == {
+                "mir2x://session",
+                "mir2x://character",
+                "mir2x://nearby",
+                "mir2x://inventory",
+                "mir2x://interaction",
+                "mir2x://capabilities",
+                "mir2x://knowledge/leveling",
+                "mir2x://knowledge/leveling/maps",
+                "mir2x://knowledge/leveling/equipment",
+                "mir2x://knowledge/leveling/skills",
+            }
             result = await session.call_tool("game_get_session", {})
             assert not result.is_error
     assert fake.auths == 1

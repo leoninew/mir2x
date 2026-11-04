@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import sys
+from importlib.resources import files
 
 import pytest
 from conftest import FIXTURES, OPERATIONS, arguments
@@ -9,6 +10,63 @@ from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from mir2x_mcp.contract import METHODS, StrictValidator, input_schema, output_schema
+
+KNOWLEDGE = {
+    "mir2x://knowledge/leveling": "leveling.md",
+    "mir2x://knowledge/leveling/maps": "leveling-maps.md",
+    "mir2x://knowledge/leveling/equipment": "leveling-equipment.md",
+    "mir2x://knowledge/leveling/skills": "leveling-skills.md",
+}
+
+
+@pytest.mark.parametrize("frozen", [False, True], ids=["source", "frozen"])
+async def test_official_sdk_reads_offline_leveling_knowledge_without_bridge(tmp_path, frozen):
+    executable = os.environ.get("MIR2X_FROZEN_EXE")
+    if frozen and not executable:
+        pytest.skip("MIR2X_FROZEN_EXE is not set")
+    root = tmp_path / "offline knowledge root"
+    root.mkdir()
+    bridge = root / "nonexistent bridge"
+    (root / "mir2x.local.toml").write_text(
+        "[launcher]\nbridge_dir=" + json.dumps(str(bridge)) + "\n", "utf-8"
+    )
+    parameters = StdioServerParameters(
+        command=executable if frozen else sys.executable,
+        args=([] if frozen else ["-m", "mir2x_mcp.runtime_cli"])
+        + [
+            "--root",
+            str(root),
+            "mcp",
+            "serve",
+            "--instance-id",
+            "f" * 32,
+            "--no-reconnect",
+        ],
+        env={"PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert not bridge.exists()
+    async with stdio_client(parameters) as (read, write):
+        async with ClientSession(read, write, read_timeout_seconds=10) as session:
+            initialized = await session.initialize()
+            assert "mir2x://knowledge/leveling" in initialized.instructions
+            resources = {
+                str(resource.uri): resource
+                for resource in (await session.list_resources()).resources
+            }
+            for uri, filename in KNOWLEDGE.items():
+                assert resources[uri].mime_type == "text/markdown"
+                result = await session.read_resource(uri)
+                assert len(result.contents) == 1
+                content = result.contents[0]
+                assert content.mime_type == "text/markdown"
+                expected = (
+                    files("mir2x_mcp").joinpath("runtime_assets", filename).read_text("utf-8")
+                )
+                assert content.text == expected
+            index = (await session.read_resource("mir2x://knowledge/leveling")).contents[0].text
+            for uri in KNOWLEDGE.keys() - {"mir2x://knowledge/leveling"}:
+                assert uri in index
+    assert not bridge.exists()
 
 
 async def test_official_sdk_targeted_interruption_sends_exact_scoped_params_once(fake, tmp_path):
@@ -70,7 +128,7 @@ async def test_real_sdk_stdio_all_tools_resources_and_eof(fake, tmp_path):
                     assert tool.annotations.read_only_hint is not write_tool
                     assert tool.annotations.destructive_hint is write_tool
                 resources = (await session.list_resources()).resources
-                assert {str(resource.uri) for resource in resources} == {
+                assert {str(resource.uri) for resource in resources} == set(KNOWLEDGE) | {
                     f"mir2x://{name}"
                     for name in (
                         "session",
@@ -96,8 +154,13 @@ async def test_real_sdk_stdio_all_tools_resources_and_eof(fake, tmp_path):
                         assert not (await session.call_tool("game_get_session", {})).is_error
                 for resource in resources:
                     result = await session.read_resource(resource.uri)
-                    payload = json.loads(result.contents[0].text)
-                    assert payload["ok"]
+                    if resource.mime_type == "application/json":
+                        payload = json.loads(result.contents[0].text)
+                        assert payload["ok"]
+                    else:
+                        assert resource.mime_type == "text/markdown"
+                        assert str(resource.uri) in KNOWLEDGE
+                        assert result.contents[0].text.startswith("# ")
                 for literal in ("null", "[]", "{}"):
                     result = await session.call_tool("game_get_inventory", {"cursor": literal})
                     assert not result.is_error

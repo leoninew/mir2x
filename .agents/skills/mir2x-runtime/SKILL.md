@@ -29,4 +29,6 @@ description: 启动、诊断和关闭本地 mir2x 服务器/客户端，并通�
 
 普通练级先读角色、背包、装备与已学技能，正常获取并穿戴装备，再用真实视野发现的自然刷新怪物和已学技能战斗，accepted 后查询终态并重新观察。`game_use_item` 的可穿戴物品须 count=1，按普通背包槽位选择；成功须精确实例进入预定装备槽，不表示消耗。技能书使用后必须再读 get_skills，消耗本身不证明学会；熟练度只报告客户端实际可读值。记录真实等级前后变化与停止原因。禁止 GM/管理员/调试召唤、加经验/金币/物品、GM 传送、修改 Lua/数据库/坐标等捷径；有消耗或不明副作用的 NPC 选择先报告。
 
+练级前读取 `mir2x://knowledge/leveling`，按当前角色的实时等级、装备、已学技能和战斗表现选择地图、装备与技能阶段；再按需要读取 `/maps`、`/equipment`、`/skills` 子资源。四个静态 Markdown 资源无需连接游戏即可阅读；发行目录离线文档为[练级索引](../../../readme/gameplay/leveling.md)、[地图与怪物](../../../readme/gameplay/leveling-maps.md)、[装备](../../../readme/gameplay/leveling-equipment.md)、[技能](../../../readme/gameplay/leveling-skills.md)，仓库浏览入口见[玩法参考](../../../readme/gameplay/README.md)。静态刷新区域、物品条件和经验曲线不证明当前目标、可走路径、现货、报价或实际经验收益；不把未来阶段的换装、技能或换图设为当前基础战斗的前置条件。
+
 内部取消仅使用 `game_stop(interrupt_only=true, operation_id, context)`：精确绑定当前owned操作和新鲜context，递增epoch、保留控制状态和授权；无pending时disarm只清宿主计划。默认game_stop仍是显式撤销任务的优先停止。取消不回滚交易，不清未知或未确认事实；新动作须重新观察和新intent。普通动作由同一监督器action调度，支持move_to/shop_close/npc_open/npc_choose/npc_close，不套用scout退路规则，不自动选择NPC脚本选项。
