@@ -590,6 +590,33 @@ TEST_CASE("Combat actual adapter pursues a reachable target with real unit moves
     CHECK(test.status().at("result").at("submitted") == true);
 }
 
+TEST_CASE("Combat completed attack preserves the sent swing before the next action")
+{
+    AdapterScene test(432, 187);
+    const auto target = test.pig(433, 187);
+    REQUIRE(test.attack(target).at("ok") == true);
+    test.controller().advance();
+    for(int i = 0; i < 100 && test.hero().actionTypeSendSequence(ACTION_ATTACK) == 0; ++i){ test.hero().update(100); }
+    REQUIRE(test.hero().actionTypeSendSequence(ACTION_ATTACK) == 1);
+    REQUIRE_FALSE(test.hero().aiCanStartMove());
+    const auto type = test.hero().currMotion()->type;
+    const auto frame = test.hero().currMotion()->frame;
+    health(*test.scene, target, 0);
+    test.controller().advance();
+    REQUIRE(test.status().at("state") == "succeeded");
+    CHECK(test.hero().currMotion()->type == type);
+    CHECK(test.hero().currMotion()->frame == frame);
+    CHECK_FALSE(test.hero().aiCanStartMove());
+    CHECK(test.scene->getFocusUID(FOCUS_ATTACK) == 0);
+    const auto next = test.move({432, 188});
+    REQUIRE(next.at("ok") == false);
+    CHECK(next.at("error").at("code") == "busy");
+    for(int i = 0; i < 20; ++i){ test.step(); }
+    CHECK(test.hero().aiMotionStopped());
+    CHECK(test.hero().actionTypeSendSequence(ACTION_ATTACK) == 1);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE) == 0);
+}
+
 TEST_CASE("Combat actual adapter cancels pursuit on manual takeover and authoritative correction")
 {
     AdapterScene test(439, 116);

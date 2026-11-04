@@ -58,8 +58,8 @@ bool MyHero::cancelAiIntent()
     m_aiActionGuard={};
     clearActionQueue();
     m_motionQueue.clear();
-    // A dying/forced server motion is authoritative; never flush it to a stand motion.
-    if(m_currMotion->type != MOTION_DIE && m_forcedMotionQueue.empty()){
+    // Stop pursuit without shortening a sent attack, spell or hit reaction.
+    if(moving() && m_forcedMotionQueue.empty()){
         brakeMove();
     }
     return true;
