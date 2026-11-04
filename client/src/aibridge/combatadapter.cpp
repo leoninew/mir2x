@@ -96,6 +96,7 @@ namespace aibridge
         uint64_t heroIncarnation=0, actionSequence=0, attackSequence=0, spellSequence=0, kickSequence=0;
         uint64_t pickupSequence=0, pickupActionSequence=0, consumeSequence=0, pickupErrorSequence=0, serverRevision=0;
         uint64_t deathSequence=0;
+        uint64_t reviveReceiptSequence=0;
         uint64_t started=0, lastProgress=0;
         std::optional<TargetIdentity> target;
         std::optional<GroundIdentity> pickupGround;
@@ -164,6 +165,12 @@ namespace aibridge
         {
             try{
                 auto &scene=run(); auto &hero=heroOf(scene);
+                if(method=="game_revive"){
+                    if(controller().context()!=context){ throw ProtocolError("stale_context","Character context changed"); }
+                    if(!scene.aiState().knownDead()){ throw ProtocolError("paused","Revival requires confirmed death"); }
+                    if(busyPanel(scene)){ throw ProtocolError("busy","A modal interaction is active"); }
+                    return {};
+                }
                 validateCommon(scene,hero,context);
                 BudgetRequest budget;
                 bool targetIsSelf=false;
@@ -308,6 +315,13 @@ namespace aibridge
                 deathSequence=scene.aiDeathSequence();
                 started=lastProgress=monotonicMs(); lastPosition=point(hero);
                 if(started>=view.deadlineMs){ return fail(view,"timeout"); }
+                if(view.method=="game_revive"){
+                    reviveReceiptSequence=scene.aiReviveReceiptSequence();
+                    const auto before=scene.aiReviveSendSequence();
+                    scene.requestRevive();
+                    sent=scene.aiReviveSendSequence()!=before;
+                    return {.submitted=sent,.result={{"submitted",sent}}};
+                }
                 ActionKind kind=ActionKind::PickUp;
                 if(view.method=="game_use_item"){
                     kind=ActionKind::UseItem;
@@ -452,6 +466,19 @@ namespace aibridge
         OperationUpdate tick(const OperationView &view)
         {
             try{
+                if(view.method=="game_revive"){
+                    if(operationId!=view.operationId){ return fail(view,"stale_context",true); }
+                    const auto scene=client.getProcess<ProcessRun>();
+                    if(!scene){ return fail(view,"not_in_game",true); }
+                    if(scene->aiReviveReceiptSequence()!=reviveReceiptSequence && scene->aiState().knownAlive()){
+                        auto proof=evidence("action","收到正常复活回执，并已重新观察到角色存活；普通动作仍暂停");
+                        proof[0]["source"]="server"; proof[0]["server_code"]="SM_REVIVE";
+                        return finish(view,{.outcome=OperationOutcome::Succeeded,.submitted=sent,
+                            .completionScope="observed_postcondition",.evidence=std::move(proof),
+                            .result={{"submitted",sent},{"position",{{"x",heroOf(*scene).x()},{"y",heroOf(*scene).y()}}}}});
+                    }
+                    return {.submitted=sent,.result={{"submitted",sent}}};
+                }
                 if(!progress || operationId!=view.operationId){ return fail(view,"stale_context",true); }
                 auto &scene=run(); auto &hero=heroOf(scene);
                 if(hero.incarnation()!=heroIncarnation){ return fail(view,"stale_context",true); }
@@ -527,7 +554,7 @@ namespace aibridge
     {
         auto &s=*m_impl;
         s.controller().registerQuery("game_get_skills",[&s](const Json &,const Json &){ return s.skills(); });
-        for(const std::string method:{"game_pick_up","game_attack","game_cast","game_use_item"}){
+        for(const std::string method:{"game_pick_up","game_attack","game_cast","game_use_item","game_revive"}){
             ActionAdapter adapter;
             adapter.validate=[&s,method](const Json &params,const Json &context){ return s.validate(method,params,context); };
             adapter.begin=[&s](const OperationView &view){ return s.begin(view); };

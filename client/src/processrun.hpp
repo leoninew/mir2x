@@ -81,6 +81,8 @@ class ProcessRun: public Process
         uint64_t m_aiServerRevision = 0;
         uint64_t m_aiPickupSendSequence = 0;
         uint64_t m_aiConsumeSendSequence = 0;
+        uint64_t m_aiReviveSendSequence = 0;
+        uint64_t m_aiReviveReceiptSequence = 0;
         aibridge::EquipmentRequests m_equipmentRequests;
         uint64_t m_aiPickupErrorSequence = 0;
         uint32_t m_aiPickupFailedItem = 0;
@@ -196,6 +198,8 @@ class ProcessRun: public Process
         uint64_t aiServerRevision() const noexcept { return m_aiServerRevision; }
         uint64_t aiPickupSendSequence() const noexcept { return m_aiPickupSendSequence; }
         uint64_t aiConsumeSendSequence() const noexcept { return m_aiConsumeSendSequence; }
+        uint64_t aiReviveSendSequence() const noexcept { return m_aiReviveSendSequence; }
+        uint64_t aiReviveReceiptSequence() const noexcept { return m_aiReviveReceiptSequence; }
         const aibridge::EquipmentRequests &equipmentRequests() const noexcept { return m_equipmentRequests; }
         uint64_t aiPickupErrorSequence() const noexcept { return m_aiPickupErrorSequence; }
         uint32_t aiPickupFailedItem() const noexcept { return m_aiPickupFailedItem; }

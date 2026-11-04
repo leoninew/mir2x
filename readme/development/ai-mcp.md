@@ -1,7 +1,9 @@
 # 使用 Python MCP 操作当前角色
-最后修改时间: 2026-11-01 21:19:34
+最后修改日期: 2026-11-04
 
 [返回知识库](README.md) · [完整验证清单](../../docs/verification/20261031-ai-character-mcp.md) · [协议与实现](ai-bridge-protocol.md)
+
+专用 `game_revive(request_id, context, timeout_ms)` 复用原生“返回复活点”流程，由服务端决定正常落点。仅已知死亡、因死亡或生命未知暂停且未明确停止的角色可用，冻结策略也必须允许。它不要求活人的控制grant，不开放普通动作，不接受地图、坐标或HP参数。accepted后查询operation，正常复活回执与后续known alive均到达才成功；缺回执、生命未知或超时保留实际不确定性。搬迁期间只保留这次复活等待，同角色加载之外的断线、换角色、显式停止仍取消；不重放旧动作。成功后继续暂停，刷新session/context及生命，按既有同任务续用规则重新规划。未知、预算和未确认钱物均不因复活清除；不将重登在原地10HP恢复当作回城复活。
 
 MCP 连接本机客户端当前角色，仍使用正常游戏规则；任务授权不扩大原生冻结策略。新授权模式下，真实的新明确用户任务通过 game_grant_control(mode=new_task) 授权。普通 SDL 输入立即停止当前 intent、递增 control_epoch，保留有效任务和 active；旧队列/计划作废，重新观察后提交新动作。正常场景加载/换图、死亡或生命未知期间不能动作；同角色同 session 恢复 known alive/auth/RUN 后，可用原 grant 的 continue_task 重新授权并规划。明确 AI 状态 toggle off、默认 game_stop 或用户说“AI不要管”均锁存停止，远端调用者只有新的明确用户操作指令及新 grant 能解除；用户也可在真实游戏窗口明确重新开启，作为新的本地授权。两种方式均不恢复旧动作；本地开启不允许旧 grant 继续，轮询不能解除停止。fault、transport/EOF、换角色/session 不可续用旧授权；unknown/submitted/未确认钱物与预算事实不因授权清除。
 

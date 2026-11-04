@@ -94,11 +94,11 @@ namespace
     };
 }
 
-TEST_CASE("all 37 methods share closed request and response fixtures")
+TEST_CASE("all 38 methods share closed request and response fixtures")
 {
     const auto fixtures = readJson(std::filesystem::path(MIR2X_AI_CONTRACT_DIR) / "fixtures.json");
-    REQUIRE(fixtures.size() == 37);
-    REQUIRE(contract().at("x-methods").size() == 37);
+    REQUIRE(fixtures.size() == 38);
+    REQUIRE(contract().at("x-methods").size() == 38);
     for(const auto &f: fixtures){
         const auto method = f.at("method").get<std::string>();
         INFO(method);

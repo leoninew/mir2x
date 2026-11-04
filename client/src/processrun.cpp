@@ -2037,6 +2037,7 @@ void ProcessRun::requestDie()
 void ProcessRun::requestRevive()
 {
     g_client->send(CM_REQUESTREVIVE);
+    ++m_aiReviveSendSequence;
 }
 
 void ProcessRun::requestLogout()

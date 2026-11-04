@@ -136,6 +136,54 @@ namespace
     }
 }
 
+TEST_CASE("Dead-only recovery cannot enable gameplay or override a stop")
+{
+    Fake fake(true,fullPolicy(true));
+    fake.registerAction("game_revive");
+    fake.registerAction("game_move_to");
+    CHECK(fake.call(fake.request("game_revive")).at("error").at("code")=="paused");
+    fake.controller->observe({"run",100,11,false});
+    const auto request=fake.request("game_revive",Json::object(),2);
+    const auto admitted=fake.call(request);
+    REQUIRE(admitted.at("ok")==true);
+    CHECK(fake.begins==0);
+    CHECK(fake.call(fake.move(3)).at("ok")==false);
+    fake.submitted=true;
+    fake.controller->advance();
+    CHECK(fake.begins==1);
+    fake.controller->observe({"run",100,12,false});
+    CHECK(fake.controller->activeOperation().has_value());
+    fake.controller->observe({"run",100,12,true});
+    auto recovered=success();recovered.submitted=true;fake.nextTick=recovered;
+    fake.controller->advance();
+    CHECK(fake.operation(admitted.at("data").at("operation_id")).at("state")=="succeeded");
+    CHECK(fake.controller->controlState()==ControlState::Paused);
+    CHECK(fake.call(fake.move(4)).at("ok")==false);
+
+    fake.controller->observe({"run",100,12,false});
+    REQUIRE(fake.call(fake.request("game_stop")).at("ok")==true);
+    CHECK(fake.call(fake.request("game_revive",Json::object(),5)).at("ok")==false);
+    CHECK(fake.begins==1);
+}
+
+TEST_CASE("Recovery keeps cancellation identity and never continues across a different role")
+{
+    Fake fake(true,fullPolicy(true));fake.registerAction("game_revive");
+    fake.controller->observe({"run",100,11,false});
+    const auto request=fake.request("game_revive",Json::object(),2);
+    const auto admitted=fake.call(request);REQUIRE(admitted.at("ok")==true);
+    REQUIRE(fake.call(fake.request("game_stop")).at("ok")==true);
+    fake.controller->advance();CHECK(fake.begins==0);
+    CHECK(fake.call(request).at("data").at("state")=="cancelled");
+
+    Fake other(true,fullPolicy(true));other.registerAction("game_revive");
+    other.controller->observe({"run",100,11,false});other.submitted=true;
+    const auto active=other.call(other.request("game_revive"));REQUIRE(active.at("ok")==true);
+    other.controller->advance();other.controller->observe({"run",101,11,false});
+    CHECK(other.operation(active.at("data").at("operation_id")).at("state")=="unknown");
+    CHECK_FALSE(other.controller->activeOperation().has_value());
+}
+
 TEST_CASE("task grant admits fresh authority and never replays queued work", "[task_grant]")
 {
     Fake f(true, fullPolicy(true));

@@ -32,3 +32,5 @@ description: 启动、诊断和关闭本地 mir2x 服务器/客户端，并通�
 练级前读取 `mir2x://knowledge/leveling`，按当前角色的实时等级、装备、已学技能和战斗表现选择地图、装备与技能阶段；再按需要读取 `/maps`、`/equipment`、`/skills` 子资源。四个静态 Markdown 资源无需连接游戏即可阅读；发行目录离线文档为[练级索引](../../../readme/gameplay/leveling.md)、[地图与怪物](../../../readme/gameplay/leveling-maps.md)、[装备](../../../readme/gameplay/leveling-equipment.md)、[技能](../../../readme/gameplay/leveling-skills.md)，仓库浏览入口见[玩法参考](../../../readme/gameplay/README.md)。静态刷新区域、物品条件和经验曲线不证明当前目标、可走路径、现货、报价或实际经验收益；不把未来阶段的换装、技能或换图设为当前基础战斗的前置条件。
 
 内部取消仅使用 `game_stop(interrupt_only=true, operation_id, context)`：精确绑定当前owned操作和新鲜context，递增epoch、保留控制状态和授权；无pending时disarm只清宿主计划。默认game_stop仍是显式撤销任务的优先停止。取消不回滚交易，不清未知或未确认事实；新动作须重新观察和新intent。普通动作由同一监督器action调度，支持move_to/shop_close/npc_open/npc_choose/npc_close，不套用scout退路规则，不自动选择NPC脚本选项。
+
+死亡恢复使用专用 `game_revive(request_id, context, timeout_ms)`，先核当前能力及策略。它仅允许已知死亡、因死亡/生命未知暂停、未明确停止且连接有效的角色，复用正常“返回复活点”协议；没有地图、坐标或加血参数，不授予普通动作权限。该入口不要求先取得仅活人可用的控制grant。accepted后查询终态，必须同时观察到本次等待期间的正常复活回执及known alive；回执或生命缺一不可。复活搬迁不会重放旧动作，仍保持暂停；刷新session/context/生命后，已有同任务grant可continue_task，缺少有效grant时按真实新用户任务规则处理。unknown/丢响应不得重发，不清预算或旧未知事实；不通过重登在死亡地点恢复10HP来代替该能力。

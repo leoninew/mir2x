@@ -206,7 +206,11 @@ namespace aibridge
         {
             if(!inGame()){ return failure("not_in_game"); }
             if(scope != context()){ return failure("stale_context"); }
-            if(control != ControlState::Active || !runtime.knownAlive() || closing || stopping){ return failure("paused"); }
+            // Recovery is a separate, dead-only request. It never enables ordinary actions.
+            const bool revive = method == "game_revive" && runtime.knownDead()
+                && control == ControlState::Paused && (reason == "death" || reason == "life_unknown") && !stopLatched && !faulted;
+            if(closing || stopping || (method == "game_revive" ? !revive
+                : control != ControlState::Active || !runtime.knownAlive())){ return failure("paused"); }
             if(!options.policy.allowsAction(method)){ return failure("policy_denied"); }
             if((method == "game_npc_open" || method == "game_npc_choose" || method == "game_npc_input") && !options.policy.allowNpcDialogue){
                 return failure("policy_denied");
@@ -440,8 +444,11 @@ namespace aibridge
         const bool enteringLoad = s.grantMode() && state.phase == "loading" && !s.sessionId.empty();
         const bool returningLoad = s.grantMode() && newInGame && !wasInGame && !s.sessionId.empty()
             && !s.resetBudgetOnRun && s.budgetRole == state.roleUid;
+        const bool reviveRelocation = s.active && s.records.at(*s.active).view.method == "game_revive"
+            && s.records.at(*s.active).begun && (s.reason == "death" || s.reason == "life_unknown")
+            && ((newInGame && state.roleUid == s.budgetRole) || enteringLoad);
         if(sessionChange && !enteringLoad && !returningLoad){ s.revokeGrant(); }
-        if((sessionChange && wasInGame) || mapChange || lifeLost){
+        if(((sessionChange && wasInGame) || mapChange || lifeLost) && !reviveRelocation){
             s.pause(lifeLost ? (state.knownDead() ? "death" : "life_unknown") : (mapChange || enteringLoad) ? "map_changed" : "session_changed");
         }
         const bool phaseChange = s.runtime.phase != state.phase;

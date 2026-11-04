@@ -114,7 +114,7 @@ def test_generated_files_are_current(tmp_path):
         files[-1].read_bytes()
         == (ROOT / "contracts/ai-bridge/v1/contract.schema.json").read_bytes()
     )
-    assert len(METHODS) == 37
+    assert len(METHODS) == 38
     for method in METHODS:
         assert input_schema(method)["type"] == "object"
 

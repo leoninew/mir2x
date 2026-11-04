@@ -675,6 +675,7 @@ void ProcessRun::on_SM_REVIVE(const uint8_t *bufPtr, size_t)
     dynamic_cast<MyHero *>(m_coList.at(m_myHeroUID).get())->clearActionQueue();
     relocateMyHero(smR.mapUID, smR.x, smR.y, smR.direction);
     m_aiDeathKnown = false;
+    ++m_aiReviveReceiptSequence;
 }
 
 void ProcessRun::on_SM_LOGOUTOK(const uint8_t *, size_t)

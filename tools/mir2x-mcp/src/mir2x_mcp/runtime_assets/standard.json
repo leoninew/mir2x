@@ -24,7 +24,8 @@
     "game_delivery_claim",
     "game_stop",
     "game_grant_control",
-    "game_shop_close"
+    "game_shop_close",
+    "game_revive"
   ],
   "allow_pvp": false,
   "allowed_peer_uids": [],

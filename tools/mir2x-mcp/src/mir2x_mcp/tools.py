@@ -1082,3 +1082,34 @@ def register_tools(server, bridge):
                 "timeout_ms": timeout_ms,
             },
         )
+
+    @server.tool(
+        name="game_revive",
+        description="仅已知死亡且未明确停止时请求正常返回复活点；无坐标参数，不授权其他动作。查询真实终态，恢复后重新观察及授权，未知不得重发；返回操作ID后查询进展，unknown不得自动重试。",
+        annotations=ToolAnnotations(
+            read_only_hint=False,
+            destructive_hint=True,
+            idempotent_hint=False,
+            open_world_hint=False,
+        ),
+    )
+    async def game_revive(
+        *,
+        request_id: Annotated[
+            str,
+            Field(
+                strict=True,
+                pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            ),
+        ],
+        context: GameContext,
+        timeout_ms: Annotated[int, Field(strict=True, ge=1, le=30000)],
+    ) -> CallToolResult:
+        return await bridge.tool(
+            "game_revive",
+            {
+                "request_id": request_id,
+                "context": context,
+                "timeout_ms": timeout_ms,
+            },
+        )

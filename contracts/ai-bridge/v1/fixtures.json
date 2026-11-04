@@ -2052,5 +2052,59 @@
       },
       "timeout_ms": 1
     }
+  },
+  {
+    "method": "game_revive",
+    "request": {
+      "v": 1,
+      "id": "example",
+      "method": "game_revive",
+      "params": {},
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    },
+    "success": {
+      "v": 1,
+      "id": "example",
+      "ok": true,
+      "data": {
+        "operation_id": "example",
+        "state": "accepted"
+      },
+      "context": null
+    },
+    "failure": {
+      "v": 1,
+      "id": "example",
+      "ok": false,
+      "error": {
+        "code": "not_in_game",
+        "message": "角色尚未进入游戏",
+        "details": {}
+      },
+      "context": null
+    },
+    "invalid": {
+      "v": 1,
+      "id": "example",
+      "method": "game_revive",
+      "params": {
+        "unexpected": true
+      },
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "context": {
+        "instance_id": "00000000000000000000000000000000",
+        "session_id": "00000000000000000000000000000000",
+        "world_epoch": "0",
+        "control_epoch": "0"
+      },
+      "timeout_ms": 1
+    }
   }
 ]

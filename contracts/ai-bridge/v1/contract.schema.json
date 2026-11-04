@@ -1100,7 +1100,7 @@
             "maxLength": 64,
             "x-maxUtf8Bytes": 64
           },
-          "maxItems": 37
+          "maxItems": 38
         },
         "allow_pvp": {
           "type": "boolean",
@@ -1167,7 +1167,7 @@
             "maxLength": 64,
             "x-maxUtf8Bytes": 64
           },
-          "maxItems": 37
+          "maxItems": 38
         },
         "supported_skills": {
           "type": "array",
@@ -8182,6 +8182,131 @@
         }
       ]
     },
+    "game_reviveRequest": {
+      "type": "object",
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "x-maxUtf8Bytes": 64
+        },
+        "method": {
+          "const": "game_revive"
+        },
+        "params": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30000
+        }
+      },
+      "required": [
+        "v",
+        "id",
+        "method",
+        "params",
+        "request_id",
+        "context",
+        "timeout_ms"
+      ],
+      "additionalProperties": false
+    },
+    "game_reviveResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "x-maxUtf8Bytes": 64
+            },
+            "ok": {
+              "const": true
+            },
+            "data": {
+              "$ref": "#/$defs/accepted"
+            },
+            "context": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/context"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "v",
+            "id",
+            "ok",
+            "data",
+            "context"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "x-maxUtf8Bytes": 64
+            },
+            "ok": {
+              "const": false
+            },
+            "error": {
+              "$ref": "#/$defs/error"
+            },
+            "context": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/context"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "v",
+            "id",
+            "ok",
+            "error",
+            "context"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
     "helloRequest": {
       "type": "object",
       "properties": {
@@ -8421,10 +8546,11 @@
                   "game_auction_cancel",
                   "game_delivery_claim",
                   "game_grant_control",
-                  "game_shop_close"
+                  "game_shop_close",
+                  "game_revive"
                 ]
               },
-              "maxItems": 37,
+              "maxItems": 38,
               "uniqueItems": true
             }
           ]
@@ -8649,6 +8775,9 @@
         },
         {
           "$ref": "#/$defs/game_shop_closeRequest"
+        },
+        {
+          "$ref": "#/$defs/game_reviveRequest"
         },
         {
           "$ref": "#/$defs/helloRequest"
@@ -9839,6 +9968,21 @@
       "timeout_ms": 5000,
       "write": true,
       "description": "关闭当前本地商店面板，不关闭NPC对话、不撤销已提交购买，无网络发送"
+    },
+    "game_revive": {
+      "action": true,
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "result": {
+        "$ref": "#/$defs/accepted"
+      },
+      "timeout_ms": 30000,
+      "write": true,
+      "description": "仅已知死亡且未明确停止时请求正常返回复活点；无坐标参数，不授权其他动作。查询真实终态，恢复后重新观察及授权，未知不得重发"
     }
   }
 }

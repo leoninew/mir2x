@@ -3,11 +3,11 @@
 
 通过官方 Python MCP SDK 的 stdio 接口访问本机 mir2x 客户端桥接。AI 操作的是该客户端当前登录的角色，游戏窗口仍可由人操作。Python 不连接游戏数据库，不发送原始游戏报文，不提供脚本、文件路径或模拟键鼠工具。
 
-角色 MCP 部分是总计划中的 T06，运行管理作为独立 runtime-launcher 增量交付。Python 注册全部 37 个固定工具、6 个实时 JSON 资源及 4 个离线 Markdown 知识资源；客户端当前实际实现与策略权限以 `game_get_session` 返回的 `capabilities` 为准。模拟桥接测试不能证明真实游戏能力已完成；真实窗口联调在 T07 汇合。
+角色 MCP 部分是总计划中的 T06，运行管理作为独立 runtime-launcher 增量交付。Python 注册全部 38 个固定工具、6 个实时 JSON 资源及 4 个离线 Markdown 知识资源；客户端当前实际实现与策略权限以 `game_get_session` 返回的 `capabilities` 为准。模拟桥接测试不能证明真实游戏能力已完成；真实窗口联调在 T07 汇合。
 
 ## 当前完成与待办
 
-- [x] T01/T08/T02/T03/T04/T05/T06 局部实现已接受，当前 C++ 源码已接入全部 37 工具，Python 提供 6 个实时资源与 4 个知识资源。
+- [x] T01/T08/T02/T03/T04/T05/T06 局部实现已接受，当前 C++ 源码已接入全部 38 工具，Python 提供 6 个实时资源与 4 个知识资源。
 - [x] T05 delivery2 的 Windows C++ 定向回归 166/166、Python 76/76 与 ruff 通过；Python SDK stdio 的游戏桥接为 fake。
 - [x] 至 T04 最终 19 能力二进制取得官方 SDK→Python→真实 C++ 只读互通/停止/退出证据。
 - [x] 后续运行管理版本已完成独立 EXE→真实 C++ 未 RUN stdio，35 工具/6 资源/35 能力，退出清凭据。
@@ -65,7 +65,7 @@ python tools/mir2x-mcp/scripts/build_runtime.py
 | 会话与观察 | `game_get_session`、`game_get_state`、`game_list_nearby`、`game_get_map_region`、`game_get_inventory`、`game_get_skills`、`game_get_interaction` |
 | 操作与停止 | `game_get_operation`、`game_get_events`、`game_stop`、`game_grant_control`、`game_move_to` |
 | NPC | `game_npc_open`、`game_npc_choose`、`game_npc_input`、`game_npc_close` |
-| 角色动作 | `game_pick_up`、`game_attack`、`game_cast`、`game_use_item` |
+| 角色动作 | `game_pick_up`、`game_attack`、`game_cast`、`game_use_item`、`game_revive` |
 | 商店 | `game_shop_list`、`game_shop_buy`、`game_shop_quote_sell`、`game_shop_sell`、`game_shop_close` |
 | 玩家交易 | `game_trade_request`、`game_trade_respond`、`game_trade_offer`、`game_trade_lock`、`game_trade_commit`、`game_trade_cancel` |
 | 拍卖 | `game_auction_list`、`game_auction_register`、`game_auction_buy`、`game_auction_cancel` |
@@ -118,7 +118,7 @@ uv run --project tools/mir2x-mcp --locked --no-sync ruff format --check tools/mi
 | `contract.py` | 共享 schema、严格 JSON、自定义约束、MCP 参数与输出 schema |
 | `bridge_client.py` | 有界帧、认证、单连接多请求匹配、心跳、实例绑定、断线与取消 |
 | `server.py` | 官方 MCPServer 公共接口、原始参数预校验、清理生命周期 |
-| `models.py`、`tools.py` | 由契约生成的 typed 模型和37个固定函数签名 |
+| `models.py`、`tools.py` | 由契约生成的 typed 模型和38个固定函数签名 |
 | `resources.py` | 六个实时 JSON 资源与四个离线 Markdown 知识资源 |
 | `tests/` | 共享 fixture、Windows 凭据、模拟 TCP、官方 SDK 子进程 stdio |
 

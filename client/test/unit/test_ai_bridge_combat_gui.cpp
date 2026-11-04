@@ -191,7 +191,7 @@ namespace
             std::filesystem::create_directory(root);
             const auto policy = root / "policy.json";
             {
-                aibridge::Json config={{"allowed_actions",{"game_attack","game_move_to"}}};
+                aibridge::Json config={{"allowed_actions",{"game_attack","game_move_to","game_revive"}}};
                 if(callerGrants){config["allowed_actions"].push_back("game_grant_control");}
                 std::ofstream out(policy);out << config.dump();
             }
@@ -292,6 +292,43 @@ namespace
         REQUIRE(test.scene->getFocusUID(FOCUS_MOUSE) == 0);
         test.scene->processEvent(event);
     }
+}
+
+TEST_CASE("Normal MCP revival sends once and requires both receipt and known life")
+{
+    AdapterScene test(430,108,true);
+    const auto request=[&](int n){return aibridge::Json{
+        {"v",1},{"id","revive"},{"method","game_revive"},{"params",aibridge::Json::object()},
+        {"context",test.controller().context()},{"timeout_ms",10000},
+        {"request_id","00000000-0000-4000-8000-"+std::string(11,'0')+std::to_string(n)}};};
+    CHECK(test.controller().handleRequest({1,request(1)}).at("ok")==false);
+    health(*test.scene,test.hero().UID(),0);
+    test.runtime->observe(test.scene->aiState());
+    const auto revive=request(2);
+    const auto response=test.controller().handleRequest({1,revive});
+    REQUIRE(response.at("ok")==true);test.operation=response.at("data").at("operation_id");
+    CHECK(test.scene->aiReviveSendSequence()==0);
+    test.controller().advance();
+    CHECK(test.scene->aiReviveSendSequence()==1);
+    CHECK(test.status().at("state")=="running");
+    // Health alone cannot turn a missing receipt into a completed revive operation.
+    health(*test.scene,test.hero().UID(),50);test.runtime->observe(test.scene->aiState());
+    test.controller().advance();CHECK(test.status().at("state")=="running");
+    health(*test.scene,test.hero().UID(),0);
+    const SMRevive receipt{.mapUID=test.scene->mapUID(),.x=405,.y=120,.direction=DIR_DOWN};
+    test.scene->on_SM_REVIVE(reinterpret_cast<const uint8_t *>(&receipt),sizeof(receipt));
+    test.controller().advance();CHECK(test.status().at("state")=="running");
+    health(*test.scene,test.hero().UID(),50);
+    test.runtime->observe(test.scene->aiState());test.controller().advance();
+    REQUIRE(test.status().at("state")=="succeeded");
+    CHECK(test.status().at("result").at("submitted")==true);
+    CHECK(test.controller().controlState()==aibridge::ControlState::Paused);
+    CHECK(test.scene->aiReviveSendSequence()==1);
+    for(int i=0;i<20;++i){test.step();}
+    CHECK(test.scene->aiReviveSendSequence()==1);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE)==0);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_ATTACK)==0);
+    CHECK(test.controller().handleRequest({1,revive}).at("data").at("state")=="succeeded");
 }
 
 TEST_CASE("Runtime targeted cancellation precedes queued movement and explicit stop retains priority")
