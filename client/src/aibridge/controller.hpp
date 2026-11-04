@@ -32,7 +32,7 @@ namespace aibridge
         std::string build;
         Policy policy;
         bool enabled = true;
-        bool autoEnable = true; // One initial RUN/authentication grant; never an automatic resume.
+        bool autoEnable = true; // Legacy initial RUN grant; explicit-grant policies require a task grant.
         std::filesystem::path auditDirectory; // Empty disables disk audit in pure tests.
         std::function<uint64_t()> monotonicMs;
         std::function<uint64_t()> unixMs;
@@ -58,7 +58,7 @@ namespace aibridge
             void notifySnapshot(); // Fixed event/current context; no caller-supplied text.
             void onConnected(uint64_t connectionId);
             void onDisconnected(uint64_t connectionId);
-            bool enableByUser(); // Local GUI only; never exposed as an IPC method.
+            bool enableByUser(); // Local gesture; cannot clear an explicit caller stop latch.
             void disableByUser(); // Keeps authenticated read-only diagnostics available.
             void pauseByUser();
             void manualInput(); // Before forwarding the original SDL event to GUI/game.

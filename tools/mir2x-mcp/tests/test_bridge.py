@@ -26,6 +26,68 @@ def move_args():
     return arguments(next(f for f in FIXTURES if f["method"] == "game_move_to"))
 
 
+async def test_grant_never_implicitly_connects_or_reauthenticates(client, monkeypatch):
+    # Inject only the future method metadata to isolate the pre-contract SDK dispatch bug.
+    monkeypatch.setitem(
+        bridge_client.METHODS, "game_grant_control", {"action": False, "write": True}
+    )
+    original = bridge_client.validate_arguments
+    monkeypatch.setattr(
+        bridge_client,
+        "validate_arguments",
+        lambda method, args: None if method == "game_grant_control" else original(method, args),
+    )
+
+    async def forbidden_connect():
+        pytest.fail("control write called connect() without an existing bound session")
+
+    monkeypatch.setattr(client, "connect", forbidden_connect)
+    with pytest.raises(BridgeError, match="paused"):
+        await client.call("game_grant_control", {})
+
+
+def grant_args():
+    return arguments(next(f for f in FIXTURES if f["method"] == "game_grant_control"))
+
+
+async def test_grant_requires_existing_binding_and_fresh_session_after_receipt(fake, client):
+    await client.call("game_get_session", {})
+    assert (await client.call("game_grant_control", grant_args()))["ok"]
+    with pytest.raises(BridgeError, match="paused"):
+        await client.call("game_move_to", move_args())
+    await client.call("game_get_session", {})
+    assert (await client.call("game_move_to", move_args()))["ok"]
+    assert fake.auths == 1
+
+
+async def test_grant_and_action_share_one_writer_and_stop_still_bypasses(fake, client):
+    await client.call("game_get_session", {})
+    fake.hold_method = "game_move_to"
+    fake.received.clear()
+    task = asyncio.create_task(client.call("game_move_to", move_args()))
+    try:
+        await asyncio.wait_for(fake.received.wait(), 1)
+        with pytest.raises(BridgeError, match="busy"):
+            await client.call("game_grant_control", grant_args())
+        assert (await client.call("game_stop", {}))["ok"]
+    finally:
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+
+async def test_grant_lost_response_and_eof_never_reconnect_or_replay(fake, client):
+    await client.call("game_get_session", {})
+    fake.drop_method = "game_grant_control"
+    with pytest.raises(BridgeError, match="transport_lost"):
+        await client.call("game_grant_control", grant_args())
+    for _ in range(3):
+        with pytest.raises(BridgeError, match="paused"):
+            await client.call("game_grant_control", grant_args())
+    assert fake.auths == 1
+    assert sum(row["method"] == "game_grant_control" for row in fake.calls) == 1
+
+
 async def test_no_instance_and_invalid_config(tmp_path):
     with pytest.raises(ValueError):
         Config(tmp_path, "../../arbitrary")

@@ -30,8 +30,8 @@ D['operation']=obj(dict(operation_id=HANDLE,request_id=UUID,method=string(64,1),
 D['actionResult']=obj(dict(position=ref('position'),dialogue_id=HANDLE,input_handle=HANDLE,trade_handle=HANDLE,quote_handle=HANDLE,quote=ref('quote'),offer_revision=decimal(),local_revision=decimal(),peer_revision=decimal(),partial=B,delivery_pending=B,toggle_enabled=B,item_changes=array(ref('itemDelta')),gold_before=decimal(),gold_after=decimal(),failed_items=array(obj(dict(item_id=U32,seq_id=U32,code=string(64)))),stopped=array(enum('move','attack','follow','queued')),submitted=B),[])
 D['itemDelta']=obj(dict(item_id=U32,seq_id=U32,before=U32,after=U32))
 D['position']=obj(dict(x=integer(),y=integer()))
-D['policySummary']=obj(dict(allowed_actions=array(string(64),35),allow_pvp=B,allow_npc_dialogue=B,max_gold_per_operation=decimal(),max_gold_per_session=decimal(),max_item_count_per_operation=U32,remaining_gold_budget=decimal(),economic_uncertain=B))
-D['capabilities']=obj(dict(protocol_version={"const":1},build=string(128),tools=array(string(64),35),supported_skills=array(U32),policy=ref('policySummary'),limitations=array(string(512))))
+D['policySummary']=obj(dict(allowed_actions=array(string(64),37),allow_pvp=B,allow_npc_dialogue=B,max_gold_per_operation=decimal(),max_gold_per_session=decimal(),max_item_count_per_operation=U32,remaining_gold_budget=decimal(),economic_uncertain=B))
+D['capabilities']=obj(dict(protocol_version={"const":1},build=string(128),tools=array(string(64),37),supported_skills=array(U32),policy=ref('policySummary'),limitations=array(string(512))))
 D['session']=obj(dict(instance_id=HEX,phase=enum('login','select_character','loading','run','disconnected','exiting'),control_state=enum('disabled','read_only','active','paused'),context=nullable(ref('context')),character_uid=nullable(decimal()),pause_reason=nullable(string(128)),capabilities=ref('capabilities')))
 D['inventoryItem']=obj(dict(item_id=U32,seq_id=U32,count=U32,name=nullable(string(256)),location=enum('inventory','belt','equipment'),slot=nullable(integer(0,65535)),reserved_count=U32))
 D['itemDetails']=obj(dict(item_id=U32,seq_id=nullable(U32),count=nullable(U32),name=nullable(string(256))))
@@ -81,7 +81,7 @@ method('get_skills',empty,'skills')
 method('get_interaction',empty,'interactionSnapshot')
 method('get_operation',obj(dict(operation_id=HANDLE)),'operation')
 method('get_events',obj(dict(after_seq=decimal(),limit=integer(1,100)),['after_seq']),'events')
-method('stop',obj(dict(operation_id=HANDLE),[]),'stopResult')
+method('stop',{'oneOf':[obj(dict(operation_id=HANDLE,interrupt_only={**B,'const':False}),[]),obj(dict(interrupt_only={**B,'const':True},operation_id=HANDLE,context=ref('context')))]},'stopResult')
 method('move_to',obj(dict(x=integer(),y=integer(),tolerance=integer(0,2)),['x','y']),'accepted',True,30000)
 method('npc_open',obj(dict(target_handle=HANDLE)),'accepted',True)
 method('npc_choose',obj(dict(dialogue_id=HANDLE,option_handle=HANDLE)),'accepted',True)
@@ -108,7 +108,12 @@ method('auction_buy',obj(dict(auction_handle=HANDLE,max_total_gold=decimal())),'
 method('auction_cancel',obj(dict(auction_handle=HANDLE)),'accepted',True,30000)
 method('delivery_list',cursor,'deliveryList')
 method('delivery_claim',obj(dict(delivery_handle=HANDLE)),'accepted',True,30000)
-assert len(METHODS)==35
+D['grantResult']=obj(dict(grant_id=UUID,mode=enum('new_task','continue_task'),control_state={'const':'active'},context=ref('context')))
+method('grant_control',obj(dict(mode=enum('new_task','continue_task'),grant_id=UUID,request_id=UUID,character_uid=decimal(),context=ref('context'))),'grantResult')
+method('shop_close',obj(dict(shop_handle=HANDLE)),'accepted',True,5000)
+assert len(METHODS)==37
+for name, meta in METHODS.items():
+    meta['write'] = meta['action'] or name in ('game_stop','game_grant_control')
 
 
 # Distinct terminal shapes prevent a successful operation from omitting evidence.
@@ -127,8 +132,9 @@ for state in ['accepted','running','succeeded','failed','cancelled','unknown']:
 D['operation']={'oneOf':operation_branches}
 
 DESCRIPTIONS=[
-'读取当前实例、角色阶段、控制状态与权限摘要','读取当前角色及地图状态','列出客户端已知的周边对象','读取当前地图有限区域的地形','分页读取背包、腰带与装备','读取已学技能及当前支持的操作','读取当前对话、输入与交易面板','读取操作进度、结果证据与迟到结论','读取有界事件并报告保留范围缺口','优先暂停并停止当前 AI 意图',
+'读取当前实例、角色阶段、控制状态与权限摘要','读取当前角色及地图状态','列出客户端已知的周边对象','读取当前地图有限区域的地形','分页读取背包、腰带与装备','读取已学技能及当前支持的操作','读取当前对话、输入与交易面板','读取操作进度、结果证据与迟到结论','读取有界事件并报告保留范围缺口','明确停止撤销授权；interrupt_only须精确操作及context，仅中断该操作并保留控制状态',
 '在当前地图使用普通寻路移动','打开当前可交互 NPC 对话','选择当前对话的真实选项','提交当前 NPC 输入请求','关闭当前本地 NPC 对话','拾取当前格已观察的地面物品','执行单次或有界持续攻击','使用已学且受支持的技能','使用背包中的药品或技能书','读取当前商店真实商品与报价','按有效报价与成本上限购买','请求当前出售界面的物品报价','按有效报价与收入下限出售','向已知玩家申请直接交易','处理当前真实交易邀请','替换当前未锁定的本方报价','锁定指定版本的本方报价','确认双方已锁定且版本匹配的交易','取消当前直接交易','查询或刷新当前拍卖分类','按原有数量语义上架物品','按条目与价格上限购买拍卖','撤回自己的拍卖条目','列出客户端已收到的可信系统投递','领取指定系统投递并观察回执']
+DESCRIPTIONS += ['新明确用户任务授权，或同任务在重新观察后续用；旧goal、轮询和重试不得创建新授权，响应丢失不得重发', '关闭当前本地商店面板，不关闭NPC对话、不撤销已提交购买，无网络发送']
 for (name,m),description in zip(METHODS.items(), DESCRIPTIONS,strict=True):
     m['description']=description
 for name,field,default in [('game_move_to','tolerance',0),('game_attack','mode','once'),('game_auction_list','refresh',False),('game_list_nearby','kind','all'),('game_list_nearby','radius',15),('game_get_events','limit',100)]:
@@ -149,8 +155,8 @@ D['heartbeatRequest']=obj(dict(base,method={'const':'heartbeat'},params=empty))
 D['transportError']=obj(dict(v={'const':1},id=nullable(string(64,1)),ok={'const':False},error=ref('error'),context=nullable(ref('context'))))
 D['helloResponse']=obj(dict(base,ok={'const':True},data=obj(dict(instance_id=HEX,protocol_version={'const':1})),context={'type':'null'}))
 D['heartbeatResponse']=obj(dict(base,ok={'const':True},data=obj(dict(alive={'const':True})),context={'type':'null'}))
-action_names=[k for k,v in METHODS.items() if v['action']]+['game_stop']
-allow_actions={'oneOf':[{'const':'*'},{'type':'array','items':enum(*action_names),'maxItems':35,'uniqueItems':True}]}
+action_names=[k for k,v in METHODS.items() if v['write']]
+allow_actions={'oneOf':[{'const':'*'},{'type':'array','items':enum(*action_names),'maxItems':37,'uniqueItems':True}]}
 def allow(s): return {'oneOf':[{'const':'*'},{'type':'array','items':s,'maxItems':4096,'uniqueItems':True}]}
 D['policy']=obj(dict(allowed_actions=allow_actions,allow_pvp=B,allowed_peer_uids=allow(decimal()),allowed_item_ids=allow(U32),max_gold_per_operation=decimal(),max_gold_per_session=decimal(),max_item_count_per_operation=U32,allow_npc_dialogue=B),[])
 D['instance']=obj(dict(v={'const':1},instance_id=HEX,token={'type':'string','pattern':'^[0-9a-f]{64}$'},pid=decimal(),started_at=decimal(),port=integer(1,65535),build=string(128,1)))

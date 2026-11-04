@@ -21,7 +21,7 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
         description="mir2x 游戏与 MCP 管理入口；.env 仅为 launcher 可选登录输入",
         epilog=(
-            "首次有效角色与认证宿主绑定后默认自动开启 AI；右下角可关闭，暂停后仅窗口恢复。"
+            "新用户任务可显式授权；普通输入停止当前动作，明确关闭或stop后可新任务授权或由用户在窗口重新开启。"
             "stdio 由宿主启动。"
         ),
     )

@@ -51,8 +51,7 @@ PurchaseBoard::PurchaseBoard(ProcessRun *argProc, Widget *argParent, bool argAut
 
           .onTrigger = [this](Widget *, int)
           {
-              setShow(false);
-              setExtendedItemID(0);
+              closeShop();
           },
 
           .parent{this},
@@ -536,6 +535,12 @@ uint64_t PurchaseBoard::buyAttempts(uint64_t npcUid, uint32_t itemId, uint32_t s
 {
     const auto p = m_buyAttempts.find({npcUid, itemId, seqId});
     return p != m_buyAttempts.end() ? p->second : m_buyAttempts.size() >= 8192 ? UINT64_MAX : 0;
+}
+
+void PurchaseBoard::closeShop()
+{
+    setShow(false);
+    setExtendedItemID(0);
 }
 
 void PurchaseBoard::invalidateDetails()

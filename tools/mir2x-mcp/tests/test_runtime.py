@@ -587,6 +587,11 @@ def test_default_policy_ready_without_local_preparation(tmp_path):
         validate(json.loads(settings.policy_path(name).read_text("utf-8")), "policy")
     policy = json.loads(settings.policy_path().read_text("utf-8"))
     assert "game_move_to" in policy["allowed_actions"]
+    assert {"game_grant_control", "game_shop_close"} <= set(policy["allowed_actions"])
+    movement = json.loads(settings.policy_path("movement").read_text("utf-8"))
+    assert "game_grant_control" in movement["allowed_actions"]
+    assert "game_shop_close" not in movement["allowed_actions"]
+    assert not json.loads(settings.policy_path("readonly").read_text("utf-8"))
     assert policy["allow_pvp"] is False
     assert int(policy["max_gold_per_operation"]) > 0
     assert not settings.bridge.exists()

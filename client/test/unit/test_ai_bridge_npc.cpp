@@ -218,5 +218,5 @@ TEST_CASE("NPC controller revalidates replaced options and does not replay unkno
     responseObserved = true; controller.advance();
     CHECK(status(id).at("state") == "unknown"); CHECK(sends == 1);
     controller.manualInput();
-    CHECK(controller.controlState() == ControlState::Paused);
+    CHECK(controller.controlState() == ControlState::Active);
 }

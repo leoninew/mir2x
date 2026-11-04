@@ -13,7 +13,7 @@ namespace
 {
     constexpr std::size_t maxPolicyBytes = 65536;
     constexpr auto actionNames = std::to_array<std::string_view>({
-        "game_stop", "game_move_to", "game_npc_open", "game_npc_choose",
+        "game_stop", "game_grant_control", "game_shop_close", "game_move_to", "game_npc_open", "game_npc_choose",
         "game_npc_input", "game_npc_close", "game_pick_up", "game_attack",
         "game_cast", "game_use_item", "game_shop_buy", "game_shop_quote_sell", "game_shop_sell",
         "game_trade_request", "game_trade_respond", "game_trade_offer",
@@ -113,7 +113,7 @@ aibridge::Policy aibridge::Policy::parse(std::string_view jsonText)
         Policy result;
         for(const auto &[key, value]: json.items()){
             if(key == "allowed_actions"){
-                allowList(value, result.m_allActions, result.m_actions, 35, [](const auto &item)
+                allowList(value, result.m_allActions, result.m_actions, 37, [](const auto &item)
                 {
                     if(!item.is_string()){
                         invalidPolicy();

@@ -80,7 +80,7 @@ def generate():
             for key in ("request_id", "context", "timeout_ms"):
                 properties[key] = definition[key]
                 required.add(key)
-        write = meta["action"] or name == "game_stop"
+        write = meta["write"]
         description = meta["description"]
         if meta["action"]:
             description += "；返回操作ID后查询进展，unknown不得自动重试。"

@@ -203,6 +203,20 @@ namespace
 #endif
 }
 
+TEST_CASE("caller grants and local shop close require frozen policy permission", "[ai_bridge_security]")
+{
+    const auto readonly=aibridge::Policy::parse("{}");
+    CHECK_FALSE(readonly.allowsAction("game_grant_control"));
+    CHECK_FALSE(readonly.allowsAction("game_shop_close"));
+    const auto movement=aibridge::Policy::parse(R"({"allowed_actions":["game_grant_control","game_move_to"]})");
+    CHECK(movement.allowsAction("game_grant_control"));
+    CHECK_FALSE(movement.allowsAction("game_shop_close"));
+    const auto all=aibridge::Policy::parse(R"({"allowed_actions":"*"})");
+    CHECK(all.allowsAction("game_grant_control"));
+    CHECK(all.allowsAction("game_shop_close"));
+    CHECK_FALSE(all.allowsAction("game_resume_old_task"));
+}
+
 TEST_CASE("bridge policy defaults deny and wildcard cannot authorize unknown actions", "[ai_bridge_security]")
 {
     const auto empty = aibridge::Policy::parse("{}");
@@ -296,7 +310,7 @@ TEST_CASE("bridge policy matches published method permissions and example fixtur
 {
     const auto all = aibridge::Policy::parse(R"({"allowed_actions":"*"})");
     for(const auto &[method, definition]: aibridge::contract().at("x-methods").items()){
-        const bool expected = method == "game_stop" || definition.at("action").get<bool>();
+        const bool expected = definition.at("write").get<bool>();
         CAPTURE(method);
         REQUIRE(all.allowsAction(method) == expected);
         const auto policy = nlohmann::json{{"allowed_actions", nlohmann::json::array({method})}};

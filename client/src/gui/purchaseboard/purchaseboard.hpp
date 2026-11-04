@@ -132,6 +132,7 @@ class PurchaseBoard: public Widget
         const auto &detailQuery() const noexcept { return m_detailQuery; }
         const auto &detailCache() const noexcept { return m_detailCache; }
         void invalidateDetails();
+        void closeShop();
         uint64_t buyAttempts(uint64_t npcUid, uint32_t itemId, uint32_t seqId) const;
         aibridge::ShopQuery::Start queryDetails(uint32_t);
         bool submitBuy(uint64_t npcUid, uint32_t itemId, uint32_t seqId, uint32_t count);

@@ -114,6 +114,34 @@ def test_generated_files_are_current(tmp_path):
         files[-1].read_bytes()
         == (ROOT / "contracts/ai-bridge/v1/contract.schema.json").read_bytes()
     )
-    assert len(METHODS) == 35
+    assert len(METHODS) == 37
     for method in METHODS:
         assert input_schema(method)["type"] == "object"
+
+
+def test_control_writes_are_not_observer_queries_or_resource_aliases():
+    from mir2x_mcp.resources import RESOURCES
+    from mir2x_mcp.supervision import READ_ONLY
+
+    assert not METHODS["game_grant_control"]["action"]
+    assert METHODS["game_grant_control"]["write"]
+    assert METHODS["game_shop_close"]["action"] and METHODS["game_shop_close"]["write"]
+    assert "game_grant_control" not in READ_ONLY and "game_stop" not in READ_ONLY
+    assert all(method in READ_ONLY for method, _ in RESOURCES.values())
+
+
+def test_targeted_interruption_requires_exact_operation_and_context_without_changing_legacy_stop():
+    validate_arguments("game_stop", {})
+    validate_arguments("game_stop", {"operation_id": "old"})
+    context = next(row["request"]["context"] for row in FIXTURES if row["method"] == "game_move_to")
+    validate_arguments(
+        "game_stop", {"interrupt_only": True, "operation_id": "owned", "context": context}
+    )
+    for invalid in (
+        {"interrupt_only": True},
+        {"interrupt_only": True, "operation_id": "owned"},
+        {"interrupt_only": True, "context": context},
+        {"interrupt_only": False, "operation_id": "owned", "context": context},
+    ):
+        with pytest.raises(ContractError):
+            validate_arguments("game_stop", invalid)

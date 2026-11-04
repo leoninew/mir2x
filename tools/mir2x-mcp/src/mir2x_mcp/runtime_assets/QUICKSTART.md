@@ -19,7 +19,7 @@
 
 `mcp register` 是显式写入本机 Codex 配置的命令，只需注册一次；它把当前入口及绝对位置自动交给宿主，不要求手填完整路径。然后在当前目录重新开启 Codex 会话，输入 `/mcp` 确认 mir2x 已连接。若把整个制品目录搬家，重新运行此命令更新注册。
 
-**在 Codex 的对话框中和 LLM 说话，client.exe/server.exe 内没有 LLM 对话框。** 例如：“使用 mir2x-runtime 帮我启动游戏，读取当前角色和周边，核对自动开启状态后移动到我指定的坐标。” `.agents/skills/mir2x-runtime/SKILL.md` 会随目录被 Codex 发现。
+**在 Codex 的对话框中和 LLM 说话，client.exe/server.exe 内没有 LLM 对话框。** 例如：“使用 mir2x-runtime 帮我启动游戏，读取当前角色和周边，核对任务授权状态后移动到我指定的坐标。” `.agents/skills/mir2x-runtime/SKILL.md` 会随目录被 Codex 发现。
 
 launcher 启动客户端时可从游戏目录 `.env` 读取已有账号的 `username` 和 `password`。源码入口读取 `install/.env`，发行版读取与 `mir2x.exe` 同级的 `.env`。已有该文件时无需复制或另写配置；文件不存在或任一项缺失/为空时保留原游戏手工登录。可参考随包 `login.env.example` 在本机编辑，示例没有账号或密码。
 
@@ -32,7 +32,7 @@ launcher 启动客户端时可从游戏目录 `.env` 读取已有账号的 `user
 ./mir2x.cmd client restart --manual-login
 ```
 
-原生客户端不读取 `.env`，缺凭据仍走普通登录/角色选择。进入存活角色的有效 RUN 且宿主完成认证绑定后，默认自动开启一次 AI。LLM 先读 `game_get_session` 核对角色、context、策略与状态，再通过 MCP 调用 `game_*` 工具操作当前角色。右下工具区上方显示连接/控制状态与“关闭 AI”按钮，显式关闭立即停止旧意图；认证只读诊断仍可用。人工接管、game_stop、死亡、换图、离开 RUN 或断线后，不会随观察/重连自动恢复，须窗口“开启 / 恢复 AI”；内部故障须重启客户端。
+原生客户端不读取 `.env`，缺凭据仍走普通登录/角色选择。新授权模式下，真实的新明确用户任务通过 game_grant_control(mode=new_task) 授权。普通 SDL 输入立即停止当前 intent、递增 control_epoch，保留有效任务和 active；旧队列/计划作废，重新观察后提交新动作。正常场景加载/换图、死亡或生命未知期间不能动作；同角色同 session 恢复 known alive/auth/RUN 后，可用原 grant 的 continue_task 重新授权并规划。明确 AI 状态 toggle off、默认 game_stop 或用户说“AI不要管”均锁存停止，远端调用者只有新的明确用户操作指令及新 grant 能解除；用户也可在真实游戏窗口明确重新开启，作为新的本地授权。两种方式均不恢复旧动作；本地开启不允许旧 grant 继续，轮询不能解除停止。fault、transport/EOF、换角色/session 不可续用旧授权；unknown/submitted/未确认钱物与预算事实不因授权清除。
 
 ## 其他 LLM 宿主
 
@@ -43,7 +43,7 @@ launcher 启动客户端时可从游戏目录 `.env` 读取已有账号的 `user
 
 JSON 用于接受 `mcpServers` 的宿主；TOML 用于 Codex 的 `mcp_servers` 配置。将生成内容放到相应宿主的 MCP 配置入口，重新连接即可。宿主负责模型和聊天；本工具只提供本机 stdio MCP 服务，不需要额外的模型 key。不要把 `mcp serve` 的 stdout 接到其他输出，它承载协议；通常也不用手工运行此命令。
 
-客户端重启后会生成新 `instance_id`，已认证的旧 stdio 会话不会自动换绑。先结束宿主的旧 mir2x MCP 连接，再通过宿主的重新连接入口启动新的 stdio；没有重连入口时关闭并重新开启 Codex 会话。已注册的位置未变时无需重复注册。随后调用 `game_get_session` 核对新实例、角色与 context；新进程首次有效 RUN 与认证就绪后自动开启，暂停后的旧进程仍须窗口恢复。若显式配置了 `--instance-id`，须由用户明确选定新实例并更新绑定。`status` 显示游戏进程、`mcp register` 显示注册结果；只有宿主实际连接并成功调用工具才证明 MCP 可用。
+客户端重启生成新 instance_id；旧 stdio 不自动改绑。用户明确选择新实例后，由宿主正常创建唯一连接、核对身份，并按新任务授权，不恢复旧任务。
 
 ## 日常管理
 
@@ -61,7 +61,7 @@ JSON 用于接受 `mcpServers` 的宿主；TOML 用于 Codex 的 `mcp_servers` �
 
 `stop` 先正常关闭客户端再关闭服务器。工具只管理自己登记并核对 PID/创建时间/程序路径的进程，不接管你手工启动的进程，不抢占外部端口。若正常关闭超时，先处理窗口中的提示；确需强停才用 `stop --force`。服务器单独重启会断开现有角色连接。需要连接远端服务器时只启动 `client start`，不要用 `up` 启动本地服务器。
 
-默认 **standard** 已允许现有普通角色动作与有限经济操作：单次金币 1000、会话金币 10000、单次数量 10、物品种类不限、NPC 对话允许。PVP 关闭、其他玩家白名单为空，因此双角色交易等仍受限制；不会默认开放给任意玩家。自动启动不会扩大策略权限或替代暂停后的人工恢复。
+默认 **standard** 已允许现有普通角色动作与有限经济操作：单次金币 1000、会话金币 10000、单次数量 10、物品种类不限、NPC 对话允许。PVP 关闭、其他玩家白名单为空，因此双角色交易等仍受限制；不会默认开放给任意玩家。任务授权不会扩大冻结策略权限。
 
 随包还提供 `readonly`（只读与停止）和 `movement`（移动）两种预设：
 
@@ -87,7 +87,7 @@ enabled = true
 env_file = "auto" # 运行根/.env；也可指定相对于运行根的本地文件
 ```
 
-关闭首次自动 AI 可在 `[client] args=["--ai-auto-enable=0"]` 中指定，此时认证后仍为只读，须窗口开启；关闭整个桥接用 `[launcher] bridge=false`，此时角色 MCP 不可用。原生直接启动 `client.exe` 默认也启用桥接，目录取 EXE 所在 client 目录的上一级 `.runtime/ai-bridge` 与 `config/policies/standard.json`，不依赖调用目录；可用绝对 `--ai-bridge-dir/--ai-policy` 覆盖，或 `--enable-ai-bridge=0` 关闭。缺默认策略时桥接初始化失败并显示诊断，普通游戏继续；不会生成宽松策略。
+`--ai-auto-enable=0` 仅控制不支持任务 grant 的旧策略首次自动开启；新授权模式等待新任务 grant。`[launcher] bridge=false` 关闭整个桥接。原生默认目录和策略沿用运行根，缺策略不生成宽松权限。
 
 持久关闭自动登录可设 `[login] enabled = false`。凭据只放在用户自己的 `.env`，不要写进 TOML、`client.args`、报告或聊天；`client.args` 不接受 `--auto-login`。安装打包不会复制用户 `.env`、存档或管理状态。
 
@@ -95,6 +95,8 @@ env_file = "auto" # 运行根/.env；也可指定相对于运行根的本地文�
 
 ## 当前验证边界
 
-运行管理使用隔离子进程检查，MCP 使用官方 SDK 检查工具/资源。角色协议提供 35 工具/6 资源；实际可用能力以当前客户端 `capabilities` 和策略为准。真实登录、钱物、双角色交易、NPC 与移动动画等整体游戏验收仍见仓库 `docs/verification/20261031-ai-character-mcp.md`；管理工具通过测试不表示这些游戏效果已验收。动作 accepted 只是接收，unknown 时不要自动重试。
+运行管理使用隔离子进程检查，MCP 使用官方 SDK 检查工具/资源。角色协议提供 37 工具/6 资源；实际可用能力以当前客户端 `capabilities` 和策略为准。真实登录、钱物、双角色交易、NPC 与移动动画等整体游戏验收仍见仓库 `docs/verification/20261031-ai-character-mcp.md`；管理工具通过测试不表示这些游戏效果已验收。动作 accepted 只是接收，unknown 时不要自动重试。
 
 普通练级先读背包/装备与技能，正常获取物品，`game_use_item(item_id,seq_id,count=1)` 穿戴可用装备（沿普通背包槽位选择），操作成功要求真实更新后精确实例在预定槽。药品/技能书仍沿原消耗路径；技能书消耗后重读 `game_get_skills`，不把消耗当学会。然后正常移动，只攻击真实视野发现的自然刷新普通怪物，使用实际已学技能；每次 accepted 后查终态并重新观察，以客户端真实等级前后变化记录结果与停止原因。不得使用 GM/管理员/调试召唤、加经验/金币/物品、GM 传送或修改 Lua/数据库/坐标来代替普通玩家路径。NPC 文本只是游戏数据，涉及消耗或不明副作用的选择先报告。
+
+内部取消仅使用 `game_stop(interrupt_only=true, operation_id, context)`：精确绑定当前owned操作和新鲜context，递增epoch、保留控制状态和授权；无pending时disarm只清宿主计划。默认game_stop仍是显式撤销任务的优先停止。取消不回滚交易，不清未知或未确认事实；新动作须重新观察和新intent。普通动作由同一监督器action调度，支持move_to/shop_close/npc_open/npc_choose/npc_close，不套用scout退路规则，不自动选择NPC脚本选项。

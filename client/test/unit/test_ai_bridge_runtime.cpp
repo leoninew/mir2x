@@ -228,7 +228,7 @@ TEST_CASE("Player input invalidates an accepted action before advance without sw
     controller.advance();
     REQUIRE(sends == 0);
     REQUIRE(originalGameEvents == 1);
-    REQUIRE(controller.controlState() == ControlState::Paused);
+    REQUIRE(controller.controlState() == ControlState::Active);
     REQUIRE(controller.handleRequest({1,request}).at("ok") == true); // Retry queries the cancelled ledger entry.
     controller.advance();
     REQUIRE(sends == 0);

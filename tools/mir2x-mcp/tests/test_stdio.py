@@ -11,6 +11,45 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 from mir2x_mcp.contract import METHODS, StrictValidator, input_schema, output_schema
 
 
+async def test_official_sdk_targeted_interruption_sends_exact_scoped_params_once(fake, tmp_path):
+    executable = os.environ.get("MIR2X_FROZEN_EXE")
+    root = tmp_path / "scoped SDK root"
+    root.mkdir()
+    (root / "mir2x.local.toml").write_text(
+        "[launcher]\nbridge_dir=" + json.dumps(str(fake.directory)) + "\n", "utf-8"
+    )
+    parameters = StdioServerParameters(
+        command=executable or sys.executable,
+        args=([] if executable else ["-m", "mir2x_mcp.runtime_cli"])
+        + [
+            "--root",
+            str(root),
+            "mcp",
+            "serve",
+            "--instance-id",
+            fake.instance_id,
+            "--no-reconnect",
+        ],
+        env={"PYTHONUTF8": "1"},
+    )
+    async with stdio_client(parameters) as (read, write):
+        async with ClientSession(read, write, read_timeout_seconds=10) as session:
+            await session.initialize()
+            args = {
+                "interrupt_only": True,
+                "operation_id": "owned-operation",
+                "context": fake.context,
+            }
+            result = await session.call_tool("game_stop", args)
+            assert not result.is_error
+            calls = [row for row in fake.calls if row["method"] == "game_stop"]
+            assert len(calls) == 1 and calls[0]["params"] == args
+            invalid = await session.call_tool("game_stop", {"interrupt_only": True})
+            assert invalid.is_error
+            assert len([row for row in fake.calls if row["method"] == "game_stop"]) == 1
+            assert fake.auths == 1
+
+
 async def test_real_sdk_stdio_all_tools_resources_and_eof(fake, tmp_path):
     parameters = StdioServerParameters(
         command=sys.executable,
@@ -27,7 +66,7 @@ async def test_real_sdk_stdio_all_tools_resources_and_eof(fake, tmp_path):
                 for tool in tools:
                     assert tool.input_schema == input_schema(tool.name)
                     assert tool.output_schema == output_schema(tool.name)
-                    write_tool = METHODS[tool.name]["action"] or tool.name == "game_stop"
+                    write_tool = METHODS[tool.name]["write"]
                     assert tool.annotations.read_only_hint is not write_tool
                     assert tool.annotations.destructive_hint is write_tool
                 resources = (await session.list_resources()).resources
@@ -53,6 +92,8 @@ async def test_real_sdk_stdio_all_tools_resources_and_eof(fake, tmp_path):
                     )
                     assert invalid.is_error
                     assert invalid.structured_content["error"]["code"] == "invalid_argument"
+                    if fixture["method"] == "game_grant_control":
+                        assert not (await session.call_tool("game_get_session", {})).is_error
                 for resource in resources:
                     result = await session.read_resource(resource.uri)
                     payload = json.loads(result.contents[0].text)

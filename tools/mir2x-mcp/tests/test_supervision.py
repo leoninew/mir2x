@@ -15,7 +15,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from mir2x_mcp.contract import validate
 from mir2x_mcp.runtime_cli import main
-from mir2x_mcp.supervision import Binding, run_with_session
+from mir2x_mcp.supervision import Binding, Observer, run_with_session
 
 BINDING = Binding("0" * 32, "1")
 CONTEXT = {
@@ -76,6 +76,32 @@ class EventLog(list):
     def append(self, event):
         super().append(event)
         self.changed.set()
+
+
+@pytest.mark.parametrize("name", ["game_grant_control", "game_stop"])
+async def test_observer_read_driver_never_dispatches_control_writes(name):
+    from mir2x_mcp.supervision import Observer
+
+    session, events = FakeSession(), EventLog()
+    observer = Observer(session, BINDING, events.append, asyncio.Event())
+    assert await observer.read(name, {}, monitor=False) is None
+    assert session.calls == []
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        {"command": "grant", "mode": "new_task"},
+        {"command": "call", "name": "game_grant_control", "arguments": {}},
+    ],
+)
+async def test_observe_commands_cannot_dispatch_grants(command):
+    from mir2x_mcp.supervision import Observer
+
+    session = FakeSession()
+    observer = Observer(session, BINDING, lambda _: None, asyncio.Event())
+    await observer.handle_command(command)
+    assert session.calls == []
 
 
 async def wait_for(events, predicate, seconds=3):
@@ -436,7 +462,7 @@ class SafetySession(FakeSession):
         self.post_purchase_fault = None
         self.spent = 0
         self.policy = {
-            "allowed_actions": ["game_shop_buy"],
+            "allowed_actions": ["game_shop_buy", "game_shop_close", "game_move_to"],
             "allow_pvp": False,
             "allow_npc_dialogue": True,
             "max_gold_per_operation": "1000",
@@ -455,10 +481,14 @@ class SafetySession(FakeSession):
                     "build": "synthetic-test",
                     "tools": [
                         "game_shop_buy",
+                        "game_shop_close",
                         "game_move_to",
                         "game_attack",
                         "game_use_item",
                         "game_stop",
+                        "game_npc_open",
+                        "game_npc_choose",
+                        "game_npc_close",
                     ],
                     "supported_skills": [],
                     "policy": copy.deepcopy(self.policy),
@@ -569,7 +599,16 @@ class SafetySession(FakeSession):
             }
             if data["items"]:
                 self.current_quote = copy.deepcopy(data["items"][0])
-        elif name in {"game_attack", "game_use_item", "game_move_to", "game_shop_buy"}:
+        elif name in {
+            "game_attack",
+            "game_use_item",
+            "game_move_to",
+            "game_shop_buy",
+            "game_shop_close",
+            "game_npc_open",
+            "game_npc_choose",
+            "game_npc_close",
+        }:
             self.write_entered.set()
             if self.write_release is not None:
                 await self.write_release.wait()
@@ -593,7 +632,9 @@ class SafetySession(FakeSession):
                 "state": self.terminal,
                 "side_effects_possible": self.terminal == "unknown",
                 "result": {"submitted": True},
-                "completion_scope": "observed_postcondition",
+                "completion_scope": (
+                    "observed_postcondition" if self.terminal == "succeeded" else None
+                ),
                 "arguments": arguments,
             }
             data = {"operation_id": operation, "state": "accepted"}
@@ -622,6 +663,9 @@ class SafetySession(FakeSession):
                     data["result"]["position"] = dict(self.position)
                 if data["method"] == "game_attack":
                     data["completion_scope"] = "client_state"
+                if data["method"] == "game_shop_close":
+                    data["completion_scope"] = "client_state"
+                    data["result"]["submitted"] = False
                 if data["method"] == "game_shop_buy":
                     data["completion_scope"] = "server_ack"
                     data["result"]["delivery_pending"] = not self.shop_delivers
@@ -634,9 +678,29 @@ class SafetySession(FakeSession):
                         self.gold -= int(quote["gold"])
                         self.spent += int(quote["gold"])
         elif name == "game_stop":
-            self.control = "paused"
+            operation = None
+            if arguments.get("interrupt_only"):
+                assert arguments["context"] == self.context
+                operation = copy.deepcopy(self.operations[arguments["operation_id"]])
+                operation.update(
+                    state="unknown"
+                    if operation["method"] in {"game_npc_open", "game_npc_choose"}
+                    else "cancelled",
+                    cancel_requested=True,
+                    error={"code": "paused", "message": "synthetic interruption", "details": {}},
+                    side_effects_possible=True,
+                    result={"submitted": True},
+                )
+                operation.pop("arguments", None)
+            else:
+                self.control = "paused"
             self.context["control_epoch"] = str(int(self.context["control_epoch"]) + 1)
-            data = {"stopped": ["attack"]}
+            data = {
+                "paused": self.control != "active",
+                "stopped": ["attack"],
+                "operation": operation,
+                "side_effects_possible": operation is not None,
+            }
         else:
             raise AssertionError(name)
         return SimpleNamespace(
@@ -736,7 +800,17 @@ class SafetyHarness:
             (name, args)
             for name, _, args in self.session.calls
             if name
-            in {"game_attack", "game_use_item", "game_move_to", "game_shop_buy", "game_stop"}
+            in {
+                "game_attack",
+                "game_use_item",
+                "game_move_to",
+                "game_shop_buy",
+                "game_shop_close",
+                "game_npc_open",
+                "game_npc_choose",
+                "game_npc_close",
+                "game_stop",
+            }
         ]
 
     def purchase_command(self, number=1):
@@ -754,6 +828,524 @@ class SafetyHarness:
         self.session.target["kind"] = "npc"
         self.session.potions = 0
         await asyncio.sleep(0.3)
+
+
+async def test_shop_close_uses_single_writer_and_rejects_duplicate_intent():
+    async with SafetyHarness() as test:
+        command = {
+            "command": "shop_close",
+            "context": copy.deepcopy(test.session.context),
+            "shop_handle": "current-shop",
+            "intent_id": "00000000-0000-4000-8000-000000000090",
+        }
+        await test.queue.put(command)
+        await wait_for(test.events, lambda event: event["event"] == "shop_close_result")
+        writes = test.writes()
+        assert len(writes) == 1 and writes[0][0] == "game_shop_close"
+        assert writes[0][1]["shop_handle"] == "current-shop"
+        assert any(
+            row.get("operation", {}).get("completion_scope") == "client_state"
+            for row in test.events
+        )
+        await test.queue.put(command)
+        await wait_for(
+            test.events,
+            lambda row: row.get("reason") == "shop_close_intent_already_seen_or_limit_reached",
+        )
+        assert len(test.writes()) == 1
+
+
+async def test_shop_close_lost_response_locks_following_writes():
+    async with SafetyHarness() as test:
+        test.session.drop_after_write = True
+        command = {
+            "command": "shop_close",
+            "context": copy.deepcopy(test.session.context),
+            "shop_handle": "current-shop",
+            "intent_id": "00000000-0000-4000-8000-000000000091",
+        }
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row.get("reason") == "write_uncertain_no_replay")
+        test.session.drop_after_write = False
+        await test.queue.put({**command, "intent_id": "00000000-0000-4000-8000-000000000092"})
+        await wait_for(test.events, lambda row: row.get("reason") == "control_or_identity_invalid")
+        assert len(test.writes()) == 1
+
+
+async def test_shop_close_rejects_stale_context_and_pending_operation():
+    async with SafetyHarness() as test:
+        command = {
+            "command": "shop_close",
+            "context": copy.deepcopy(test.session.context),
+            "shop_handle": "current-shop",
+            "intent_id": "00000000-0000-4000-8000-000000000093",
+        }
+        command["context"]["control_epoch"] = "999"
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row.get("reason") == "shop_close_context_mismatch")
+        assert not test.writes()
+
+        command["context"] = copy.deepcopy(test.session.context)
+        test.session.operation_release = asyncio.Event()
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row["event"] == "operation_accepted")
+        await test.queue.put({**command, "intent_id": "00000000-0000-4000-8000-000000000094"})
+        await wait_for(test.events, lambda row: row.get("reason") == "scheduler_busy")
+        test.session.operation_release.set()
+        await wait_for(test.events, lambda row: row["event"] == "shop_close_result")
+        assert len(test.writes()) == 1
+
+
+@pytest.mark.parametrize("command", ["shop_close", "action"])
+async def test_observer_rejects_shop_close(command):
+    session, events, stop = SafetySession(), EventLog(), asyncio.Event()
+    observer = Observer(session, BINDING, events.append, stop)
+    await observer.handle_command(
+        {"command": command, "method": "game_shop_close", "shop_handle": "current-shop"}
+    )
+    assert not any(name == "game_shop_close" for name, *_ in session.calls)
+    assert any(row.get("reason") == "write_or_unknown_command_rejected" for row in events)
+
+
+def ordinary_command(test, *, method="game_move_to", intent=101, timeout=5000):
+    return {
+        "command": "action",
+        "method": method,
+        "params": {"x": 10, "y": 1, "tolerance": 0}
+        if method == "game_move_to"
+        else {"shop_handle": "current-shop"}
+        if method == "game_shop_close"
+        else {"target_handle": "discovered-npc"}
+        if method == "game_npc_open"
+        else {"dialogue_id": "current-dialogue", "option_handle": "explicit-option"}
+        if method == "game_npc_choose"
+        else {"dialogue_id": "current-dialogue"},
+        "context": copy.deepcopy(test.session.context),
+        "intent_id": f"00000000-0000-4000-8000-{intent:012d}",
+        "timeout_ms": timeout,
+    }
+
+
+@pytest.mark.parametrize("kind", ["monster", "npc"])
+async def test_ordinary_move_does_not_apply_scout_route_rules_or_require_potions(kind):
+    async with SafetyHarness() as test:
+        test.session.potions = 0
+        test.session.target["position"] = {"x": 10, "y": 2}
+        test.session.target["kind"] = kind
+        await test.queue.put(ordinary_command(test))
+        await wait_for(test.events, lambda row: row["event"] == "action_result")
+        writes = test.writes()
+        assert len(writes) == 1 and writes[0][0] == "game_move_to"
+        assert writes[0][1]["x"] == 10 and writes[0][1]["timeout_ms"] == 5000
+        assert test.session.position == {"x": 10, "y": 1}
+        assert not any(row["event"] == "armed" for row in test.events)
+
+
+@pytest.mark.parametrize(
+    "method,params",
+    [
+        ("game_npc_open", {"target_handle": "discovered-npc"}),
+        (
+            "game_npc_choose",
+            {"dialogue_id": "current-dialogue", "option_handle": "explicit-option"},
+        ),
+        ("game_npc_close", {"dialogue_id": "current-dialogue"}),
+    ],
+)
+@pytest.mark.parametrize("outcome", ["succeeded", "unknown"])
+async def test_ordinary_npc_actions_forward_explicit_handles_and_never_replay(
+    method, params, outcome
+):
+    async with SafetyHarness() as test:
+        test.session.policy["allowed_actions"].append(method)
+        test.session.terminal = outcome
+        await asyncio.sleep(0.3)
+        command = {**ordinary_command(test, method=method), "params": params}
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row.get("event") == "action_result")
+        writes = test.writes()
+        assert len(writes) == 1 and writes[0][0] == method
+        assert {k: writes[0][1][k] for k in params} == params
+        result = next(row for row in test.events if row.get("event") == "action_result")
+        if outcome == "succeeded":
+            assert result["operation"]["state"] == "succeeded"
+            await test.queue.put(command)
+            await wait_for(
+                test.events,
+                lambda row: row.get("reason") == "action_intent_already_seen_or_limit_reached",
+            )
+        else:
+            assert any(row.get("reason") == "operation_unknown" for row in test.events)
+            await test.queue.put({**command, "intent_id": "00000000-0000-4000-8000-000000000202"})
+            await wait_for(
+                test.events, lambda row: row.get("reason") == "control_or_identity_invalid"
+            )
+        assert len(test.writes()) == 1
+
+
+async def test_ordinary_action_preserves_loaded_safety_plan():
+    async with SafetyHarness() as test:
+        await test.arm()
+        await test.queue.put(ordinary_command(test))
+        await wait_for(
+            test.events, lambda row: row.get("reason") == "ordinary_action_requires_disarmed"
+        )
+        await test.queue.put({"command": "observe"})
+        await wait_for(test.events, lambda row: row["event"] == "status")
+        assert next(row for row in reversed(test.events) if row["event"] == "status")["plan_loaded"]
+        assert not test.writes()
+
+
+async def test_ordinary_move_uses_requested_timeout_without_starving_health_monitor():
+    async with SafetyHarness() as test:
+        test.session.operation_release = asyncio.Event()
+        await test.queue.put(ordinary_command(test))
+        await wait_for(test.events, lambda row: row["event"] == "operation_accepted")
+        await asyncio.sleep(2.8)
+        assert not any(row.get("writes_locked") for row in test.events)
+        test.session.operation_release.set()
+        await wait_for(test.events, lambda row: row["event"] == "action_result")
+        assert len(test.writes()) == 1
+        states = [stamp for name, stamp, _ in test.session.calls if name == "game_get_state"]
+        assert max(b - a for a, b in pairwise(states)) <= 0.5
+
+
+async def test_ordinary_shop_close_and_alias_share_the_same_intent_ledger():
+    async with SafetyHarness() as test:
+        command = ordinary_command(test, method="game_shop_close")
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row["event"] == "action_result")
+        result = next(row for row in test.events if row["event"] == "action_result")
+        assert result["operation"]["completion_scope"] == "client_state"
+        assert result["operation"]["result"]["submitted"] is False
+        await test.queue.put(
+            {
+                "command": "shop_close",
+                "shop_handle": "current-shop",
+                "context": command["context"],
+                "intent_id": command["intent_id"],
+            }
+        )
+        await wait_for(
+            test.events,
+            lambda row: row.get("reason") == "shop_close_intent_already_seen_or_limit_reached",
+        )
+        assert len(test.writes()) == 1
+
+
+@pytest.mark.parametrize(
+    "case", ["method", "params", "timeout", "context", "policy", "economic", "life"]
+)
+async def test_ordinary_action_rejects_invalid_or_unsafe_input_without_writes(case):
+    async with SafetyHarness() as test:
+        command = ordinary_command(test)
+        if case == "method":
+            command["method"] = "game_shop_buy"
+        elif case == "params":
+            command["params"]["context"] = command["context"]
+        elif case == "timeout":
+            command["timeout_ms"] = 30001
+        elif case == "context":
+            command["context"]["control_epoch"] = "999"
+        elif case == "policy":
+            test.session.policy["allowed_actions"].remove("game_move_to")
+        elif case == "economic":
+            test.session.policy["economic_uncertain"] = True
+        else:
+            test.session.hp = 0
+        await asyncio.sleep(0.3)
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row["event"] == "command_rejected")
+        assert not test.writes()
+
+
+@pytest.mark.parametrize("outcome", ["unknown", "lost", "poll_lost"])
+async def test_ordinary_action_never_replays_unknown_or_lost_response(outcome):
+    async with SafetyHarness() as test:
+        evidence = [{
+            "source": "client", "kind": "action", "observed_at": "123", "snapshot_seq": "7",
+            "server_code": None, "description": "synthetic uncertain operation observation",
+        }]
+        original_call = test.session.call_tool
+        observed_operations = []
+
+        async def call_tool(name, arguments):
+            if name == "game_get_operation" and outcome == "poll_lost" and observed_operations:
+                raise ConnectionError("synthetic loss after observing running operation")
+            result = await original_call(name, arguments)
+            if name == "game_get_operation":
+                result.structured_content["data"]["evidence"] = copy.deepcopy(evidence)
+                observed_operations.append(copy.deepcopy(result.structured_content["data"]))
+            return result
+
+        test.session.call_tool = call_tool
+        test.session.terminal = "running" if outcome == "poll_lost" else "unknown"
+        test.session.drop_after_write = outcome == "lost"
+        await test.queue.put(ordinary_command(test))
+        await wait_for(test.events, lambda row: row.get("reason") == "write_uncertain_no_replay")
+        await wait_for(test.events, lambda row: row["event"] == "action_result")
+        result = next(row for row in test.events if row["event"] == "action_result")
+        if outcome != "lost":
+            observed = next(row["operation"] for row in test.events if row["event"] == "operation")
+            assert result["operation"] == observed == observed_operations[-1]
+            assert observed["operation_id"] == result["response"]["data"]["operation_id"]
+            assert observed["request_id"] == result["request_id"]
+            assert observed["context"] == test.writes()[0][1]["context"]
+            assert observed["state"] == ("running" if outcome == "poll_lost" else "unknown")
+            assert observed["side_effects_possible"] is (outcome == "unknown")
+            assert observed["result"]["submitted"] is True and observed["evidence"] == evidence
+        else:
+            assert result["operation"] is None and result["response"] is None
+        assert any(row.get("writes_locked") for row in test.events)
+        if outcome == "poll_lost":
+            await asyncio.wait_for(test.task, 1)
+            assert any(row.get("reason") == "connection_unavailable" for row in test.events)
+        else:
+            test.session.drop_after_write = False
+            await test.queue.put(ordinary_command(test, intent=102))
+            await wait_for(
+                test.events, lambda row: row.get("reason") == "control_or_identity_invalid"
+            )
+        assert len(test.writes()) == 1
+
+
+async def test_ordinary_action_busy_is_reported_without_retry_and_duplicate_is_rejected():
+    async with SafetyHarness() as test:
+        test.session.busy = True
+        command = ordinary_command(test)
+        await test.queue.put(command)
+        await wait_for(test.events, lambda row: row["event"] == "action_result")
+        result = next(row for row in test.events if row["event"] == "action_result")
+        assert result["response"]["error"]["code"] == "busy"
+        assert result["operation"] is None
+        test.session.busy = False
+        await test.queue.put(command)
+        await wait_for(
+            test.events,
+            lambda row: row.get("reason") == "action_intent_already_seen_or_limit_reached",
+        )
+        assert len(test.writes()) == 1
+
+
+async def test_ordinary_action_rechecks_context_after_waiting_for_call_budget():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = SafetySession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    entered, released = asyncio.Event(), asyncio.Event()
+
+    class HeldBudget:
+        async def acquire(self, stop, *, monitor):
+            entered.set()
+            await released.wait()
+            return True
+
+    command = {
+        "command": "action",
+        "method": "game_move_to",
+        "params": {"x": 10, "y": 1},
+        "context": copy.deepcopy(session.context),
+        "intent_id": "00000000-0000-4000-8000-000000000120",
+        "timeout_ms": 5000,
+    }
+    task = None
+    original_budget = observer.budget
+    observer.budget = HeldBudget()
+    try:
+        task = asyncio.create_task(observer.ordinary_action(command, observer.version))
+        await asyncio.wait_for(entered.wait(), 1)
+        observer.invalidate("manual_input")
+        session.context["control_epoch"] = "2"
+        observer.budget = original_budget
+        await prime_grant_observer(observer, session)
+        released.set()
+        with pytest.raises(ValueError, match="ordinary_action_no_longer_valid"):
+            await task
+        assert not any(name == "game_move_to" for name, *_ in session.calls)
+    finally:
+        released.set()
+        if task is not None:
+            await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_ordinary_action_does_not_clear_unconfirmed_purchase():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = SafetySession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    observer.unconfirmed_purchase = {
+        "operation_id": "original-purchase",
+        "request_id": "original-request",
+    }
+    command = {
+        "command": "action",
+        "method": "game_move_to",
+        "params": {"x": 10, "y": 1},
+        "context": copy.deepcopy(session.context),
+        "intent_id": "00000000-0000-4000-8000-000000000121",
+        "timeout_ms": 5000,
+    }
+    with pytest.raises(ValueError, match="ordinary_action_economic_uncertainty"):
+        await observer.ordinary_action(command, observer.version)
+    assert observer.locked
+    assert observer.unconfirmed_purchase["operation_id"] == "original-purchase"
+    assert not any(name == "game_move_to" for name, *_ in session.calls)
+
+
+async def test_ordinary_action_actual_supervise_stdio_uses_one_official_session(fake, tmp_path):
+    model = SafetySession()
+    model.context = copy.deepcopy(fake.context)
+    model.potions = 0
+    model.target.update(kind="npc", position={"x": 10, "y": 2})
+    ordinary_methods = (
+        "game_move_to",
+        "game_shop_close",
+        "game_npc_open",
+        "game_npc_choose",
+        "game_npc_close",
+    )
+    model.policy["allowed_actions"].extend(ordinary_methods[2:])
+    send_original = fake.send
+
+    async def synthetic_response(writer, response):
+        request = next((row for row in reversed(fake.calls) if row["id"] == response["id"]), None)
+        if request is not None and request["method"] != "heartbeat":
+            args = dict(request["params"])
+            args.update(
+                {
+                    key: request[key]
+                    for key in ("context", "request_id", "timeout_ms")
+                    if key in request
+                }
+            )
+            result = await model.call_tool(request["method"], args)
+            response = copy.deepcopy(response)
+            response["context"] = copy.deepcopy(model.context)
+            response["data"].update(result.structured_content["data"])
+            if request["method"] == "game_list_nearby":
+                response["data"]["items"][0].update(
+                    name="synthetic NPC", max_hp=10, ground_handle=None, items=[]
+                )
+            if request["method"] == "game_get_operation":
+                response["data"]["evidence"] = [
+                    {
+                        "source": "client",
+                        "kind": "dialogue"
+                        if response["data"]["method"] == "game_shop_close"
+                        else "position",
+                        "observed_at": "1",
+                        "snapshot_seq": "1",
+                        "server_code": None,
+                        "description": "synthetic client observation",
+                    }
+                ]
+                validate(response["data"], "operation")
+        await send_original(writer, response)
+
+    fake.send = synthetic_response
+    runtime_root = tmp_path / "ordinary root"
+    runtime_root.mkdir()
+    (runtime_root / "mir2x.local.toml").write_text(
+        "[launcher]\nbridge_dir=" + json.dumps(str(fake.directory)) + "\n", "utf-8"
+    )
+    command = (
+        [os.environ["MIR2X_FROZEN_EXE"]]
+        if os.environ.get("MIR2X_FROZEN_EXE")
+        else [sys.executable, "-m", "mir2x_mcp.runtime_cli"]
+    )
+    events = EventLog()
+    with (runtime_root / "stderr.log").open("wb") as errors:
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            "--root",
+            str(runtime_root),
+            "mcp",
+            "supervise",
+            "--instance-id",
+            fake.instance_id,
+            "--character-uid",
+            "1",
+            "--report",
+            str(runtime_root / "events.jsonl"),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=errors,
+            creationflags=0x08000000 if os.name == "nt" else 0,
+        )
+
+        async def drain():
+            while line := await process.stdout.readline():
+                events.append(json.loads(line))
+
+        reader = asyncio.create_task(drain())
+        try:
+            await wait_for(events, lambda row: row["event"] == "monitor_ready", seconds=10)
+            helper = SafetyHarness()
+            helper.session = model
+            for index, method in enumerate(ordinary_methods, 101):
+                action = ordinary_command(helper, method=method, intent=index)
+                process.stdin.write((json.dumps(action) + "\n").encode())
+                await process.stdin.drain()
+                await wait_for(
+                    events,
+                    lambda row, selected=method: (
+                        row["event"] == "action_result" and row["method"] == selected
+                    ),
+                    seconds=5,
+                )
+            results = [row for row in events if row["event"] == "action_result"]
+            assert all(row["operation"]["state"] == "succeeded" for row in results)
+            assert results[1]["operation"]["completion_scope"] == "client_state"
+            assert results[1]["operation"]["result"]["submitted"] is False
+            assert model.position == {"x": 10, "y": 1}
+            model.terminal = "unknown"
+            uncertain = ordinary_command(helper, intent=201)
+            process.stdin.write((json.dumps(uncertain) + "\n").encode())
+            await process.stdin.drain()
+            await wait_for(
+                events,
+                lambda row: row["event"] == "action_result"
+                and row["intent_id"] == uncertain["intent_id"],
+                seconds=5,
+            )
+            result = next(
+                row for row in events
+                if row["event"] == "action_result" and row["intent_id"] == uncertain["intent_id"]
+            )
+            observed = next(
+                row["operation"] for row in events
+                if row["event"] == "operation"
+                and row["operation"]["request_id"] == result["request_id"]
+            )
+            assert result["operation"] == observed
+            assert observed["state"] == "unknown" and observed["side_effects_possible"] is True
+            assert observed["context"] == uncertain["context"]
+            assert observed["result"]["submitted"] is True and observed["evidence"]
+            process.stdin.write((json.dumps(ordinary_command(helper, intent=202)) + "\n").encode())
+            await process.stdin.drain()
+            await wait_for(
+                events, lambda row: row.get("reason") == "control_or_identity_invalid", seconds=5
+            )
+            process.stdin.close()
+            assert await asyncio.wait_for(process.wait(), 5) == 2
+            await reader
+            assert fake.auths == 1
+            writes = [
+                row["method"]
+                for row in fake.calls
+                if row["method"] in {*ordinary_methods, "game_stop"}
+            ]
+            assert writes == [*ordinary_methods, "game_move_to"]
+            assert not any(
+                row["method"] in {"game_get_inventory", "game_get_map_region"} for row in fake.calls
+            )
+        finally:
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+            await reader
 
 
 async def test_purchase_refreshes_and_buys_three_separate_doses_without_llm_quote_roundtrip():
@@ -1080,6 +1672,37 @@ async def test_armed_short_attack_uses_one_scheduler_and_never_replays_an_intent
         assert args["context"] == CONTEXT
 
 
+async def test_confirmed_native_manual_cancel_preserves_submission_without_permanent_write_lock():
+    async with SafetyHarness() as test:
+        await test.arm()
+        original = test.session.call_tool
+
+        async def manual_cancel(name, arguments):
+            result = await original(name, arguments)
+            if name == "game_get_operation":
+                data = result.structured_content["data"]
+                data.update(
+                    state="cancelled",
+                    cancel_requested=True,
+                    side_effects_possible=True,
+                    completion_scope=None,
+                    error={"code": "paused"},
+                )
+                data["result"] = {"submitted": True}
+            return result
+
+        test.session.call_tool = manual_cancel
+        await test.attack()
+        await wait_for(test.events, lambda event: event["event"] == "manual_intent_stopped")
+        event = next(row for row in test.events if row["event"] == "manual_intent_stopped")
+        assert event["operation"]["side_effects_possible"]
+        assert event["operation"]["result"]["submitted"]
+        assert len(test.writes()) == 1
+        assert not any(
+            row.get("reason") == "terminal_side_effects_unresolved" for row in test.events
+        )
+
+
 @pytest.mark.parametrize("target_change", ["distant", "unknown_health", "player"])
 async def test_armed_attack_refuses_nonadjacent_unknown_or_player(target_change):
     async with SafetyHarness() as test:
@@ -1175,9 +1798,11 @@ async def test_pause_context_death_or_stale_observation_invalidates_plan_without
         assert not test.writes()
 
 
-async def test_pending_action_does_not_starve_monitor_and_stop_is_global_without_retreat():
+@pytest.mark.parametrize("command", ["stop", "disarm"])
+async def test_pending_action_does_not_starve_monitor_and_stop_is_global_without_retreat(command):
     async with SafetyHarness() as test:
         await test.arm()
+        test.session.terminal = "running"
         test.session.operation_release = asyncio.Event()
         await test.attack()
         await asyncio.wait_for(test.session.write_entered.wait(), 2)
@@ -1195,12 +1820,18 @@ async def test_pending_action_does_not_starve_monitor_and_stop_is_global_without
         assert status["pending_actions"] == 1
         assert status["pending_operation"]["operation_id"] == "op-1"
         assert status["hunting_enabled"] is False
-        await test.queue.put({"command": "stop"})
+        await test.queue.put({"command": command})
         test.session.operation_release.set()
         await wait_for(test.events, lambda event: event["event"] == "global_stop")
         assert [name for name, _ in test.writes()] == ["game_attack", "game_stop"]
         await asyncio.sleep(0.4)
-        assert test.session.control == "paused" and len(test.writes()) == 2
+        assert test.session.control == ("paused" if command == "stop" else "active")
+        assert len(test.writes()) == 2
+        assert test.writes()[-1][1] == (
+            {}
+            if command == "stop"
+            else {"interrupt_only": True, "operation_id": "op-1", "context": CONTEXT}
+        )
 
 
 async def test_adjacent_idle_positions_without_native_walk_do_not_qualify_as_traversal():
@@ -1526,3 +2157,492 @@ async def test_supervise_process_official_sdk_arms_attacks_once_and_locks_after_
                 process.kill()
                 await process.wait()
             await reader
+
+
+class GrantSession(SafetySession):
+    def __init__(self):
+        super().__init__()
+        self.policy["allowed_actions"].append("game_grant_control")
+        self.reason = None
+        self.grant_calls = []
+        self.grant_hold = None
+        self.grant_entered = asyncio.Event()
+
+    async def call_tool(self, name, arguments):
+        if name != "game_grant_control":
+            result = await super().call_tool(name, arguments)
+            if name == "game_stop" and not arguments.get("interrupt_only"):
+                self.reason = "stop_requested"
+            if name == "game_get_session":
+                result.structured_content["data"]["pause_reason"] = self.reason
+            return result
+        self.grant_calls.append(copy.deepcopy(arguments))
+        self.grant_entered.set()
+        if self.grant_hold is not None:
+            await self.grant_hold.wait()
+        self.context["control_epoch"] = str(int(self.context["control_epoch"]) + 1)
+        self.control, self.reason = "active", None
+        data = {
+            "grant_id": arguments["grant_id"],
+            "mode": arguments["mode"],
+            "control_state": "active",
+            "context": copy.deepcopy(self.context),
+        }
+        validate(data, "grantResult")
+        return SimpleNamespace(
+            is_error=False,
+            structured_content={
+                "ok": True,
+                "data": data,
+                "context": copy.deepcopy(self.context),
+            },
+        )
+
+
+class SceneGrantSession(GrantSession):
+    def __init__(self):
+        super().__init__()
+        self.phase = "run"
+
+    async def call_tool(self, name, arguments):
+        result = await super().call_tool(name, arguments)
+        if name == "game_get_session":
+            data = result.structured_content["data"]
+            data["phase"] = self.phase
+            if self.phase != "run":
+                data["context"] = None
+                data["character_uid"] = None
+                result.structured_content["context"] = None
+            validate(data, "session")
+        return result
+
+
+async def test_task_grant_survives_actual_loading_observation_without_replaying_old_work():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = SceneGrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    command = task_command(session)
+    await submit_grant(observer, command)
+    await prime_grant_observer(observer, session)
+    root = copy.deepcopy(observer.task_grant)
+    observer.plan = {
+        "context": copy.deepcopy(observer.context),
+        "map_uid": "2",
+        "phase": "purchase",
+    }
+    observer.work.put_nowait(
+        ({"command": "attack", "target_handle": "old-target"}, observer.version)
+    )
+    session.phase, session.control, session.reason = "loading", "paused", "map_changed"
+    polling = asyncio.create_task(observer.poll())
+    watchdog = asyncio.create_task(observer.watchdog())
+    try:
+        await wait_for(events, lambda row: row.get("reason") == "not_in_game")
+        await asyncio.sleep(0.06)
+        assert observer.context is None and observer.task_grant == root
+        assert observer.plan is None and observer.work.empty()
+        with pytest.raises(ValueError, match="authorization_observation_stale"):
+            await submit_grant(observer, task_command(session, "continue_task"))
+        assert len(session.grant_calls) == 1
+
+        session.phase = "run"
+        session.context["world_epoch"] = "2"
+        session.context["control_epoch"] = str(int(session.context["control_epoch"]) + 1)
+        session.map_uid = "3"
+        await wait_for(
+            events, lambda row: row.get("event") == "health" and row.get("map_uid") == "3"
+        )
+        await submit_grant(observer, task_command(session, "continue_task"))
+        assert len(session.grant_calls) == 2
+        assert observer.task_grant["grant_id"] == root["grant_id"]
+        assert observer.plan is None and observer.work.empty()
+        assert all(name != "game_attack" for name, *_ in session.calls)
+    finally:
+        observer.stop.set()
+        await asyncio.gather(polling, watchdog)
+
+
+@pytest.mark.parametrize("phase", ["login", "disconnected", "select_character"])
+@pytest.mark.parametrize("refreshed", [False, True])
+async def test_task_grant_is_revoked_by_noncontinuable_null_context_session(phase, refreshed):
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = SceneGrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    if refreshed:
+        await prime_grant_observer(observer, session)
+    session.phase, session.control, session.reason = phase, "paused", "session_changed"
+    result = await observer.read("game_get_session", {}, monitor=True)
+    observer.context = result[0]["context"]
+    observer.check_safety()
+    assert observer.task_grant is None
+    session.phase, session.control, session.reason = "run", "paused", "session_changed"
+    await prime_grant_observer(observer, session)
+    await observer.handle_command(task_command(session, "continue_task"))
+    assert observer.work.empty() and len(session.grant_calls) == 1
+
+
+async def test_task_grant_is_revoked_when_poll_detects_a_different_character():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = SceneGrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    await prime_grant_observer(observer, session)
+    session.uid = "2"
+    observer.locked = "operation_unknown"
+    observer.unconfirmed_purchase = {"request_id": "preserved"}
+    await observer.poll()
+    assert observer.failed and observer.stop.is_set()
+    assert observer.task_grant is None
+    assert observer.locked == "operation_unknown"
+    assert observer.unconfirmed_purchase == {"request_id": "preserved"}
+    assert len(session.grant_calls) == 1
+
+
+async def prime_grant_observer(observer, session):
+    for name in ("game_get_session", "game_get_state", "game_list_nearby"):
+        await observer.read(name, {}, monitor=True)
+    observer.context = copy.deepcopy(session.context)
+    observer.check_safety()
+
+
+async def test_internal_stop_retains_same_task_and_active_state_without_replay():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    await prime_grant_observer(observer, session)
+    root = copy.deepcopy(observer.task_grant)
+    context = copy.deepcopy(session.context)
+    pending = {
+        "operation_id": "owned",
+        "request_id": "original",
+        "method": "game_move_to",
+        "context": context,
+    }
+    session.operations["owned"] = copy.deepcopy(pending)
+    observer.pending = copy.deepcopy(pending)
+    observer.work.put_nowait(({"command": "attack", "target_handle": "old"}, observer.version))
+    await observer.global_stop()
+    assert session.calls[-1][2] == {
+        "interrupt_only": True,
+        "operation_id": "owned",
+        "context": context,
+    }
+    assert observer.locked is None and session.control == "active"
+    with pytest.raises(ValueError, match="authorization_reobservation_required"):
+        observer.world()
+    await prime_grant_observer(observer, session)
+    assert observer.task_grant == root and observer.work.empty() and observer.plan is None
+    assert observer.stop_confirmed and observer.interrupted_operation["request_id"] == "original"
+    observer.world()
+    assert len(session.grant_calls) == 1
+    assert not any(name == "game_attack" for name, *_ in session.calls)
+
+
+async def test_internal_disarm_without_pending_only_clears_host_work():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    root = copy.deepcopy(observer.task_grant)
+    await observer.handle_command({"command": "disarm"})
+    await observer.global_stop()
+    assert observer.task_grant == root and observer.locked is None
+    assert not any(name == "game_stop" for name, *_ in session.calls)
+
+
+async def test_explicit_stop_is_not_downgraded_by_later_disarm():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    await prime_grant_observer(observer, session)
+    await observer.handle_command({"command": "stop"})
+    await observer.handle_command({"command": "disarm"})
+    assert observer.halt
+    await observer.global_stop()
+    assert session.calls[-1][2] == {}
+    await prime_grant_observer(observer, session)
+    assert observer.task_grant is None
+    await observer.handle_command(task_command(session, "continue_task"))
+    assert observer.work.empty() and len(session.grant_calls) == 1
+
+
+async def test_explicit_stop_arriving_during_internal_cancel_is_the_next_single_writer_call():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    await prime_grant_observer(observer, session)
+    pending = {
+        "operation_id": "owned",
+        "request_id": "original",
+        "method": "game_move_to",
+        "context": copy.deepcopy(session.context),
+    }
+    observer.pending = copy.deepcopy(pending)
+    session.operations["owned"] = copy.deepcopy(pending)
+    session.hold["game_stop"] = asyncio.Event()
+    stopping = asyncio.create_task(observer.global_stop())
+    await asyncio.wait_for(session.hold["game_stop"].wait(), 2)
+    await observer.handle_command({"command": "stop"})
+    await observer.handle_command({"command": "disarm"})
+    session.release.set()
+    await stopping
+    assert observer.halt and observer.task_grant is None
+    observer.pending = None
+    await prime_grant_observer(observer, session)
+    await observer.global_stop()
+    calls = [args for name, _, args in session.calls if name == "game_stop"]
+    assert len(calls) == 2 and calls[0]["interrupt_only"] is True and calls[1] == {}
+    assert session.control == "paused" and observer.task_grant is None
+
+
+@pytest.mark.parametrize("method", ["game_npc_open", "game_npc_choose"])
+@pytest.mark.parametrize("outcome", ["unknown", "lost_response", "identity_mismatch"])
+async def test_uncertain_interruption_cannot_be_cleared_by_later_explicit_stop_and_new_grant(
+    method, outcome,
+):
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    session.policy["allowed_actions"].append(method)
+    session.terminal = "running"
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    await prime_grant_observer(observer, session)
+    original_call = session.call_tool
+    template = next(row for row in FIXTURES if row["method"] == "game_get_operation")
+
+    async def uncertain_stop(name, args):
+        result = await original_call(name, args)
+        if name == method:
+            operation_id = result.structured_content["data"]["operation_id"]
+            operation = copy.deepcopy(template["success"]["data"])
+            operation.update(session.operations[operation_id])
+            operation["evidence"] = [
+                {
+                    "source": "client",
+                    "kind": "dialogue",
+                    "observed_at": "1",
+                    "snapshot_seq": "1",
+                    "server_code": None,
+                    "description": "synthetic submitted NPC request",
+                }
+            ]
+            session.operations[operation_id] = operation
+        if name == "game_get_operation":
+            validate(result.structured_content["data"], "operation")
+        if name == "game_stop" and args.get("interrupt_only"):
+            operation = result.structured_content["data"]["operation"]
+            assert operation["state"] == "unknown"
+            assert operation["side_effects_possible"] is True
+            assert operation["result"]["submitted"] is True
+            if outcome == "lost_response":
+                raise ConnectionError("synthetic cancel response loss")
+            if outcome == "identity_mismatch":
+                operation.update(
+                    operation_id="replacement-operation", state="cancelled",
+                    side_effects_possible=False, result={"submitted": False},
+                )
+                result.structured_content["data"]["side_effects_possible"] = False
+            validate(operation, "operation")
+        return result
+
+    session.call_tool = uncertain_stop
+    helper = SimpleNamespace(session=session)
+    action = asyncio.create_task(
+        observer.ordinary_action(ordinary_command(helper, method=method), observer.version)
+    )
+    try:
+        await wait_for(events, lambda row: row["event"] == "operation")
+        observed = copy.deepcopy(
+            next(row["operation"] for row in events if row["event"] == "operation")
+        )
+        assert observed["state"] == "running" and observed["result"]["submitted"] is True
+        await observer.handle_command({"command": "disarm"})
+        await asyncio.wait_for(action, 3)
+    finally:
+        if not action.done():
+            action.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await action
+    assert observer.pending is None
+    assert not observer.stop_confirmed
+    await asyncio.sleep(1)
+    await prime_grant_observer(observer, session)
+    await observer.handle_command({"command": "stop"})
+    await observer.global_stop()
+    explicit = next(row for row in reversed(events) if row["event"] == "global_stop")
+    assert explicit["response"]["data"]["operation"] is None
+    assert observer.stop_confirmed
+    await asyncio.sleep(1)
+    await prime_grant_observer(observer, session)
+    with pytest.raises(ValueError, match="authorization_cannot_clear_write_uncertainty"):
+        await submit_grant(
+            observer, task_command(session, origin="new-explicit-user-command", root=18)
+        )
+    assert len(session.grant_calls) == 1
+    with pytest.raises(ValueError, match="control_or_identity_invalid"):
+        await observer.ordinary_action(ordinary_command(helper, intent=102), observer.version)
+    assert sum(name == method for name, *_ in session.calls) == 1
+    assert session.policy["economic_uncertain"] is False
+
+    await observer.handle_command({"command": "observe"})
+    status = next(row for row in reversed(events) if row["event"] == "status")
+    assert status["writes_locked"] == "interruption_uncertain"
+    fact = status["unresolved_interruption"]
+    for key in ("operation_id", "request_id", "method", "context"):
+        assert fact["operation"][key] == observed[key]
+    assert fact["operation"]["last_observed"] == observed
+    if outcome == "lost_response":
+        assert fact["response"] is None
+    else:
+        cancelled = fact["response"]["data"]["operation"]
+        assert cancelled["state"] == ("cancelled" if outcome == "identity_mismatch" else "unknown")
+
+
+@pytest.mark.parametrize("fault", ["admission_unknown", "stale_context", "unknown", "unconfirmed"])
+async def test_internal_stop_never_invents_identity_or_clears_uncertainty(fault):
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    await prime_grant_observer(observer, session)
+    root = copy.deepcopy(observer.task_grant)
+    observer.pending = {"operation_id": "owned", "context": copy.deepcopy(session.context)}
+    if fault == "admission_unknown":
+        observer.pending["operation_id"] = None
+    elif fault == "stale_context":
+        observer.pending["context"]["control_epoch"] = "0"
+    else:
+        observer.locked = "operation_unknown"
+        if fault == "unconfirmed":
+            observer.unconfirmed_purchase = {"request_id": "preserved"}
+    await observer.global_stop()
+    assert observer.task_grant == root and observer.locked
+    assert not any(name == "game_stop" for name, *_ in session.calls)
+    if fault == "unconfirmed":
+        assert observer.unconfirmed_purchase == {"request_id": "preserved"}
+
+
+def task_command(session, mode="new_task", origin="conversation:user-message-17", root=17):
+    return {
+        "command": "grant",
+        "mode": mode,
+        "user_intent_id": origin,
+        "grant_id": f"00000000-0000-4000-8000-{root:012x}",
+        "context": copy.deepcopy(session.context),
+    }
+
+
+async def submit_grant(observer, command):
+    await observer.handle_command(command)
+    queued, version = observer.work.get_nowait()
+    await observer.grant(queued, version)
+
+
+async def test_task_grant_deduplicates_real_input_and_never_restores_old_plan():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    session.control, session.reason = "disabled", "disabled_by_user"
+    await prime_grant_observer(observer, session)
+    observer.plan = {"old_plan": True}
+    command = task_command(session)
+    await submit_grant(observer, command)
+    assert observer.plan is None
+    assert len(session.grant_calls) == 1
+    observer.check_safety()
+    assert observer.task_grant is not None
+    await prime_grant_observer(observer, session)
+    await observer.handle_command({**command, "context": copy.deepcopy(session.context)})
+    assert observer.work.empty() and len(session.grant_calls) == 1
+    assert any(event.get("reason") == "duplicate_user_intent" for event in events)
+    assert observer.task_grant["user_intent_id"] == command["user_intent_id"]
+
+
+@pytest.mark.parametrize("change", ["map", "life", "manual", "off", "session"])
+async def test_task_grant_temporary_interruptions_and_noncontinuable_boundaries(change):
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    await submit_grant(observer, task_command(session))
+    await prime_grant_observer(observer, session)
+    session.context["control_epoch"] = str(int(session.context["control_epoch"]) + 1)
+    if change == "map":
+        session.context["world_epoch"] = "2"
+        session.map_uid, session.control, session.reason = "3", "paused", "map_changed"
+    elif change == "life":
+        session.hp, session.control, session.reason = 0, "paused", "death"
+        await prime_grant_observer(observer, session)
+        with pytest.raises(ValueError, match="life_unknown_or_dead"):
+            await submit_grant(observer, task_command(session, "continue_task"))
+        assert len(session.grant_calls) == 1
+        session.hp = 300
+    elif change == "off":
+        session.control, session.reason = "disabled", "disabled_by_user"
+    elif change == "session":
+        session.context["session_id"] = "2" * 32
+    await prime_grant_observer(observer, session)
+    await observer.handle_command(task_command(session, "continue_task"))
+    if change in ("off", "session"):
+        assert observer.work.empty() and observer.task_grant is None
+    else:
+        queued, version = observer.work.get_nowait()
+        await observer.grant(queued, version)
+        assert len(session.grant_calls) == 2
+        assert observer.plan is None
+
+
+@pytest.mark.parametrize("lock", ["operation_unknown", "delivery_uncertain", "economic_uncertain"])
+async def test_task_grant_cannot_clear_persistent_write_uncertainty(lock):
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    observer.locked = lock
+    observer.unconfirmed_purchase = {"request_id": "preserved"}
+    with pytest.raises(ValueError, match="cannot_clear_write_uncertainty"):
+        await submit_grant(observer, task_command(session))
+    assert session.grant_calls == []
+    assert observer.locked == lock and observer.unconfirmed_purchase == {"request_id": "preserved"}
+
+
+async def test_task_grant_eof_during_response_locks_without_replay():
+    from mir2x_mcp.supervision import ArmedSupervisor
+
+    session, events = GrantSession(), EventLog()
+    observer = ArmedSupervisor(session, BINDING, events.append, asyncio.Event())
+    await prime_grant_observer(observer, session)
+    session.grant_hold = asyncio.Event()
+    task = asyncio.create_task(submit_grant(observer, task_command(session)))
+    await asyncio.wait_for(session.grant_entered.wait(), 1)
+    observer.input_closed()
+    session.grant_hold.set()
+    with pytest.raises(ValueError, match="after_invalidation"):
+        await task
+    assert observer.locked and observer.task_grant is None
+    assert len(session.grant_calls) == 1

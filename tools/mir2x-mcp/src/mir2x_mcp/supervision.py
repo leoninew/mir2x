@@ -10,6 +10,7 @@ import time
 import uuid
 from collections import deque
 from collections.abc import AsyncIterator, Callable
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -19,7 +20,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from .contract import METHODS, ContractError, validate_arguments
 
-READ_ONLY = frozenset(name for name, spec in METHODS.items() if not spec["action"]) - {"game_stop"}
+READ_ONLY = frozenset(name for name, spec in METHODS.items() if spec.get("write") is False)
 PERIOD = 0.25
 MAX_AGE = 0.5
 
@@ -121,6 +122,9 @@ class Observer:
         self.stop.set()
 
     async def read(self, name, arguments, *, monitor):
+        if name not in READ_ONLY:
+            self.event("command_rejected", reason="read_only", tool=name)
+            return None
         if not await self.budget.acquire(self.stop, monitor=monitor):
             return None
         started = time.monotonic()
@@ -403,12 +407,23 @@ class ArmedSupervisor(Observer):
         self.pending = None
         self.pending_since = None
         self.halt = False
+        self.revoke_task = False
         self.exiting = False
         self.work = asyncio.Queue(maxsize=1)
         self.wake = asyncio.Event()
         self.attack_intents = set()
         self.purchase_intents = set()
+        self.action_intents = set()
+        self.ordinary = None
         self.unconfirmed_purchase = None
+        self.unresolved_interruption = None
+        self.task_grant = None
+        self.user_intents = {}
+        self.grant_ids = set()
+        self.control_requests = set()
+        self.stop_confirmed = False
+        self.awaiting_grant_context = None
+        self.interrupted_operation = None
         self.last_attack = {}
         self.trail_scope = None
         self.visited = {}
@@ -417,10 +432,20 @@ class ArmedSupervisor(Observer):
         self.previous_sample = None
         self.walk_edge = None
 
+    def fail(self, reason):
+        self.task_grant = None
+        self.invalidate(reason)
+        super().fail(reason)
+
     def invalidate(self, reason, *, lock=False):
-        lock = lock or self.unconfirmed_purchase is not None
-        had_plan = self.plan is not None
+        lock = (
+            lock
+            or self.unconfirmed_purchase is not None
+            or self.unresolved_interruption is not None
+        )
+        had_plan = self.plan is not None or self.ordinary is not None
         self.plan = None
+        self.ordinary = None
         self.hunting = self.recover = False
         self.version += 1
         if lock and self.locked is None:
@@ -434,10 +459,14 @@ class ArmedSupervisor(Observer):
                 writes_locked=self.locked,
                 operation=self.pending,
                 unconfirmed_purchase=self.unconfirmed_purchase,
+                unresolved_interruption=self.unresolved_interruption,
+                interrupted_operation=self.interrupted_operation,
             )
         self.wake.set()
 
     def world(self):
+        if self.awaiting_grant_context is not None:
+            raise ValueError("authorization_reobservation_required")
         now = time.monotonic()
         for name in ("game_get_session", "game_get_state", "game_list_nearby"):
             response, started = self.snapshots.get(name, ({}, 0))
@@ -484,6 +513,32 @@ class ArmedSupervisor(Observer):
             or self.plan["map_uid"] != state["map_uid"]
         ):
             raise ValueError("plan_no_longer_valid")
+        return state, nearby
+
+    def ordinary_guard(self, version):
+        state, nearby = self.world()
+        if (
+            self.ordinary is None
+            or version != self.version
+            or self.ordinary["version"] != version
+            or self.ordinary["context"] != self.context
+        ):
+            raise ValueError("ordinary_action_no_longer_valid")
+        policy = (
+            self.snapshots["game_get_session"][0]["data"].get("capabilities", {}).get("policy", {})
+        )
+        if self.unconfirmed_purchase is not None or policy.get("economic_uncertain") is True:
+            self.invalidate("economic_uncertain", lock=True)
+            raise ValueError("ordinary_action_economic_uncertainty")
+        if policy.get("economic_uncertain") is not False or self.ordinary[
+            "method"
+        ] not in policy.get("allowed_actions", []):
+            raise ValueError("ordinary_action_native_policy_denied")
+        if (
+            self.ordinary["method"] in ("game_npc_open", "game_npc_choose")
+            and policy.get("allow_npc_dialogue") is not True
+        ):
+            raise ValueError("ordinary_action_native_policy_denied")
         return state, nearby
 
     def danger(self, state, safety=None):
@@ -553,10 +608,38 @@ class ArmedSupervisor(Observer):
 
     def check_safety(self):
         try:
+            session = self.snapshots.get("game_get_session", ({}, 0))[0].get("data", {})
+            context = session.get("context") or {}
+            if self.awaiting_grant_context is not None:
+                expected = self.awaiting_grant_context
+                if context.get("session_id") == expected["session_id"] and int(
+                    context.get("control_epoch", "0")
+                ) < int(expected["control_epoch"]):
+                    return
+            if self.task_grant is not None and (
+                session.get("pause_reason")
+                in ("disabled_by_user", "stop_requested", "transport_lost", "controller_error")
+                or session.get("phase") in ("login", "select_character", "disconnected", "exiting")
+                or (context and context.get("session_id") != self.task_grant["session_id"])
+                or session.get("character_uid") not in (None, self.binding.character_uid)
+            ):
+                self.task_grant = None
+                self.awaiting_grant_context = None
+            if self.awaiting_grant_context is not None:
+                state_context = self.snapshots.get("game_get_state", ({}, 0))[0].get("context")
+                if state_context != context:
+                    return
+                self.awaiting_grant_context = None
             self.record_trail()
-            if self.pending_since is not None and time.monotonic() - self.pending_since > 2.5:
+            pending_limit = (self.pending or {}).get("timeout_ms", 2000) / 1000 + MAX_AGE
+            if (
+                self.pending_since is not None
+                and time.monotonic() - self.pending_since > pending_limit
+            ):
                 if not self.locked:
                     self.invalidate("operation_deadline_unresolved", lock=True)
+            if self.ordinary is not None:
+                self.ordinary_guard(self.version)
             if self.plan is None:
                 return
             state, _ = self.guard(self.version)
@@ -576,13 +659,14 @@ class ArmedSupervisor(Observer):
                 )
                 self.wake.set()
         except (KeyError, TypeError, ValueError) as exc:
-            if self.plan is not None:
+            if self.plan is not None or self.ordinary is not None:
                 self.invalidate(str(exc))
 
     def input_closed(self):
+        self.task_grant = None
         self.invalidate("input_closed")
         self.exiting = True
-        self.halt = self.pending_since is not None
+        self.halt |= self.pending_since is not None
         self.wake.set()
 
     async def handle_command(self, command):
@@ -596,10 +680,16 @@ class ArmedSupervisor(Observer):
                 plan_loaded=self.plan is not None,
                 writes_locked=self.locked,
                 unconfirmed_purchase=self.unconfirmed_purchase,
+                unresolved_interruption=self.unresolved_interruption,
+                interrupted_operation=self.interrupted_operation,
             )
         elif kind in ("quit", "disarm", "stop"):
+            if kind in ("quit", "stop"):
+                self.task_grant = None
             self.invalidate(kind)
-            self.halt = self.pending_since is not None or kind == "stop"
+            self.halt |= self.pending_since is not None or kind == "stop"
+            if kind == "stop":
+                self.revoke_task = True
             self.exiting |= kind == "quit"
             self.wake.set()
         elif kind == "trail":
@@ -610,13 +700,68 @@ class ArmedSupervisor(Observer):
                 points=[{"x": p[0], "y": p[1]} for p in self.visited],
                 edges=[[list(p) for p in edge] for edge in self.edges],
             )
-        elif kind in ("arm", "attack", "scout", "purchase"):
-            if self.work.full() or self.pending_since is not None or self.recover:
+        elif kind == "grant":
+            if self.exiting:
+                self.event("command_rejected", reason="scheduler_busy")
+                return
+            try:
+                mode = command["mode"]
+                origin = command["user_intent_id"]
+                root = command["grant_id"]
+                if type(origin) is not str or not 0 < len(origin) <= 256:
+                    raise ValueError("user_intent_source_required")
+                if mode == "new_task":
+                    if origin in self.user_intents or root in self.grant_ids:
+                        raise ValueError("duplicate_user_intent")
+                elif (
+                    mode != "continue_task"
+                    or self.task_grant is None
+                    or (
+                        origin != self.task_grant["user_intent_id"]
+                        or root != self.task_grant["grant_id"]
+                    )
+                ):
+                    raise ValueError("task_authority_unavailable")
+                args = {
+                    "mode": mode,
+                    "grant_id": root,
+                    "request_id": str(uuid.uuid4()),
+                    "character_uid": self.binding.character_uid,
+                    "context": command["context"],
+                }
+                validate_arguments("game_grant_control", args)
+                if len(self.user_intents) >= 4096 or len(self.control_requests) >= 4096:
+                    raise ValueError("intent_ledger_full")
+                self.invalidate("explicit_task_authorization")
+                if mode == "new_task":
+                    self.task_grant = None
+                if self.pending_since is not None:
+                    raise ValueError("scheduler_busy")
+                if mode == "new_task":
+                    self.user_intents[origin] = root
+                    self.grant_ids.add(root)
+                self.control_requests.add(args["request_id"])
+                self.work.put_nowait(({**command, "arguments": args}, self.version))
+                self.wake.set()
+            except (KeyError, TypeError, ValueError, ContractError) as exc:
+                self.event("command_rejected", reason=str(exc))
+        elif kind in ("arm", "attack", "scout", "purchase", "shop_close", "action"):
+            if kind in ("shop_close", "action") and self.plan is not None:
+                self.event("command_rejected", reason="ordinary_action_requires_disarmed")
+                return
+            if (
+                self.work.full()
+                or self.pending_since is not None
+                or self.recover
+                or self.ordinary is not None
+            ):
                 self.event("command_rejected", reason="scheduler_busy")
                 return
             self.work.put_nowait((command, self.version))
             self.wake.set()
-        elif kind == "call" and (self.plan is not None or self.pending_since is not None):
+        elif kind == "call" and (
+            self.plan is not None or self.pending_since is not None or self.ordinary is not None
+        ):
             self.event("command_rejected", reason="optional_queries_wait_until_disarmed")
         else:
             await super().handle_command(command)
@@ -629,6 +774,103 @@ class ArmedSupervisor(Observer):
         if time.monotonic() - result[1] > MAX_AGE:
             raise ValueError("preflight_query_stale")
         return result[0]["data"]
+
+    async def grant(self, command, version):
+        if (self.locked and not (self.locked == "global_stop" and self.stop_confirmed)) or (
+            self.unconfirmed_purchase is not None
+            or self.unresolved_interruption is not None
+            or self.pending_since is not None
+            or self.failed
+            or self.exiting
+            or self.stop.is_set()
+        ):
+            raise ValueError("authorization_cannot_clear_write_uncertainty")
+        args = command["arguments"]
+        for name in ("game_get_session", "game_get_state"):
+            response, started = self.snapshots.get(name, ({}, 0))
+            if (
+                time.monotonic() - started > MAX_AGE
+                or response.get("context") != args["context"]
+                or version != self.version
+            ):
+                raise ValueError("authorization_observation_stale")
+            data = response.get("data", {})
+            if name == "game_get_session":
+                if (
+                    data.get("instance_id") != self.binding.instance_id
+                    or data.get("character_uid") != self.binding.character_uid
+                    or data.get("phase") != "run"
+                    or "game_grant_control"
+                    not in data.get("capabilities", {}).get("policy", {}).get("allowed_actions", [])
+                ):
+                    raise ValueError("authorization_identity_or_policy_invalid")
+                if data["capabilities"]["policy"].get("economic_uncertain") is not False:
+                    self.invalidate("economic_uncertain", lock=True)
+                    raise ValueError("authorization_cannot_clear_write_uncertainty")
+            elif (
+                data.get("character_uid") != self.binding.character_uid
+                or type(data.get("hp")) is not int
+                or data["hp"] <= 0
+                or "alive" not in data.get("known_states", [])
+                or "dead" in data.get("known_states", [])
+            ):
+                raise ValueError("life_unknown_or_dead")
+        if args["mode"] == "continue_task" and (
+            self.task_grant is None
+            or self.task_grant["session_id"] != args["context"]["session_id"]
+        ):
+            raise ValueError("task_authority_unavailable")
+        if not await self.budget.acquire(self.stop, monitor=False):
+            raise ValueError("stopping")
+        if version != self.version or self.context != args["context"]:
+            raise ValueError("authorization_context_changed")
+        if any(
+            time.monotonic() - self.snapshots.get(name, ({}, 0))[1] > MAX_AGE
+            for name in ("game_get_session", "game_get_state")
+        ):
+            raise ValueError("authorization_observation_stale")
+        try:
+            result = await self.session.call_tool("game_grant_control", args)
+            payload = result.structured_content
+            self.event("grant_response", response=payload, user_intent_id=command["user_intent_id"])
+            if result.is_error or not payload.get("ok"):
+                if payload.get("error", {}).get("code") == "transport_lost":
+                    self.invalidate("grant_response_unknown", lock=True)
+                return
+            data = payload["data"]
+            expected = args["context"]
+            current = data["context"]
+            if (
+                data["grant_id"] != args["grant_id"]
+                or data["mode"] != args["mode"]
+                or data["control_state"] != "active"
+                or payload.get("context") != current
+                or any(
+                    current[k] != expected[k] for k in ("instance_id", "session_id", "world_epoch")
+                )
+                or int(current["control_epoch"]) <= int(expected["control_epoch"])
+            ):
+                raise ValueError("grant_receipt_mismatch")
+            if version != self.version:
+                raise ValueError("grant_response_after_invalidation")
+            self.task_grant = {
+                "grant_id": args["grant_id"],
+                "user_intent_id": command["user_intent_id"],
+                "session_id": current["session_id"],
+            }
+            if self.locked == "global_stop" and self.stop_confirmed:
+                self.locked = None
+            self.awaiting_grant_context = current
+            self.event(
+                "task_authorized",
+                grant_id=args["grant_id"],
+                mode=args["mode"],
+                reobservation_required=True,
+                restored_plan=False,
+            )
+        except Exception:
+            self.invalidate("grant_response_unknown", lock=True)
+            raise
 
     def available_potions(self, data, keys):
         if data.get("next_cursor") is not None or "inventory" in data.get("unavailable_fields", []):
@@ -755,37 +997,139 @@ class ArmedSupervisor(Observer):
         )
 
     async def global_stop(self):
-        self.halt = False
-        # This is a global pause, never a cancel-only prelude to potion/retreat.
-        if self.locked or self.failed:
+        self.stop_confirmed = False
+        if not self.revoke_task and self.pending is None:
+            self.halt = False
+            self.invalidate("internal_disarm")
+            return
+        if self.failed or (self.locked and self.locked != "global_stop" and not self.revoke_task):
+            self.halt = False
             self.event("alert", reason="stop_unavailable_writes_locked", operation=self.pending)
             return
-        expected = self.pending["context"] if self.pending is not None else self.context
         self.invalidate("global_stop", lock=True)
         if not await self.budget.acquire(self.stop, monitor=False):
             return
+        # Explicit user stop wins over an interruption waiting for its call allowance.
+        revoke = self.revoke_task
+        self.halt = self.revoke_task = False
         response, started = self.snapshots.get("game_get_session", ({}, 0))
+        current = response.get("context")
+        data = response.get("data", {})
         if (
             time.monotonic() - started > MAX_AGE
-            or response.get("context") != expected
-            or response.get("data", {}).get("control_state") != "active"
+            or not current
+            or current != self.context
+            or data.get("context") != current
+            or data.get("instance_id") != self.binding.instance_id
+            or data.get("character_uid") != self.binding.character_uid
+            or data.get("phase") != "run"
         ):
+            if self.pending is not None and self.unresolved_interruption is None:
+                self.unresolved_interruption = {"operation": dict(self.pending), "response": None}
+                if self.locked == "global_stop":
+                    self.locked = "interruption_uncertain"
             self.event("alert", reason="stop_context_not_fresh_no_write")
             return
+        arguments = {}
+        pending = self.pending
+        if not revoke:
+            if pending is None or not pending.get("operation_id") or pending["context"] != current:
+                if self.unresolved_interruption is None:
+                    self.unresolved_interruption = {
+                        "operation": dict(pending or {}),
+                        "response": None,
+                    }
+                if self.locked == "global_stop":
+                    self.locked = "interruption_uncertain"
+                self.event(
+                    "alert", reason="interruption_identity_unknown_no_write", operation=pending
+                )
+                return
+            arguments = {
+                "interrupt_only": True,
+                "operation_id": pending["operation_id"],
+                "context": current,
+            }
+            self.unresolved_interruption = {"operation": dict(pending), "response": None}
+        payload = None
         try:
-            response = await self.session.call_tool("game_stop", {})
-            self.event("global_stop", response=response.structured_content, retreat_allowed=False)
+            result = await self.session.call_tool("game_stop", arguments)
+            payload = result.structured_content
+            operation = payload.get("data", {}).get("operation")
+            self.stop_confirmed = bool(
+                payload.get("ok")
+                and not result.is_error
+                and (
+                    not payload.get("data", {}).get("side_effects_possible")
+                    or self.local_intent_stopped(operation or {})
+                )
+                and (
+                    operation is None
+                    or operation.get("state") in ("succeeded", "failed", "cancelled")
+                )
+            )
+            if not revoke:
+                self.unresolved_interruption["response"] = payload
+                observed = payload.get("context") or {}
+                self.stop_confirmed &= bool(
+                    operation
+                    and pending
+                    and all(
+                        operation.get(key) == pending.get(key)
+                        for key in ("operation_id", "request_id", "method", "context")
+                    )
+                    and all(
+                        observed.get(key) == current[key]
+                        for key in ("instance_id", "session_id", "world_epoch")
+                    )
+                    and int(observed.get("control_epoch", "0")) >= int(current["control_epoch"])
+                )
+                if self.stop_confirmed:
+                    self.unresolved_interruption = None
+                    self.interrupted_operation = operation
+                    self.awaiting_grant_context = observed
+                    if self.locked == "global_stop" and self.unconfirmed_purchase is None:
+                        self.locked = None
+                elif self.locked == "global_stop":
+                    self.locked = "interruption_uncertain"
+            elif self.local_intent_stopped(operation or {}):
+                self.interrupted_operation = operation
+            self.event(
+                "global_stop", interrupt_only=not revoke, response=payload, retreat_allowed=False
+            )
         except Exception as exc:
+            if not revoke and self.locked == "global_stop":
+                self.locked = "interruption_uncertain"
             self.event("alert", reason="stop_response_unknown", exception_type=type(exc).__name__)
+        finally:
+            if not self.stop_confirmed:
+                if self.unresolved_interruption is None:
+                    self.unresolved_interruption = {"operation": pending, "response": payload}
+                if self.locked == "global_stop":
+                    self.locked = "interruption_uncertain"
 
-    async def action(self, name, params, version):
+    @staticmethod
+    def local_intent_stopped(operation):
+        # Native cancellation confirms the owned move/attack stopped, while preserving
+        # the fact that earlier packets may already have had effects. Never replay them.
+        return (
+            operation.get("state") == "cancelled"
+            and operation.get("method") in ("game_move_to", "game_attack")
+            and operation.get("cancel_requested") is True
+            and (operation.get("error") or {}).get("code") == "paused"
+            and (operation.get("result") or {}).get("submitted") is True
+        )
+
+    async def action(self, name, params, version, *, ordinary=None):
         if not await self.budget.acquire(self.stop, monitor=False):
             raise ValueError("stopping")
-        state, _ = self.guard(version)
+        state, _ = self.ordinary_guard(version) if ordinary is not None else self.guard(version)
         if name == "game_attack" and (not self.hunting or self.danger(state)):
             raise ValueError("hunting_locked")
         for prerequisite in (
-            ("game_get_inventory", "game_shop_list")
+            ()
+            if name == "game_shop_close" or ordinary is not None
+            else ("game_get_inventory", "game_shop_list")
             if name == "game_shop_buy"
             else ("game_get_inventory", "game_get_map_region")
             if name == "game_attack"
@@ -824,8 +1168,8 @@ class ArmedSupervisor(Observer):
         arguments = {
             **params,
             "context": dict(self.context),
-            "request_id": str(uuid.uuid4()),
-            "timeout_ms": 2000,
+            "request_id": ordinary["request_id"] if ordinary is not None else str(uuid.uuid4()),
+            "timeout_ms": ordinary["timeout_ms"] if ordinary is not None else 2000,
         }
         validate_arguments(name, arguments)
         self.pending_since = time.monotonic()
@@ -834,11 +1178,15 @@ class ArmedSupervisor(Observer):
             "request_id": arguments["request_id"],
             "context": dict(self.context),
             "operation_id": None,
+            "timeout_ms": arguments["timeout_ms"],
+            "last_observed": None,
         }
         self.event("write_submitting", tool=name, arguments=arguments, write_enabled=True)
         try:
             result = await self.session.call_tool(name, arguments)
             payload = result.structured_content
+            if ordinary is not None:
+                ordinary["response"] = payload
             self.event("write_response", tool=name, response=payload)
             if not isinstance(payload, dict):
                 raise ValueError("invalid_write_response")
@@ -873,7 +1221,13 @@ class ArmedSupervisor(Observer):
             while not self.stop.is_set():
                 if self.halt:
                     await self.global_stop()
-                    return None
+                    return (
+                        self.interrupted_operation
+                        if self.stop_confirmed
+                        and self.interrupted_operation
+                        and self.interrupted_operation.get("operation_id") == operation
+                        else None
+                    )
                 result = await self.read(
                     "game_get_operation", {"operation_id": operation}, monitor=False
                 )
@@ -888,11 +1242,24 @@ class ArmedSupervisor(Observer):
                     or data.get("context") != arguments["context"]
                 ):
                     raise ValueError("operation_identity_invalid")
+                self.pending["last_observed"] = deepcopy(data)
+                if ordinary is not None:
+                    ordinary["operation"] = data
                 self.event("operation", operation=data)
                 status = data.get("state")
                 if status == "unknown":
                     raise ValueError("operation_unknown")
                 if status in ("succeeded", "failed", "cancelled"):
+                    if self.local_intent_stopped(data):
+                        self.interrupted_operation = data
+                        self.invalidate("manual_intent_stopped")
+                        self.event(
+                            "manual_intent_stopped",
+                            operation=data,
+                            replay=False,
+                            reobservation_required=True,
+                        )
+                        return data
                     if status != "succeeded" and data.get("side_effects_possible"):
                         raise ValueError("terminal_side_effects_unresolved")
                     return data
@@ -918,6 +1285,92 @@ class ArmedSupervisor(Observer):
             raise ValueError("purchase_gold_unknown")
         self.purchase_budget()
         return state
+
+    async def shop_close(self, command, version):
+        if set(command) != {"command", "context", "shop_handle", "intent_id"}:
+            raise ValueError("invalid_shop_close_fields")
+        await self.ordinary_action(
+            {
+                "command": "action",
+                "method": "game_shop_close",
+                "params": {"shop_handle": command["shop_handle"]},
+                "context": command["context"],
+                "intent_id": command["intent_id"],
+                "timeout_ms": 2000,
+            },
+            version,
+            alias=True,
+        )
+
+    async def ordinary_action(self, command, version, *, alias=False):
+        if (
+            self.plan is not None
+            or self.ordinary is not None
+            or self.pending_since is not None
+            or version != self.version
+        ):
+            raise ValueError("ordinary_action_requires_disarmed")
+        if set(command) != {"command", "method", "params", "context", "intent_id", "timeout_ms"}:
+            raise ValueError("invalid_ordinary_action_fields")
+        name = command["method"]
+        if not isinstance(name, str) or name not in (
+            "game_move_to",
+            "game_shop_close",
+            "game_npc_open",
+            "game_npc_choose",
+            "game_npc_close",
+        ):
+            raise ValueError("ordinary_action_method_not_enabled")
+        intent = command["intent_id"]
+        if not isinstance(intent, str) or not re.fullmatch(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", intent
+        ):
+            raise ValueError("explicit_ordinary_action_intent_id_required")
+        if intent in self.action_intents or len(self.action_intents) >= 4096:
+            raise ValueError(
+                "shop_close_intent_already_seen_or_limit_reached"
+                if alias
+                else "action_intent_already_seen_or_limit_reached"
+            )
+        self.world()
+        if command["context"] != self.context:
+            raise ValueError(
+                "shop_close_context_mismatch" if alias else "ordinary_action_context_mismatch"
+            )
+        params = command["params"]
+        if not isinstance(params, dict) or {"context", "request_id", "timeout_ms"}.intersection(
+            params
+        ):
+            raise ValueError("ordinary_action_params_required")
+        request = {
+            **params,
+            "context": command["context"],
+            "request_id": str(uuid.uuid4()),
+            "timeout_ms": command["timeout_ms"],
+        }
+        validate_arguments(name, request)
+        self.action_intents.add(intent)
+        current = {
+            "context": dict(self.context),
+            "version": version,
+            "method": name,
+            "request_id": request["request_id"],
+            "timeout_ms": request["timeout_ms"],
+            "response": None,
+            "operation": None,
+        }
+        self.ordinary = current
+        self.ordinary_guard(version)
+        operation = await self.action(name, params, version, ordinary=current)
+        self.event(
+            "shop_close_result" if alias else "action_result",
+            intent_id=intent,
+            method=name,
+            request_id=current["request_id"],
+            response=current["response"],
+            operation=operation if operation is not None else current["operation"],
+        )
+        self.invalidate("ordinary_action_finished")
 
     def purchase_budget(self):
         policy = (
@@ -1235,10 +1688,16 @@ class ArmedSupervisor(Observer):
                     continue
                 if not self.work.empty():
                     command, version = self.work.get_nowait()
-                    if command["command"] in ("arm", "scout"):
+                    if command["command"] == "grant":
+                        await self.grant(command, version)
+                    elif command["command"] in ("arm", "scout"):
                         await self.arm(command)
                     elif command["command"] == "purchase":
                         await self.purchase(command, version)
+                    elif command["command"] == "shop_close":
+                        await self.shop_close(command, version)
+                    elif command["command"] == "action":
+                        await self.ordinary_action(command, version)
                     else:
                         await self.attack(command, version)
                     continue

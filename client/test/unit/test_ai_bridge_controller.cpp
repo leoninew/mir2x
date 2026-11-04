@@ -32,9 +32,16 @@ namespace
         s << "00000000-0000-4000-8000-" << std::hex << std::setw(12) << std::setfill('0') << n;
         return s.str();
     }
-    Policy fullPolicy()
+    Policy fullPolicy(bool callerGrants = false)
     {
-        return Policy::parse(R"({"allowed_actions":"*","allow_npc_dialogue":true,"allowed_peer_uids":"*","allowed_item_ids":"*","max_gold_per_operation":"100","max_gold_per_session":"200","max_item_count_per_operation":99})");
+        auto policy = Json::parse(R"({"allowed_actions":[],"allow_npc_dialogue":true,"allowed_peer_uids":"*","allowed_item_ids":"*","max_gold_per_operation":"100","max_gold_per_session":"200","max_item_count_per_operation":99})");
+        for(const auto &[name, meta]: contract().at("x-methods").items()){
+            if((meta.at("action") == true || name == "game_stop" || name == "game_grant_control")
+                && (callerGrants || name != "game_grant_control")){
+                policy["allowed_actions"].push_back(name);
+            }
+        }
+        return Policy::parse(policy.dump());
     }
     struct Fake
     {
@@ -129,6 +136,241 @@ namespace
     }
 }
 
+TEST_CASE("task grant admits fresh authority and never replays queued work", "[task_grant]")
+{
+    Fake f(true, fullPolicy(true));
+    f.registerAction();
+    f.controller->disableByUser();
+    const auto grant = [&](std::string mode, size_t id){
+        return f.request("game_grant_control", {{"mode",mode},{"grant_id",uuid(800)},
+            {"request_id",uuid(id)},{"character_uid","100"},{"context",f.controller->context()}}, id);
+    };
+    const auto first = grant("new_task", 801);
+    REQUIRE(f.call(first).at("ok") == true);
+    CHECK(f.begins == 0);
+    const auto old = f.move(802);
+    const auto stale = f.move(810);
+    const auto queued = accepted(f.call(old));
+    REQUIRE(f.operation(queued).at("state") == "accepted");
+    f.controller->manualInput();
+    CHECK(f.controller->controlState() == ControlState::Active);
+    CHECK(f.operation(queued).at("state") == "cancelled");
+    CHECK(f.operation(queued).at("side_effects_possible") == false);
+    for(int i=0; i<100; ++i){ f.controller->advance(); }
+    code(f.call(stale), "stale_context");
+    const auto duplicate = f.call(old);
+    REQUIRE(duplicate.at("ok") == true);
+    CHECK(duplicate.at("data").at("operation_id") == queued);
+    CHECK(duplicate.at("data").at("state") == "cancelled");
+    CHECK(f.begins == 0);
+    SECTION("same task can reobserve map and life recovery"){
+        const auto initialSession=f.controller->context().at("session_id");
+        f.controller->observe({"loading",std::nullopt,std::nullopt,false});
+        REQUIRE(f.controller->context().is_null());
+        f.controller->observe({"run",100,12,true});
+        CHECK(f.controller->context().at("session_id") == initialSession);
+        REQUIRE(f.call(grant("continue_task",803)).at("ok") == true);
+        f.controller->observe({"run",100,12,false});
+        code(f.call(grant("continue_task",804)), "paused");
+        f.controller->observe({"run",100,12,true});
+        CHECK(f.call(grant("continue_task",805)).at("ok") == true);
+    }
+    SECTION("explicit stop rejects old root but accepts a new local authorization"){
+        REQUIRE(f.call(f.request("game_stop")).at("ok") == true);
+        code(f.call(grant("continue_task",806)), "paused");
+        REQUIRE(f.controller->enableByUser());
+        code(f.call(grant("continue_task",809)), "paused");
+        f.controller->manualInput();
+        CHECK(f.controller->controlState() == ControlState::Active);
+        CHECK(f.operation(queued).at("state") == "cancelled");
+        CHECK(f.begins == 0);
+        auto next = grant("new_task",807);
+        next["params"]["grant_id"] = uuid(900);
+        CHECK(f.call(next).at("ok") == true);
+    }
+    SECTION("consumed grant cannot be rebased as a fresh task"){
+        code(f.call(grant("new_task",808)), "duplicate_conflict");
+    }
+}
+
+TEST_CASE("task grants preserve uncertainty and reject identity and lifetime crossings", "[task_grant]")
+{
+    Fake f(true, fullPolicy(true));
+    const auto grant = [&](size_t root, size_t request, std::string mode = "new_task"){
+        return f.request("game_grant_control", {{"mode",mode},{"grant_id",uuid(root)},
+            {"request_id",uuid(request)},{"character_uid","100"},{"context",f.controller->context()}},request);
+    };
+    REQUIRE(f.call(grant(1000,1001)).at("ok") == true);
+    SECTION("manual fences every input while retaining the task"){
+        const auto before = std::stoull(f.controller->context().at("control_epoch").get<std::string>());
+        f.controller->manualInput(); f.controller->manualInput();
+        CHECK(std::stoull(f.controller->context().at("control_epoch").get<std::string>()) == before+2);
+        CHECK(f.controller->controlState() == ControlState::Active);
+    }
+    SECTION("economic unknown and reserved budget survive a new grant"){
+        f.registerAction("game_shop_buy"); f.cost.gold=40; f.submitted=true;
+        const auto id=accepted(f.call(f.buy(1002))); f.controller->advance();
+        f.controller->manualInput();
+        REQUIRE(f.operation(id).at("state") == "unknown");
+        const auto policy=f.controller->session().at("capabilities").at("policy");
+        REQUIRE(policy.at("economic_uncertain") == true);
+        REQUIRE(f.call(grant(1100,1101)).at("ok") == true);
+        CHECK(f.controller->session().at("capabilities").at("policy") == policy);
+        CHECK(f.operation(id).at("side_effects_possible") == true);
+        code(f.call(f.buy(1102)), "economic_uncertain");
+        CHECK(f.begins == 1);
+    }
+    SECTION("local authorization preserves unknown economic facts and revokes the old root"){
+        f.registerAction("game_shop_buy"); f.cost.gold=40; f.submitted=true;
+        const auto id=accepted(f.call(f.buy(1300))); f.controller->advance();
+        REQUIRE(f.call(f.request("game_stop")).at("ok") == true);
+        REQUIRE(f.operation(id).at("state") == "unknown");
+        const auto policy=f.controller->session().at("capabilities").at("policy");
+        REQUIRE(f.controller->enableByUser());
+        CHECK(f.controller->session().at("capabilities").at("policy") == policy);
+        CHECK(f.operation(id).at("state") == "unknown");
+        code(f.call(grant(1000,1301,"continue_task")), "paused");
+        code(f.call(f.buy(1302)), "economic_uncertain");
+        CHECK(f.begins == 1);
+    }
+    SECTION("explicit off invalidates continuation"){
+        f.controller->disableByUser();
+        code(f.call(grant(1000,1003,"continue_task")), "paused");
+    }
+    SECTION("wrong character cannot acquire authority"){
+        auto request=grant(1200,1201); request["params"]["character_uid"]="101";
+        code(f.call(request), "stale_context");
+    }
+    SECTION("unknown life is never assumed recovered"){
+        RuntimeState state{"run",100,11,true}; state.lifeKnown=false;
+        f.controller->observe(state);
+        code(f.call(grant(1000,1202,"continue_task")), "paused");
+    }
+    SECTION("session change cannot continue an old task"){
+        f.controller->observe({"run",101,11,true});
+        auto request=grant(1000,1203,"continue_task"); request["params"]["character_uid"]="101";
+        code(f.call(request), "paused");
+    }
+    SECTION("transport loss cannot continue an old task"){
+        f.controller->onDisconnected(1); f.controller->onConnected(2);
+        const auto response=f.call(grant(1000,1204,"continue_task"),2);
+        code(response,"paused");
+    }
+    SECTION("an active operation is never replaced by a grant"){
+        f.registerAction(); accepted(f.call(f.move(1002)));
+        code(f.call(grant(1200,1205)),"busy");
+        CHECK(f.begins == 0);
+    }
+}
+
+TEST_CASE("targeted interruption preserves authority and fences only the owned operation", "[task_grant][internal_stop]")
+{
+    Fake f(true, fullPolicy(true));
+    const auto grant = [&](size_t id, std::string mode = "continue_task"){
+        return f.request("game_grant_control", {{"mode",mode},{"grant_id",uuid(1400)},
+            {"request_id",uuid(id)},{"character_uid","100"},{"context",f.controller->context()}},id);
+    };
+    REQUIRE(f.call(grant(1401,"new_task")).at("ok") == true);
+    f.registerAction();
+    const auto old=f.move(1402);
+    const auto stale=f.move(1403);
+    const auto id=accepted(f.call(old));
+    const auto interrupt=[&]{return f.request("game_stop",{{"interrupt_only",true},
+        {"operation_id",id},{"context",f.controller->context()}});};
+    SECTION("accepted intent is cancelled before begin"){
+        const auto before=f.controller->context();
+        const auto result=f.call(interrupt());REQUIRE(result.at("ok") == true);
+        CHECK(result.at("data").at("paused") == false);
+        CHECK(f.controller->context() != before);
+        CHECK(f.controller->controlState() == ControlState::Active);
+        CHECK(f.controller->session().at("pause_reason").is_null());
+        CHECK(f.operation(id).at("state") == "cancelled");
+        CHECK(f.operation(id).at("side_effects_possible") == false);
+        REQUIRE(f.call(grant(1404)).at("ok") == true);
+        code(f.call(stale),"stale_context");
+        CHECK(f.call(old).at("data").at("state") == "cancelled");
+        for(int i=0;i<100;++i){f.controller->advance();}
+        CHECK(f.begins == 0);CHECK(f.stops == 0);
+    }
+    SECTION("running move stops once and only a new action begins"){
+        f.submitted=true;f.controller->advance();REQUIRE(f.begins == 1);
+        REQUIRE(f.call(interrupt()).at("ok") == true);
+        CHECK(f.operation(id).at("state") == "cancelled");
+        CHECK(f.operation(id).at("side_effects_possible") == true);
+        CHECK(f.controller->controlState() == ControlState::Active);
+        REQUIRE(f.call(grant(1404)).at("ok") == true);
+        CHECK(f.call(old).at("data").at("state") == "cancelled");
+        for(int i=0;i<100;++i){f.controller->advance();}
+        CHECK(f.begins == 1);CHECK(f.stops == 1);
+        accepted(f.call(f.move(1405)));f.controller->advance();
+        CHECK(f.begins == 2);
+    }
+    SECTION("wrong operation context or connection has no effect"){
+        auto request=interrupt();
+        SECTION("wrong id"){request["params"]["operation_id"]="missing";code(f.call(request),"operation_not_found");}
+        SECTION("stale context"){request["params"]["context"]["control_epoch"]="0";code(f.call(request),"stale_context");}
+        SECTION("wrong connection"){code(f.call(request,2),"unauthorized");}
+        CHECK(f.operation(id).at("state") == "accepted");CHECK(f.begins == 0);
+        CHECK(f.controller->context() == old.at("context"));
+    }
+    SECTION("explicit stop or local disable cannot be undone by interruption"){
+        SECTION("explicit first"){REQUIRE(f.call(f.request("game_stop")).at("ok") == true);}
+        SECTION("local disable first"){f.controller->disableByUser();}
+        const auto before=f.controller->session();
+        REQUIRE(f.call(interrupt()).at("ok") == true);
+        CHECK(f.controller->session() == before);
+        code(f.call(grant(1404)),"paused");
+    }
+    SECTION("interruption then explicit stop still revokes"){
+        REQUIRE(f.call(interrupt()).at("ok") == true);
+        REQUIRE(f.call(f.request("game_stop")).at("ok") == true);
+        code(f.call(grant(1404)),"paused");
+    }
+    SECTION("terminal replay cannot stop a newer operation"){
+        auto first=interrupt();REQUIRE(f.call(first).at("ok") == true);
+        code(f.call(first),"stale_context");
+        const auto next=accepted(f.call(f.move(1405)));f.controller->advance();
+        const auto before=f.controller->context();
+        REQUIRE(f.call(interrupt()).at("ok") == true);
+        CHECK(f.controller->context() == before);CHECK(f.operation(next).at("state") == "running");
+        CHECK(f.begins == 1);CHECK(f.cancels == 0);
+    }
+    SECTION("dead unknown and disabled states are never activated"){
+        SECTION("death"){f.controller->observe({"run",100,11,false});}
+        SECTION("unknown life"){RuntimeState state{"run",100,11,true};state.lifeKnown=false;f.controller->observe(state);}
+        SECTION("disabled"){f.controller->disableByUser();}
+        const auto before=f.controller->session();
+        REQUIRE(f.call(interrupt()).at("ok") == true);
+        CHECK(f.controller->session() == before);
+        code(f.call(grant(1404)),"paused");
+    }
+}
+
+TEST_CASE("targeted interruption retains unknown economics and requires grant policy", "[task_grant][internal_stop]")
+{
+    SECTION("unknown economic outcome preserves reservation and budget"){
+        Fake f(true,fullPolicy(true));f.registerAction("game_shop_buy");f.cost.gold=40;f.submitted=true;
+        const auto root=uuid(1500);
+        const auto grant=[&](size_t n,std::string mode){return f.request("game_grant_control",
+            {{"mode",mode},{"grant_id",root},{"request_id",uuid(n)},{"character_uid","100"},{"context",f.controller->context()}});};
+        REQUIRE(f.call(grant(1501,"new_task")).at("ok") == true);
+        const auto id=accepted(f.call(f.buy(1502)));f.controller->advance();
+        REQUIRE(f.call(f.request("game_stop",{{"interrupt_only",true},{"operation_id",id},{"context",f.controller->context()}})).at("ok") == true);
+        REQUIRE(f.operation(id).at("state") == "unknown");
+        const auto policy=f.controller->session().at("capabilities").at("policy");
+        REQUIRE(policy.at("economic_uncertain") == true);
+        REQUIRE(f.call(grant(1504,"continue_task")).at("ok") == true);
+        CHECK(f.controller->session().at("capabilities").at("policy") == policy);
+        CHECK(f.operation(id).at("state") == "unknown");
+        code(f.call(f.buy(1505)),"economic_uncertain");CHECK(f.begins == 1);
+    }
+    SECTION("legacy policy cannot opt into interruption"){
+        Fake f;f.registerAction();const auto id=accepted(f.call(f.move()));
+        code(f.call(f.request("game_stop",{{"interrupt_only",true},{"operation_id",id},{"context",f.controller->context()}})),"policy_denied");
+        CHECK(f.operation(id).at("state") == "accepted");CHECK(f.begins == 0);
+    }
+}
+
 TEST_CASE("controller rechecks deadline and cancellation after adapter validation")
 {
     Fake f;
@@ -156,13 +398,13 @@ TEST_CASE("controller exposes only real registered capabilities and readonly lif
     auto session=f.call(f.request("game_get_session")).at("data");
     CHECK(session.at("control_state")=="read_only");
     CHECK(session.at("context").is_null());
-    CHECK(session.at("capabilities").at("tools").size()==4);
+    CHECK(session.at("capabilities").at("tools").size()==5);
     CHECK_FALSE(f.controller->enableByUser());
     code(f.call(f.request("game_get_state")),"not_in_game");
     f.controller->observe({"run",100,11,true});
     code(f.call(f.request("game_get_state")),"unavailable");
     f.registerAction();
-    CHECK(f.controller->session().at("capabilities").at("tools").size()==5);
+    CHECK(f.controller->session().at("capabilities").at("tools").size()==6);
     code(f.call(f.move()),"paused");
     REQUIRE(f.controller->enableByUser());
     CHECK(f.controller->controlState()==ControlState::Active);

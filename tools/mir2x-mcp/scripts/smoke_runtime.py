@@ -26,7 +26,7 @@ async def smoke(executable: Path, root: Path):
             tools = (await session.list_tools()).tools
             resources = (await session.list_resources()).resources
             assert initialized.server_info.name == "mir2x"
-            assert len(tools) == 35 and len({tool.name for tool in tools}) == 35
+            assert len(tools) == 37 and len({tool.name for tool in tools}) == 37
             assert len(resources) == 6
             result = await session.call_tool("game_get_session", {})
             # This check deliberately uses an empty, isolated bridge directory.

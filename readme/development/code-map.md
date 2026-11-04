@@ -65,7 +65,7 @@ flowchart LR
 | `gameadapter.*`、`combatadapter.*`、`npcadapter.*` | 真实观察/移动、技能/动作及 NPC 交互 |
 | `shopadapter.*`、`tradeadapter.*`、`auctionadapter.*` | 商店、玩家交易、拍卖和系统投递，复用原 GUI 入口 |
 | `client/src/responsecallbacks.hpp`、`Client::sendScoped` | Process 作用域回调、单调响应 ID 和期限 |
-| `tools/mir2x-mcp/src/mir2x_mcp/` | 官方 SDK stdio、35 个固定 typed 工具、6 资源及本地 IPC |
+| `tools/mir2x-mcp/src/mir2x_mcp/` | 官方 SDK stdio、37 个固定 typed 工具、6 资源及本地 IPC |
 | `contracts/ai-bridge/v1/`、`client/test/unit/test_ai_bridge*.cpp` | 同源 schema/fixture 与纯模型/真实组件测试 |
 
 上表短文件名均位于 `client/src/aibridge/`。详细模型和调用约束见[协议说明](ai-bridge-protocol.md)，使用方式见[使用说明](ai-mcp.md)。代码接入与开发检查已完成，最终 35 能力 stdio 和真实角色效果仍按[验证清单](../../docs/verification/20261031-ai-character-mcp.md)待验证，不能从该代码地图推断实机通过。

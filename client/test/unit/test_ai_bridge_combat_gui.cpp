@@ -2,6 +2,8 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <thread>
+#include <asio.hpp>
 #include "aibridge/gameadapter.hpp"
 #include "aibridge/runtime.hpp"
 #include "bgmusicdb.hpp"
@@ -172,7 +174,7 @@ namespace
         ProcessRun *scene = nullptr;
         std::string operation;
 
-        AdapterScene(int x, int y)
+        AdapterScene(int x, int y, bool callerGrants = false)
         {
             auto initial = online();
             initial.action = ActionStand{.direction = DIR_DOWN, .x = x, .y = y};
@@ -188,13 +190,18 @@ namespace
             root = std::filesystem::current_path() / ("adapter-" + std::to_string(nonce));
             std::filesystem::create_directory(root);
             const auto policy = root / "policy.json";
-            { std::ofstream out(policy); out << R"({"allowed_actions":["game_attack","game_move_to"]})"; }
+            {
+                aibridge::Json config={{"allowed_actions",{"game_attack","game_move_to"}}};
+                if(callerGrants){config["allowed_actions"].push_back("game_grant_control");}
+                std::ofstream out(policy);out << config.dump();
+            }
             // Only the bridge listener is started, in a dedicated test directory.
             // Requests enter the real controller directly; game NetIO remains unpolled.
             runtime = std::make_unique<aibridge::AiBridgeRuntime>(*fixture.client);
             runtime->start({root / "bridge", policy, "combat-gui-test"});
             runtime->observe(scene->aiState());
             controller().onConnected(1);
+            if(callerGrants){REQUIRE(controller().enableByUser());}
             REQUIRE(controller().controlState() == aibridge::ControlState::Active);
         }
         ~AdapterScene()
@@ -285,6 +292,102 @@ namespace
         REQUIRE(test.scene->getFocusUID(FOCUS_MOUSE) == 0);
         test.scene->processEvent(event);
     }
+}
+
+TEST_CASE("Runtime targeted cancellation precedes queued movement and explicit stop retains priority")
+{
+    AdapterScene test(430,108,true);
+    using aibridge::Json;
+    using namespace std::chrono_literals;
+    const auto context=test.controller().context();
+    std::ifstream file(test.root/"bridge"/(context.at("instance_id").get<std::string>()+".json"));
+    const auto instance=Json::parse(file);
+    asio::io_context io;
+    asio::ip::tcp::socket socket(io);
+    socket.connect({asio::ip::make_address_v4("127.0.0.1"),instance.at("port").get<uint16_t>()});
+    socket.non_blocking(true);
+    std::vector<uint8_t> received;
+    const auto send=[&](const std::vector<Json> &requests){
+        std::vector<uint8_t> frames;
+        for(const auto &request:requests){
+            const auto frame=aibridge::encodeFrame(request);
+            frames.insert(frames.end(),frame.begin(),frame.end());
+        }
+        asio::write(socket,asio::buffer(frames));
+    };
+    const auto collect=[&](size_t count){
+        std::vector<Json> responses;
+        const auto deadline=std::chrono::steady_clock::now()+2s;
+        while(responses.size()<count && std::chrono::steady_clock::now()<deadline){
+            test.runtime->poll();
+            std::array<uint8_t,8192> buffer{};asio::error_code error;
+            const auto n=socket.read_some(asio::buffer(buffer),error);
+            if(!error){received.insert(received.end(),buffer.begin(),buffer.begin()+n);}
+            else{REQUIRE((error==asio::error::would_block || error==asio::error::try_again));}
+            while(received.size()>=4){
+                const auto length=aibridge::decodeLength(std::span<const uint8_t,4>(received.data(),4),aibridge::maxResponseBytes);
+                if(received.size()<length+4){break;}
+                responses.push_back(aibridge::strictParse(std::string_view(reinterpret_cast<const char *>(received.data()+4),length)));
+                received.erase(received.begin(),received.begin()+length+4);
+            }
+            if(responses.size()<count){std::this_thread::sleep_for(1ms);}
+        }
+        REQUIRE(responses.size()==count);
+        return responses;
+    };
+    send({{{"v",1},{"id","hello"},{"method","hello"},{"params",{{"instance_id",instance.at("instance_id")},{"token",instance.at("token")}}}}});
+    REQUIRE(collect(1).front().at("ok")==true);
+    const auto grant=[&](std::string mode,std::string request){
+        return test.controller().handleRequest({1,{{"v",1},{"id","grant"},{"method","game_grant_control"},
+            {"params",{{"mode",mode},{"grant_id","00000000-0000-4000-8000-000000000100"},
+                {"request_id",request},{"character_uid",std::to_string(test.hero().UID())},{"context",test.controller().context()}}}}});
+    };
+    REQUIRE(grant("new_task","00000000-0000-4000-8000-000000000101").at("ok")==true);
+    REQUIRE(test.move(freeNeighbors(test).front()).at("ok")==true);
+    REQUIRE(test.status().at("state")=="accepted");
+    const auto before=test.controller().context();
+    const Json interrupt={{"v",1},{"id","interrupt"},{"method","game_stop"},
+        {"params",{{"interrupt_only",true},{"operation_id",test.operation},{"context",before}}}};
+    std::vector<Json> requests={{{"v",1},{"id","ordinary-read"},{"method","game_get_session"},{"params",Json::object()}},interrupt};
+    bool explicitStop=false;
+    SECTION("targeted cancellation is processed before active advance"){}
+    SECTION("explicit stop overtakes the targeted cancellation in the same batch"){
+        requests.push_back({{"v",1},{"id","explicit"},{"method","game_stop"},{"params",Json::object()}});
+        explicitStop=true;
+    }
+    SECTION("explicit stop stays revoked when sent before the targeted cancellation"){
+        requests.insert(requests.begin(),Json{{"v",1},{"id","explicit"},{"method","game_stop"},{"params",Json::object()}});
+        explicitStop=true;
+    }
+    send(requests);
+    const auto responses=collect(requests.size());
+    CAPTURE(responses);
+    const auto stopped=std::find_if(responses.begin(),responses.end(),[&](const auto &response){
+        return response.at("id")==(explicitStop ? "explicit" : "interrupt");
+    });
+    REQUIRE(stopped!=responses.end());REQUIRE(stopped->at("ok")==true);
+    // Only an accepted, never-begun native operation reports exactly this stop set.
+    CHECK(stopped->at("data").at("stopped")==Json::array({"queued"}));
+    CHECK(stopped->at("data").at("operation").at("operation_id")==test.operation);
+    CHECK(stopped->at("data").at("operation").at("state")=="cancelled");
+    const auto interrupted=std::find_if(responses.begin(),responses.end(),[](const auto &response){
+        return response.at("id")=="interrupt";
+    });
+    REQUIRE(interrupted!=responses.end());
+    CHECK(interrupted->at("ok")==!explicitStop);
+    if(explicitStop){CHECK(interrupted->at("error").at("code")=="stale_context");}
+    else{CHECK(interrupted->at("data").at("paused")==false);}
+    CHECK(test.status().at("state")=="cancelled");
+    CHECK(test.status().at("side_effects_possible")==false);
+    CHECK(test.controller().context()!=before);
+    const auto continued=grant("continue_task","00000000-0000-4000-8000-000000000102");
+    CHECK(continued.at("ok")==!explicitStop);
+    if(explicitStop){CHECK(continued.at("error").at("code")=="paused");}
+    CHECK(test.controller().controlState()==(explicitStop ? aibridge::ControlState::Paused : aibridge::ControlState::Active));
+    for(int i=0;i<20;++i){test.runtime->poll();test.hero().update(100);}
+    CHECK(test.hero().actionSendSequence()==0);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE)==0);
+    CHECK(test.status().at("state")=="cancelled");
 }
 
 TEST_CASE("Combat real client stationary hit preserves the attack correction revision")

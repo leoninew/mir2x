@@ -1,1 +1,6 @@
-{"allowed_actions": ["game_move_to"]}
+{
+  "allowed_actions": [
+    "game_move_to",
+    "game_grant_control"
+  ]
+}

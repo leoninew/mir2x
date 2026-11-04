@@ -94,11 +94,11 @@ namespace
     };
 }
 
-TEST_CASE("all 35 methods share closed request and response fixtures")
+TEST_CASE("all 37 methods share closed request and response fixtures")
 {
     const auto fixtures = readJson(std::filesystem::path(MIR2X_AI_CONTRACT_DIR) / "fixtures.json");
-    REQUIRE(fixtures.size() == 35);
-    REQUIRE(contract().at("x-methods").size() == 35);
+    REQUIRE(fixtures.size() == 37);
+    REQUIRE(contract().at("x-methods").size() == 37);
     for(const auto &f: fixtures){
         const auto method = f.at("method").get<std::string>();
         INFO(method);
@@ -271,6 +271,65 @@ TEST_CASE("authentication rejects wrong token instance version and extra connect
     auto second = f.connect(); f.send(second, f.hello());
     f.pump([&]{return f.closed(second);});
     CHECK(f.bridge.authenticated());
+}
+
+TEST_CASE("explicit stop overtakes bounded targeted interruption without sharing its priority slot")
+{
+    Fixture f;auto socket=f.connect();f.authenticate(socket);
+    auto interrupt=query("game_stop","interrupt");
+    interrupt["params"]={{"interrupt_only",true},{"operation_id","owned"},
+        {"context",{{"instance_id",f.bridge.instance()->instance_id},{"session_id",std::string(32,'a')},
+            {"world_epoch","1"},{"control_epoch","1"}}}};
+    f.send(socket,interrupt);
+    f.pump([&]{return f.bridge.queuedRequests()==1;});
+    f.send(socket,query("game_stop","explicit"));
+    f.pump([&]{return f.bridge.queuedRequests()==2;});
+    const auto requests=f.bridge.takeRequests();REQUIRE(requests.size()==2);
+    CHECK(requests[0].message.at("id")=="explicit");
+    CHECK(requests[1].message.at("id")=="interrupt");
+}
+
+TEST_CASE("targeted interruptions obey ordinary rate and queue limits while explicit stop stays reserved")
+{
+    Fixture f;auto socket=f.connect();f.authenticate(socket);
+    auto interrupt=query("game_stop","interrupt");
+    interrupt["params"]={{"interrupt_only",true},{"operation_id","owned"},
+        {"context",{{"instance_id",f.bridge.instance()->instance_id},{"session_id",std::string(32,'a')},
+            {"world_epoch","1"},{"control_epoch","1"}}}};
+    size_t expected=0;
+    SECTION("targeted interruptions cannot bypass the ordinary request rate"){
+        for(size_t i=0;i<AiBridgeTransport::Limits::requestsPerSecond;++i){f.send(socket,interrupt);}
+        expected=AiBridgeTransport::Limits::requestsPerSecond;
+        f.pump([&]{return f.bridge.queuedRequests()==expected;});
+    }
+    SECTION("targeted interruptions cannot occupy the reserved slot when the ordinary queue is full"){
+        while(expected<AiBridgeTransport::Limits::pendingRequests){
+            const auto count=std::min(AiBridgeTransport::Limits::requestsPerSecond,
+                AiBridgeTransport::Limits::pendingRequests-expected);
+            for(size_t i=0;i<count;++i){f.send(socket,interrupt);}
+            expected+=count;
+            f.pump([&]{return f.bridge.queuedRequests()==expected;});
+            if(expected<AiBridgeTransport::Limits::pendingRequests){std::this_thread::sleep_for(1010ms);}
+        }
+    }
+    interrupt["id"]="overflow";
+    f.send(socket,interrupt);
+    const auto rejected=f.receive(socket);
+    CHECK(rejected.at("id")=="overflow");
+    CHECK(rejected.at("error").at("code")=="busy");
+    CHECK(f.bridge.queuedRequests()==expected);
+    f.send(socket,query("game_stop","explicit"));
+    f.pump([&]{return f.bridge.queuedRequests()==expected+1;});
+    const auto requests=f.bridge.takeRequests(100);
+    REQUIRE(requests.size()==8);
+    CHECK(requests.front().message.at("id")=="explicit");
+    CHECK(requests.front().message.at("params")==Json::object());
+    for(size_t i=1;i<requests.size();++i){
+        CHECK(requests[i].message.at("id")=="interrupt");
+        CHECK(requests[i].message.at("params").at("interrupt_only")==true);
+    }
+    CHECK(f.bridge.authenticated());
+    CHECK(f.bridge.queuedRequests()==expected-7);
 }
 
 TEST_CASE("unauthenticated limits and handshake deadline")

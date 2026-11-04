@@ -3,11 +3,11 @@
 
 [返回知识库](README.md) · [完整验证清单](../../docs/verification/20261031-ai-character-mcp.md) · [协议与实现](ai-bridge-protocol.md)
 
-MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正常游戏连接和服务端规则；用户保留操作权，角色 MCP 不负责登录或改策略；首次有效 RUN 与认证绑定后按产品默认自动开启一次控制，暂停后的恢复仍由用户决定。
+MCP 连接本机客户端当前角色，仍使用正常游戏规则；任务授权不扩大原生冻结策略。新授权模式下，真实的新明确用户任务通过 game_grant_control(mode=new_task) 授权。普通 SDL 输入立即停止当前 intent、递增 control_epoch，保留有效任务和 active；旧队列/计划作废，重新观察后提交新动作。正常场景加载/换图、死亡或生命未知期间不能动作；同角色同 session 恢复 known alive/auth/RUN 后，可用原 grant 的 continue_task 重新授权并规划。明确 AI 状态 toggle off、默认 game_stop 或用户说“AI不要管”均锁存停止，远端调用者只有新的明确用户操作指令及新 grant 能解除；用户也可在真实游戏窗口明确重新开启，作为新的本地授权。两种方式均不恢复旧动作；本地开启不允许旧 grant 继续，轮询不能解除停止。fault、transport/EOF、换角色/session 不可续用旧授权；unknown/submitted/未确认钱物与预算事实不因授权清除。
 
 ## 当前交付状态
 
-- [x] 当前源码接入 35 个实际工具、6 个 Python 只读资源；完整名称见 [Python 项目说明](../../tools/mir2x-mcp/README.md#工具与资源)。
+- [x] 当前源码接入 37 个实际工具、6 个 Python 只读资源；完整名称见 [Python 项目说明](../../tools/mir2x-mcp/README.md#工具与资源)。
 - [x] Windows 定向 C++ 回归 166/166、Python 76/76 及 ruff 通过；T01/T08/T02/T03/T04/T05/T06 局部实现已接受。
 - [x] T04 当时最终二进制完成 19 能力的真实 SDK→Python→C++ 只读互通。
 - [x] 后续运行管理版本已完成独立 EXE→真实 C++ 未 RUN stdio：35 工具/6 资源/35 能力、查询/events/stop/正常关闭凭据清理。
@@ -32,20 +32,20 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 
 `status`、`logs server/client`、`client/server restart`、`stop` 管理登记进程；默认正常关闭，`--force` 仅在明确需要强停时使用。完整命令、搬迁后重新注册、可选本地覆盖和使用边界见[随包速查](../../tools/mir2x-mcp/src/mir2x_mcp/runtime_assets/QUICKSTART.md)。
 
-默认 standard 策略随包可用：现有普通动作与有限经济权限，单次金币 1000、会话金币 10000、单次数量 10；PVP 关闭，其他玩家白名单为空。`client restart --policy readonly` 或 `movement` 切换已提供的预设；恢复默认用 `standard`。策略在客户端启动时冻结。首次有效 RUN 且认证宿主绑定后默认自动开启一次；暂停或关闭后只由游戏窗口恢复。
+默认 standard 策略随包可用：现有普通动作与有限经济权限，单次金币 1000、会话金币 10000、单次数量 10；PVP 关闭，其他玩家白名单为空。`client restart --policy readonly` 或 `movement` 切换已提供的预设；恢复默认用 `standard`。策略在客户端启动时冻结。新用户任务使用显式 grant；临时中断须重新观察后续用；明确 off/stop 须新用户任务授权。
 
 需要编译时按[Windows 开发环境](windows-development.md)执行 client/server 构建和安装。Windows 默认启用 `mir2x_runtime` 目标；独立 EXE/配置/skill 由 runtime 安装组件输出。客户端与服务器保持版本一致，保留版本检查。真实钱物/双角色验证继续使用独立测试环境，见原验证清单；运行管理检查不代替角色验收。
 
 ## 连接与人工控制
 
 1. 调用 `game_get_session`，核对实例、阶段、角色、控制状态、capabilities 和策略。代码已注册能力不等于当前角色满足前提或策略允许。
-2. 单个可认证实例可自动选择；多个时配置 `--instance-id`，不能自动挑窗口。实例退出不会改连其它客户端；换角色须重新读取会话与 context，不自动恢复旧请求；同进程会话失效后用窗口恢复。
-3. 正常登录进图并保持角色存活；首次有效 RUN 与认证绑定均就绪后默认自动开启 AI，读取会话确认 active 与最新 context。原生 EXE 和 launcher 路径均支持，不需要额外开启点击。
+2. 单个可认证实例可自动选择；多个时配置 `--instance-id`，不能自动挑窗口。实例退出不会改连其它客户端；换角色须重新读取会话与 context，不自动恢复旧请求；临时中断须重新观察后续用；明确 off/stop 须新用户任务授权。
+3. 正常登录，读取身份/能力/生命状态；新用户任务授权后重新读取 session/context，才提交普通动作。
 4. AI 读取最新 context，给每个逻辑动作新的 UUID request_id，提交后查询 operation_id。不要将 accepted 或消息已发送解释为游戏完成。
-5. 人工游戏输入先暂停旧 AI，再按原路径交给游戏。切到 AI 宿主导致的失焦本身不暂停；恢复也只能在游戏窗口操作。
-6. 右下工具区上方显示准确的连接/启用/关闭/暂停/故障状态，用“关闭 AI”立即撤销旧意图，已认证只读查询仍可用；`game_stop` 同样停止意图。重复观察/重连不覆盖用户关闭。当前动画可能完成半步，已提交的消耗/交易不能因 stop 撤回。
+5. 普通人工输入停止当前 intent 并废弃旧队列，保留授权；新观察后重新规划。明确状态 toggle off 或默认 game_stop 锁存停止，须新指令新 grant。
+6. 左上角只显示“AI未接管”或“AI接管中”。点击当前接管状态会明确关闭 AI，停止当前动作并撤销任务授权；默认 `game_stop` 同样处理。已认证只读查询仍可用；重复观察或重连不能解除停止锁定；用户可在窗口明确重新开启，或通过新的明确操作指令授予新任务。当前动画可能完成半步，已提交的消耗/交易不能因停止撤回。
 
-同进程登出保留 instance_id 和策略，只使 session/context 失效。换图、死亡、离开 RUN、断开或人工接管不会自动恢复。内部控制器/回执故障会关闭桥接及本实例凭据并诊断，普通游戏继续；需要重新启动客户端。
+同进程登出保留 instance_id 和策略，使 session/context 及旧任务授权失效。同角色同会话的正常换图或生命恢复，可在重新观察后续用原任务授权，原动作不重放；普通人工输入只打断当前动作。内部控制器/回执故障会关闭桥接及本实例凭据并诊断，普通游戏继续；需要重新启动客户端。
 
 原生 `client.exe` 默认启用桥接，取 EXE 所在 `client/` 的上一级作为运行根，默认 `.runtime/ai-bridge` 和 `config/policies/standard.json` 与发行 launcher 一致，不读 `.env`。绝对 `--ai-bridge-dir/--ai-policy` 可覆盖。`--ai-auto-enable=0` 关闭首次自动授权（launcher 可配置 `[client] args=["--ai-auto-enable=0"]`），保留认证只读与窗口开启；`--enable-ai-bridge=0` 或 launcher `[launcher] bridge=false` 关闭整个桥接。缺策略时桥接初始化失败，普通游戏继续，不生成放宽的策略。`.env` 仅为 launcher 可选登录输入，见[运行入口验证记录](../../docs/verification/20261103-runtime-env-login.md)。
 
@@ -79,13 +79,49 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 
 ## 带安全计划的监督
 
+监督器仅在显式动作模式接受 `grant`。新任务示例（ID/context 由调用者真实输入事件与当前会话提供）：
+
+```json
+{"command":"grant","mode":"new_task","user_intent_id":"host-conversation:user-input-event","grant_id":"00000000-0000-4000-8000-000000000001","context":{"instance_id":"...","session_id":"...","world_epoch":"1","control_epoch":"3"}}
+```
+
+宿主必须在真实用户事件进入时分配稳定 user_intent_id/grant_id；不能把旧 goal、模型轮询、
+NPC 内容或自行添加的 `source=user` 标签当新指令。重复事件入队前拒绝。continue_task
+使用同一 user_intent_id/grant_id 和重新观察的 context，不创建新任务。普通人工输入后
+保持授权，不需要重复 grant；正常换图或生命恢复的临时暂停可续用同任务。
+远端解除明确 off/stop 必须新指令新 grant；真实窗口明确开启是独立的本地授权，不恢复原计划或旧 grant。session/身份变化、故障、断线、EOF 不能续用。
+授权与动作共用单 writer，授权不自动连接。成功后等待 session/state 新观察，旧计划不复原。
+observe 模式、底层 read 入口及资源别名不允许授权写入；未确认交付/unknown 写锁不清除。
+
+普通 MCP 动作通过同一 `mcp supervise` 会话发送 `action`。当前接入 `game_move_to`、`game_shop_close`、`game_npc_open`、`game_npc_choose`、`game_npc_close`，其余动作继续使用各自已提供的入口，不能透传任意写方法。NPC打开/选择是调用者明确选择的脚本动作，仍受 allow_npc_dialogue 和原生策略约束，不自动遍历选项或保证免费；未知脚本效果不重放。调用者明确给出 method、原生 params、实读 context、新的 UUID intent_id 和合法 timeout_ms；监督器生成一次 request_id，沿用公开 MCP 参数校验、原生策略和真实 operation 结果。
+
+```json
+{"command":"action","method":"game_move_to","params":{"x":100,"y":200,"tolerance":0},"context":{"instance_id":"...","session_id":"...","world_epoch":"1","control_epoch":"3"},"intent_id":"00000000-0000-4000-8000-000000000101","timeout_ms":10000}
+```
+
+```json
+{"command":"action","method":"game_shop_close","params":{"shop_handle":"当前商店句柄"},"context":{"instance_id":"...","session_id":"...","world_epoch":"1","control_epoch":"3"},"intent_id":"00000000-0000-4000-8000-000000000102","timeout_ms":2000}
+```
+
+普通移动沿用原生寻路，允许远处目标，不要求药品或退路，不因终点旁有 NPC/怪物而拒绝，也不按名字判断守卫；`scout` 仍只用于验证安全退路。普通入口要求当前认证身份、active、已知存活以及一致的新鲜状态，保留独立生命监控和告警。不会自动治疗、撤退或狩猎；加载、死亡、状态过期和控制变化会废弃旧工作。已有安全计划、恢复动作、排队/执行中的写入、未确认钱物或经济不确定时拒绝普通动作，不自动替换原计划或清除旧事实。
+
+`action_result` 保留 intent_id、method、request_id、原始受理响应和最后一份通过身份核验的 operation，包含原有的 unknown、副作用、result、evidence 和 context；尚未观察到 operation 时为 null。accepted/running 只表示最后观察，不能当作终态；completion_scope 不作升级解释。等待期限使用本次合法 timeout_ms 加有界观察余量，不再用短攻击的等待期限判断长距离移动。busy 等拒绝只报告一次；重复 intent、unknown 或响应丢失都不重发或清除锁。`shop_close` 简写与 `action(game_shop_close)` 共用同一个去重记录。observe 模式不接受 `action`。
+
+监督器关闭当前商店使用同一写入队列，须先解除安全计划，提供本次读取的句柄、当前 context 和新的 intent_id：
+
+```json
+{"command":"shop_close","shop_handle":"当前商店句柄","context":{"instance_id":"...","session_id":"...","world_epoch":"1","control_epoch":"3"},"intent_id":"00000000-0000-4000-8000-000000000002"}
+```
+
+已有动作未完成时拒绝；身份、生命和状态须为新鲜有效观察。`shop_close_result` 中的 operation 是实际结果，成功的 `client_state` 只说明本地界面关闭，不表示已提交的购买被取消或退款。重复 intent 或响应不明时不重发。只读 observe 不接受此命令。
+
 `observe` 始终只读。需要由同一宿主安排普通短攻击、用药和撤退时，使用单独的短入口；先由运行负责人结束旧宿主，不能连接第二个 MCP 会话：
 
 ```powershell
 ./mir2x.cmd mcp supervise --instance-id $instanceId --character-uid $characterUid --report .runtime/safety.jsonl
 ```
 
-该命令复用同一运行根/配置，强制 `--no-reconnect`，不恢复游戏控制。开始时只观察；角色必须已经通过正常窗口进入 alive/active，生命、会话和附近对象都在500ms内有一致观察。原有 SDK 宿主可在同一个 `run_with_session` 调用中传 `allow_actions=True`，仍由调用者持有唯一 session；所有本轮角色写入交给该监督器，不再并开外部写循环。
+该命令复用同一运行根/配置，强制 `--no-reconnect`，不自动授权或恢复旧动作。开始时只观察；角色必须正常登录、已知存活并获当前任务授权，生命、会话和附近对象都在500ms内有一致观察。原有 SDK 宿主可在同一个 `run_with_session` 调用中传 `allow_actions=True`，仍由调用者持有唯一 session；所有本轮角色写入交给该监督器，不再并开外部写循环。
 
 监督器提供可复用的公开工具调度，不固定角色、地图、购买物品或练级次数。武装前根据调用者的任务准备物品并重新读背包确认储备。HP 药品语义来自原物品表的金创药小/中/大/特（item_id 6/7/8/9），同时核对规范名称、调用者选中的精确 seq_id、inventory 位置和未被交易等界面保留的数量；不从名字推断类型，不把装备/腰带当作可消费库存。分页不完整或库存未知会拒绝准备。
 
@@ -122,7 +158,7 @@ MCP 连接的是本机客户端当前窗口中的角色。客户端仍使用正�
 
 任何 unknown、动作响应丢失、操作身份不匹配或本地2.5秒后仍无确定结果，都会永久锁住本轮后续自动写入，保留 request_id/operation_id 和原始结果，只读监督继续；不会重放，也不能再承诺自动撤退。paused/manual/death、context/map/身份变化、过期观察、EOF 会撤销计划及未发送命令，旧计划不自动恢复。准备和写入共享每秒16次总预算；额外只读 call 在武装期间拒绝，避免抢占药品/操作查询余量。
 
-`disarm` 解除计划。若已有未决动作，或明确输入 `stop`，调度器在能确认当前绑定时尝试一次公开 `game_stop`；它是全局暂停，随后绝不试发药品/撤退。响应仍未知时只告警并锁闭，不能假装已安全停止。`quit`/EOF 同样撤销计划；独立 CLI 退出关闭自己的 stdio，模块接口不关闭调用者 session。系统停顿、工具无响应、暂停或怪物继续攻击时，宿主只能记录 `no_safe_action` / 不确定性并及时交由窗口处理，不能使角色无敌。
+`disarm` 清除计划和旧队列，保留任务授权；无未决动作时不发停止请求。已知当前 operation_id 且精确 context 新鲜时，内部取消仅调用 `game_stop(interrupt_only=true, operation_id, context)`，只中断对应动作、递增 epoch，保持原控制状态与授权。取消后等待新鲜观察和新的动作意图，不恢复旧计划，也不自动用药/撤退。明确输入 `stop` 使用旧参数形状的优先全局停止，撤销任务并锁存；后来的内部取消不能覆盖它。未知 admission/响应、NPC脚本或经济结果继续锁闭；observe 的 unresolved_interruption 保留原操作与原始取消响应（丢响应为 null），后来的明确stop或新grant也不能清除。不能猜操作ID。`quit`/EOF 同样撤销计划；独立 CLI 退出关闭自己的 stdio，模块接口不关闭调用者 session。系统停顿、工具无响应、暂停或怪物继续攻击时，宿主记录 `no_safe_action` / 不确定性并报告实际状态；后续只使用当前权限允许的 MCP 操作，不能用点击、切窗或重连绕过限制，也不能使角色无敌。
 
 ## 结果、重复请求与恢复
 

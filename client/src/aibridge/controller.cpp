@@ -7,6 +7,7 @@
 #include <limits>
 #include <map>
 #include <random>
+#include <set>
 #include <sstream>
 
 namespace aibridge
@@ -88,6 +89,13 @@ namespace aibridge
         bool stopping = false;
         bool faulted = false;
         bool initialStartupArmed;
+        bool stopLatched = false;
+        std::optional<std::string> taskGrant;
+        std::optional<uint64_t> grantRole;
+        std::string grantSession;
+        uint64_t grantConnection = 0;
+        std::map<std::string, std::string, std::less<>> grantRequests;
+        std::set<std::string> consumedGrants;
         std::string faultDiagnostic;
         std::map<std::string, ActionAdapter, std::less<>> actions;
         std::map<std::string, Query, std::less<>> queries;
@@ -112,6 +120,8 @@ namespace aibridge
         }
 
         bool inGame() const { return runtime.phase == "run" && runtime.roleUid && runtime.mapUid && !sessionId.empty(); }
+        bool grantMode() const { return options.policy.allowsAction("game_grant_control"); }
+        void revokeGrant(){ taskGrant.reset(); grantRole.reset(); grantSession.clear(); grantConnection = 0; }
         Json context() const
         {
             if(!inGame()){ return nullptr; }
@@ -130,7 +140,7 @@ namespace aibridge
         }
         std::vector<std::string> tools() const
         {
-            std::vector<std::string> result = {"game_get_session", "game_get_operation", "game_get_events", "game_stop"};
+            std::vector<std::string> result = {"game_get_session", "game_get_operation", "game_get_events", "game_stop", "game_grant_control"};
             for(const auto &[method, adapter]: actions){ result.push_back(method); }
             for(const auto &[method, query]: queries){ result.push_back(method); }
             return result;
@@ -139,7 +149,7 @@ namespace aibridge
         {
             Json allowed = Json::array();
             for(const auto &method: tools()){
-                if((isAction(method) || method == "game_stop") && options.policy.allowsAction(method)){ allowed.push_back(method); }
+                if((isAction(method) || method == "game_stop" || method == "game_grant_control") && options.policy.allowsAction(method)){ allowed.push_back(method); }
             }
             const auto used = plus(spent, reserved);
             const auto remaining = used >= options.policy.maxGoldPerSession ? 0 : options.policy.maxGoldPerSession - used;
@@ -154,7 +164,7 @@ namespace aibridge
                 {"pause_reason", reason.empty() ? Json(nullptr) : Json(reason)},
                 {"capabilities", {{"protocol_version", 1}, {"build", options.build}, {"tools", tools()},
                     {"supported_skills", Json::array()}, {"policy", policy},
-                    {"limitations", Json::array({"默认首次有效RUN与认证绑定可自动开启；暂停或关闭后仅窗口恢复", "NPC脚本可能有未预告消耗，结构化交易预算不覆盖所有脚本副作用"})}}}};
+                    {"limitations", Json::array({grantMode() ? "新用户任务可显式授权；普通输入保留任务，换图或生命恢复须重新观察续用；明确关闭或stop须新授权" : "当前策略不允许调用者授权，保留窗口控制入口", "NPC脚本可能有未预告消耗，结构化交易预算不覆盖所有脚本副作用"})}}}};
             validateDefinition(result, "session");
             return result;
         }
@@ -350,6 +360,7 @@ namespace aibridge
         }
         void initialEnable()
         {
+            if(grantMode()){ initialStartupArmed = false; return; }
             if(!initialStartupArmed || !inGame() || !runtime.knownAlive() || !connection || closing || faulted){ return; }
             initialStartupArmed = false;
             increment(controlEpoch);
@@ -365,6 +376,7 @@ namespace aibridge
         }
         void abortOnFault(std::string_view stage)
         {
+            revokeGrant();
             initialStartupArmed = false;
             if(!faulted){ faultDiagnostic = std::string(stage) + "/" + std::string(faultCategory()); }
             faulted = true;
@@ -406,7 +418,7 @@ namespace aibridge
     void AiBridgeController::registerQuery(std::string method, Query query)
     {
         if(!contract().at("x-methods").contains(method) || isAction(method) || !query
-            || method == "game_get_session" || method == "game_get_operation" || method == "game_get_events" || method == "game_stop"
+            || method == "game_get_session" || method == "game_get_operation" || method == "game_get_events" || method == "game_stop" || method == "game_grant_control"
             || m_impl->queries.contains(method)){
             throw std::invalid_argument("invalid or duplicate bridge query adapter");
         }
@@ -423,16 +435,23 @@ namespace aibridge
         const bool sessionChange = wasInGame != newInGame || (newInGame && s.runtime.roleUid != state.roleUid);
         const bool mapChange = wasInGame && newInGame && s.runtime.mapUid != state.mapUid;
         const bool lifeLost = wasInGame && newInGame && s.runtime.knownAlive() && !state.knownAlive();
+        // A scene load is not a new login. Keep task authority but expose no usable context
+        // until the same character returns; world/control epochs still fence all old work.
+        const bool enteringLoad = s.grantMode() && state.phase == "loading" && !s.sessionId.empty();
+        const bool returningLoad = s.grantMode() && newInGame && !wasInGame && !s.sessionId.empty()
+            && !s.resetBudgetOnRun && s.budgetRole == state.roleUid;
+        if(sessionChange && !enteringLoad && !returningLoad){ s.revokeGrant(); }
         if((sessionChange && wasInGame) || mapChange || lifeLost){
-            s.pause(lifeLost ? (state.knownDead() ? "death" : "life_unknown") : mapChange ? "map_changed" : "session_changed");
+            s.pause(lifeLost ? (state.knownDead() ? "death" : "life_unknown") : (mapChange || enteringLoad) ? "map_changed" : "session_changed");
         }
         const bool phaseChange = s.runtime.phase != state.phase;
         s.runtime = state;
         if(state.phase == "login" || state.phase == "select_character" || state.phase == "disconnected"){
             s.resetBudgetOnRun = true;
+            if(s.grantMode()){ s.revokeGrant(); s.sessionId.clear(); }
         }
         if(sessionChange){
-            s.sessionId.clear();
+            if(!enteringLoad && !returningLoad){ s.sessionId.clear(); }
             if(newInGame){
                 // A transient loading process invalidates context, but is not a new login budget.
                 if(s.resetBudgetOnRun || s.budgetRole != state.roleUid){
@@ -441,7 +460,7 @@ namespace aibridge
                 }
                 s.resetBudgetOnRun = false;
                 s.budgetRole = state.roleUid;
-                s.sessionId = s.options.newSessionId();
+                if(!returningLoad){ s.sessionId = s.options.newSessionId(); }
                 validateSchema(s.sessionId, contract().at("$defs").at("context").at("properties").at("session_id"));
                 increment(s.worldEpoch);
                 increment(s.controlEpoch);
@@ -466,7 +485,7 @@ namespace aibridge
         auto &s = *m_impl;
         if(id == s.connection){ return; }
         if(!id || id <= s.lastConnection){ throw ProtocolError("unauthorized", "连接已失效"); }
-        if(s.lastConnection){ s.pause("transport_lost"); }
+        if(s.lastConnection){ s.revokeGrant(); s.pause("transport_lost"); }
         s.connection = id; s.lastConnection = id;
         s.records.clear(); s.ledger.clear(); s.active.reset();
         increment(s.controlEpoch);
@@ -477,6 +496,7 @@ namespace aibridge
     {
         auto &s = *m_impl;
         if(!id || id != s.connection){ return; }
+        s.revokeGrant();
         s.pause("transport_lost");
         s.connection = 0;
         s.event("disconnected");
@@ -487,6 +507,11 @@ namespace aibridge
         s.initialStartupArmed = false;
         if(!s.options.enabled || s.closing || s.faulted || !s.inGame() || !s.runtime.knownAlive() || !s.connection){ return false; }
         if(s.control == ControlState::Active){ return true; }
+        if(s.grantMode()){
+            // A fresh local gesture authorizes new work, never continuation of the old caller grant.
+            s.revokeGrant();
+            s.stopLatched = false;
+        }
         increment(s.controlEpoch);
         s.control = ControlState::Active;
         s.reason.clear();
@@ -497,6 +522,8 @@ namespace aibridge
     {
         auto &s = *m_impl;
         s.initialStartupArmed = false;
+        s.revokeGrant();
+        if(s.grantMode()){ s.stopLatched = true; }
         if(s.closing || s.faulted || s.control == ControlState::Disabled){ return; }
         const bool hadControl = s.control == ControlState::Active;
         increment(s.controlEpoch);
@@ -508,6 +535,13 @@ namespace aibridge
     void AiBridgeController::pauseByUser(){ m_impl->pause("paused_by_user"); }
     void AiBridgeController::manualInput()
     {
+        auto &s = *m_impl;
+        if(s.grantMode() && s.control == ControlState::Active && s.runtime.knownAlive()){
+            increment(s.controlEpoch);
+            s.interrupt("paused", false, true);
+            s.event("control");
+            return;
+        }
         if(m_impl->control == ControlState::Active || (m_impl->inGame() && m_impl->initialStartupArmed)){
             m_impl->pause("manual_input");
         }
@@ -530,9 +564,28 @@ namespace aibridge
         try{
             request = decodeRequest(request.dump());
             if(!s.options.enabled || s.closing){ return s.error(request, failure("unavailable")); }
-            onConnected(input.connectionId);
             const auto method = request.at("method").get<std::string>();
             const auto &params = request.at("params");
+            if(method == "game_stop" && params.value("interrupt_only", false)){
+                // Unlike explicit stop, cancellation is scoped to this authenticated operation.
+                if(!input.connectionId || input.connectionId != s.connection){ return s.error(request, failure("unauthorized")); }
+                if(!s.grantMode() || !s.options.policy.allowsAction("game_stop")){ return s.error(request, failure("policy_denied")); }
+                if(s.context().is_null() || params.at("context") != s.context()){ return s.error(request, failure("stale_context")); }
+                const auto id = params.at("operation_id").get<std::string>();
+                const auto found = s.records.find(id);
+                if(found == s.records.end()){ return s.error(request, failure("operation_not_found")); }
+                std::vector<std::string> stopped;
+                if(!found->second.terminal()){
+                    if(s.active != id || found->second.view.context != s.context()){ return s.error(request, failure("stale_context")); }
+                    increment(s.controlEpoch);
+                    stopped = s.interrupt("paused");
+                    s.event("control");
+                }
+                const auto &record = s.records.at(id);
+                return s.response(request, {{"paused",s.control != ControlState::Active},{"stopped",stopped},
+                    {"operation",record.json()},{"side_effects_possible",record.sideEffectsPossible}});
+            }
+            onConnected(input.connectionId);
             if(method == "game_get_session"){ return s.response(request, s.session()); }
             if(method == "game_get_events"){
                 return s.response(request, s.events.read(std::stoull(params.at("after_seq").get<std::string>()), params.value("limit", size_t{100})));
@@ -543,8 +596,40 @@ namespace aibridge
                 s.expire(found->second);
                 return s.response(request, found->second.json());
             }
+            if(method == "game_grant_control"){
+                if(!s.grantMode()){ return s.error(request, failure("policy_denied")); }
+                if(!s.inGame()){ return s.error(request, failure("not_in_game")); }
+                if(params.at("context") != s.context() || params.at("character_uid") != std::to_string(*s.runtime.roleUid)){
+                    return s.error(request, failure("stale_context"));
+                }
+                if(s.faulted || s.stopping || !s.runtime.knownAlive() || !s.connection){ return s.error(request, failure("paused")); }
+                if(s.active){ return s.error(request, failure("busy")); }
+                const auto id = params.at("request_id").get<std::string>();
+                const auto root = params.at("grant_id").get<std::string>();
+                const bool fresh = params.at("mode") == "new_task";
+                if(s.grantRequests.contains(id) || (fresh && s.consumedGrants.contains(root))){
+                    return s.error(request, failure("duplicate_conflict"));
+                }
+                if(!fresh && (s.stopLatched || s.taskGrant != root || s.grantRole != s.runtime.roleUid
+                    || s.grantSession != s.sessionId || s.grantConnection != s.connection
+                    || (s.control != ControlState::Active && s.reason != "manual_input" && s.reason != "map_changed"
+                        && s.reason != "death" && s.reason != "life_unknown"))){
+                    return s.error(request, failure("paused"));
+                }
+                if(s.grantRequests.size() >= 4096 || s.consumedGrants.size() >= 4096){ return s.error(request, failure("ledger_full")); }
+                s.grantRequests.emplace(id, request.dump());
+                if(fresh){ s.consumedGrants.insert(root); }
+                s.taskGrant = root; s.grantRole = s.runtime.roleUid;
+                s.grantSession = s.sessionId; s.grantConnection = s.connection;
+                s.stopLatched = false; s.initialStartupArmed = false;
+                increment(s.controlEpoch); s.control = ControlState::Active; s.reason.clear();
+                s.event("control");
+                return s.response(request, {{"grant_id",root},{"mode",params.at("mode")},{"control_state","active"},{"context",s.context()}});
+            }
             if(method == "game_stop"){
                 s.initialStartupArmed = false;
+                s.revokeGrant();
+                if(s.grantMode()){ s.stopLatched = true; }
                 const bool hadControl = s.control == ControlState::Active;
                 auto id = s.active;
                 if(!id && params.contains("operation_id") && s.records.contains(params.at("operation_id").get<std::string>())){

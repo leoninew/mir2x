@@ -1100,7 +1100,7 @@
             "maxLength": 64,
             "x-maxUtf8Bytes": 64
           },
-          "maxItems": 35
+          "maxItems": 37
         },
         "allow_pvp": {
           "type": "boolean",
@@ -1167,7 +1167,7 @@
             "maxLength": 64,
             "x-maxUtf8Bytes": 64
           },
-          "maxItems": 35
+          "maxItems": 37
         },
         "supported_skills": {
           "type": "array",
@@ -3135,6 +3135,35 @@
       ],
       "additionalProperties": false
     },
+    "grantResult": {
+      "type": "object",
+      "properties": {
+        "grant_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "new_task",
+            "continue_task"
+          ]
+        },
+        "control_state": {
+          "const": "active"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        }
+      },
+      "required": [
+        "grant_id",
+        "mode",
+        "control_state",
+        "context"
+      ],
+      "additionalProperties": false
+    },
     "game_get_sessionRequest": {
       "type": "object",
       "properties": {
@@ -4221,17 +4250,49 @@
           "const": "game_stop"
         },
         "params": {
-          "type": "object",
-          "properties": {
-            "operation_id": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
-              "x-maxUtf8Bytes": 128
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "operation_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "x-maxUtf8Bytes": 128
+                },
+                "interrupt_only": {
+                  "type": "boolean",
+                  "const": false
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "interrupt_only": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "operation_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "x-maxUtf8Bytes": 128
+                },
+                "context": {
+                  "$ref": "#/$defs/context"
+                }
+              },
+              "required": [
+                "interrupt_only",
+                "operation_id",
+                "context"
+              ],
+              "additionalProperties": false
             }
-          },
-          "required": [],
-          "additionalProperties": false
+          ]
         }
       },
       "required": [
@@ -7847,6 +7908,280 @@
         }
       ]
     },
+    "game_grant_controlRequest": {
+      "type": "object",
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "x-maxUtf8Bytes": 64
+        },
+        "method": {
+          "const": "game_grant_control"
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "new_task",
+                "continue_task"
+              ]
+            },
+            "grant_id": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "request_id": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "character_uid": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$",
+              "x-decimalMaximum": 18446744073709551615
+            },
+            "context": {
+              "$ref": "#/$defs/context"
+            }
+          },
+          "required": [
+            "mode",
+            "grant_id",
+            "request_id",
+            "character_uid",
+            "context"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "v",
+        "id",
+        "method",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    "game_grant_controlResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "x-maxUtf8Bytes": 64
+            },
+            "ok": {
+              "const": true
+            },
+            "data": {
+              "$ref": "#/$defs/grantResult"
+            },
+            "context": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/context"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "v",
+            "id",
+            "ok",
+            "data",
+            "context"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "x-maxUtf8Bytes": 64
+            },
+            "ok": {
+              "const": false
+            },
+            "error": {
+              "$ref": "#/$defs/error"
+            },
+            "context": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/context"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "v",
+            "id",
+            "ok",
+            "error",
+            "context"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "game_shop_closeRequest": {
+      "type": "object",
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "x-maxUtf8Bytes": 64
+        },
+        "method": {
+          "const": "game_shop_close"
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "shop_handle": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "x-maxUtf8Bytes": 128
+            }
+          },
+          "required": [
+            "shop_handle"
+          ],
+          "additionalProperties": false
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000
+        }
+      },
+      "required": [
+        "v",
+        "id",
+        "method",
+        "params",
+        "request_id",
+        "context",
+        "timeout_ms"
+      ],
+      "additionalProperties": false
+    },
+    "game_shop_closeResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "x-maxUtf8Bytes": 64
+            },
+            "ok": {
+              "const": true
+            },
+            "data": {
+              "$ref": "#/$defs/accepted"
+            },
+            "context": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/context"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "v",
+            "id",
+            "ok",
+            "data",
+            "context"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "x-maxUtf8Bytes": 64
+            },
+            "ok": {
+              "const": false
+            },
+            "error": {
+              "$ref": "#/$defs/error"
+            },
+            "context": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/context"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "v",
+            "id",
+            "ok",
+            "error",
+            "context"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
     "helloRequest": {
       "type": "object",
       "properties": {
@@ -8062,6 +8397,7 @@
               "items": {
                 "type": "string",
                 "enum": [
+                  "game_stop",
                   "game_move_to",
                   "game_npc_open",
                   "game_npc_choose",
@@ -8084,10 +8420,11 @@
                   "game_auction_buy",
                   "game_auction_cancel",
                   "game_delivery_claim",
-                  "game_stop"
+                  "game_grant_control",
+                  "game_shop_close"
                 ]
               },
-              "maxItems": 35,
+              "maxItems": 37,
               "uniqueItems": true
             }
           ]
@@ -8308,6 +8645,12 @@
           "$ref": "#/$defs/game_delivery_claimRequest"
         },
         {
+          "$ref": "#/$defs/game_grant_controlRequest"
+        },
+        {
+          "$ref": "#/$defs/game_shop_closeRequest"
+        },
+        {
           "$ref": "#/$defs/helloRequest"
         },
         {
@@ -8351,6 +8694,7 @@
         "$ref": "#/$defs/session"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取当前实例、角色阶段、控制状态与权限摘要"
     },
     "game_get_state": {
@@ -8365,6 +8709,7 @@
         "$ref": "#/$defs/state"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取当前角色及地图状态"
     },
     "game_list_nearby": {
@@ -8403,6 +8748,7 @@
         "$ref": "#/$defs/nearby"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "列出客户端已知的周边对象"
     },
     "game_get_map_region": {
@@ -8443,6 +8789,7 @@
         "$ref": "#/$defs/mapRegion"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取当前地图有限区域的地形"
     },
     "game_get_inventory": {
@@ -8464,6 +8811,7 @@
         "$ref": "#/$defs/inventory"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "分页读取背包、腰带与装备"
     },
     "game_get_skills": {
@@ -8478,6 +8826,7 @@
         "$ref": "#/$defs/skills"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取已学技能及当前支持的操作"
     },
     "game_get_interaction": {
@@ -8492,6 +8841,7 @@
         "$ref": "#/$defs/interactionSnapshot"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取当前对话、输入与交易面板"
     },
     "game_get_operation": {
@@ -8515,6 +8865,7 @@
         "$ref": "#/$defs/operation"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取操作进度、结果证据与迟到结论"
     },
     "game_get_events": {
@@ -8543,28 +8894,62 @@
         "$ref": "#/$defs/events"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取有界事件并报告保留范围缺口"
     },
     "game_stop": {
       "action": false,
       "params": {
-        "type": "object",
-        "properties": {
-          "operation_id": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "x-maxUtf8Bytes": 128
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "x-maxUtf8Bytes": 128
+              },
+              "interrupt_only": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "interrupt_only": {
+                "type": "boolean",
+                "const": true
+              },
+              "operation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "x-maxUtf8Bytes": 128
+              },
+              "context": {
+                "$ref": "#/$defs/context"
+              }
+            },
+            "required": [
+              "interrupt_only",
+              "operation_id",
+              "context"
+            ],
+            "additionalProperties": false
           }
-        },
-        "required": [],
-        "additionalProperties": false
+        ]
       },
       "result": {
         "$ref": "#/$defs/stopResult"
       },
       "timeout_ms": null,
-      "description": "优先暂停并停止当前 AI 意图"
+      "write": true,
+      "description": "明确停止撤销授权；interrupt_only须精确操作及context，仅中断该操作并保留控制状态"
     },
     "game_move_to": {
       "action": true,
@@ -8598,6 +8983,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "在当前地图使用普通寻路移动"
     },
     "game_npc_open": {
@@ -8621,6 +9007,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
+      "write": true,
       "description": "打开当前可交互 NPC 对话"
     },
     "game_npc_choose": {
@@ -8651,6 +9038,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
+      "write": true,
       "description": "选择当前对话的真实选项"
     },
     "game_npc_input": {
@@ -8681,6 +9069,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
+      "write": true,
       "description": "提交当前 NPC 输入请求"
     },
     "game_npc_close": {
@@ -8704,6 +9093,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
+      "write": true,
       "description": "关闭当前本地 NPC 对话"
     },
     "game_pick_up": {
@@ -8727,6 +9117,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
+      "write": true,
       "description": "拾取当前格已观察的地面物品"
     },
     "game_attack": {
@@ -8758,6 +9149,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "执行单次或有界持续攻击"
     },
     "game_cast": {
@@ -8831,6 +9223,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
+      "write": true,
       "description": "使用已学且受支持的技能"
     },
     "game_use_item": {
@@ -8865,7 +9258,8 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 10000,
-      "description": "使用药品/技能书或穿戴背包装备（装备count=1，普通槽位选择；真实槽位精确实例为穿戴证据）"
+      "write": true,
+      "description": "使用背包中的药品或技能书"
     },
     "game_shop_list": {
       "action": false,
@@ -8893,6 +9287,7 @@
         "$ref": "#/$defs/shopList"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "读取当前商店真实商品与报价"
     },
     "game_shop_buy": {
@@ -8928,6 +9323,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "按有效报价与成本上限购买"
     },
     "game_shop_quote_sell": {
@@ -8963,6 +9359,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "请求当前出售界面的物品报价"
     },
     "game_shop_sell": {
@@ -8992,6 +9389,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "按有效报价与收入下限出售"
     },
     "game_trade_request": {
@@ -9015,6 +9413,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "向已知玩家申请直接交易"
     },
     "game_trade_respond": {
@@ -9043,6 +9442,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "处理当前真实交易邀请"
     },
     "game_trade_offer": {
@@ -9103,6 +9503,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "替换当前未锁定的本方报价"
     },
     "game_trade_lock": {
@@ -9132,6 +9533,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "锁定指定版本的本方报价"
     },
     "game_trade_commit": {
@@ -9167,6 +9569,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "确认双方已锁定且版本匹配的交易"
     },
     "game_trade_cancel": {
@@ -9190,6 +9593,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "取消当前直接交易"
     },
     "game_auction_list": {
@@ -9222,6 +9626,7 @@
         "$ref": "#/$defs/auctionList"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "查询或刷新当前拍卖分类"
     },
     "game_auction_register": {
@@ -9263,6 +9668,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "按原有数量语义上架物品"
     },
     "game_auction_buy": {
@@ -9292,6 +9698,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "按条目与价格上限购买拍卖"
     },
     "game_auction_cancel": {
@@ -9315,6 +9722,7 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "撤回自己的拍卖条目"
     },
     "game_delivery_list": {
@@ -9336,6 +9744,7 @@
         "$ref": "#/$defs/deliveryList"
       },
       "timeout_ms": null,
+      "write": false,
       "description": "列出客户端已收到的可信系统投递"
     },
     "game_delivery_claim": {
@@ -9359,7 +9768,77 @@
         "$ref": "#/$defs/accepted"
       },
       "timeout_ms": 30000,
+      "write": true,
       "description": "领取指定系统投递并观察回执"
+    },
+    "game_grant_control": {
+      "action": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "new_task",
+              "continue_task"
+            ]
+          },
+          "grant_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "request_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "character_uid": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "x-decimalMaximum": 18446744073709551615
+          },
+          "context": {
+            "$ref": "#/$defs/context"
+          }
+        },
+        "required": [
+          "mode",
+          "grant_id",
+          "request_id",
+          "character_uid",
+          "context"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "$ref": "#/$defs/grantResult"
+      },
+      "timeout_ms": null,
+      "write": true,
+      "description": "新明确用户任务授权，或同任务在重新观察后续用；旧goal、轮询和重试不得创建新授权，响应丢失不得重发"
+    },
+    "game_shop_close": {
+      "action": true,
+      "params": {
+        "type": "object",
+        "properties": {
+          "shop_handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "x-maxUtf8Bytes": 128
+          }
+        },
+        "required": [
+          "shop_handle"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "$ref": "#/$defs/accepted"
+      },
+      "timeout_ms": 5000,
+      "write": true,
+      "description": "关闭当前本地商店面板，不关闭NPC对话、不撤销已提交购买，无网络发送"
     }
   }
 }

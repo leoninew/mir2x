@@ -95,7 +95,7 @@ namespace
     {
         aibridge::ControllerOptions options;
         options.instanceId=std::string(32,'a'); options.build="control-gui-test";
-        options.policy=aibridge::Policy::parse(R"({"allowed_actions":"*"})");
+        options.policy=aibridge::Policy::parse(R"({"allowed_actions":["game_move_to","game_stop"]})");
         options.newSessionId=[]{return std::string(32,'b');};
         return options;
     }
@@ -123,6 +123,34 @@ namespace
         REQUIRE(image);
         REQUIRE(IMG_SavePNG(image.get(),path));
     }
+}
+
+TEST_CASE("Caller grant mode retains manual authority and accepts a fresh GUI enable gesture")
+{
+    ControlGuiFixture fixture;
+    using namespace aibridge;
+    auto options=startupOptions(); options.policy=Policy::parse(R"({"allowed_actions":"*"})");
+    AiBridgeController controller(options);
+    AiControlPanel panel([&]{return &controller;},[]{return true;});
+    controller.onConnected(1); controller.observe({"run",100,11,true});
+    REQUIRE(controller.controlState()!=ControlState::Active);
+    const auto grant=[&](int n){
+        const std::string id="00000000-0000-4000-8000-00000000000"+std::to_string(n);
+        return controller.handleRequest({1,{{"v",1},{"id","grant"},{"method","game_grant_control"},
+            {"params",{{"mode","new_task"},{"grant_id",id},{"request_id",id},{"character_uid","100"},{"context",controller.context()}}}}});
+    };
+    REQUIRE(grant(1).at("ok")==true);
+    controller.manualInput(); panel.refresh();
+    CHECK(controller.controlState()==ControlState::Active);
+    CHECK(panel.status()=="AI接管中");
+    click(panel,panel.bounds());
+    REQUIRE(controller.controlState()==ControlState::Disabled);
+    click(panel,panel.bounds());
+    REQUIRE(controller.controlState()==ControlState::Active);
+    controller.manualInput();
+    CHECK(controller.controlState()==ControlState::Active);
+    REQUIRE(grant(2).at("ok")==true);
+    panel.refresh(); CHECK(panel.status()=="AI接管中");
 }
 
 TEST_CASE("Compact top-left AI panel toggles control and retains its original identity")

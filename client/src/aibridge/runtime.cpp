@@ -16,6 +16,7 @@
 #include "sdldevice.hpp"
 #include "log.hpp"
 #include <utility>
+#include <algorithm>
 #include <deque>
 #include <map>
 
@@ -191,15 +192,37 @@ namespace aibridge
             };
             size_t processed = 0;
             auto incoming=s.transport.takeRequests(8);
-            for(const auto &request: incoming){
-                if(request.message.at("method") == "game_stop"){
+            const auto isInterruption=[](const auto &request){
+                return request.message.at("method") == "game_stop" && request.message.at("params").value("interrupt_only", false);
+            };
+            for(auto it=incoming.begin();it!=incoming.end();){
+                if(it->message.at("method") == "game_stop" && !isInterruption(*it)){
                     // A stop must overtake even the bounded work deferred from an earlier poll.
-                    if(!respond(request)){ return; }
+                    if(!respond(*it)){ return; }
+                    it=incoming.erase(it);
                     ++processed;
                 }
+                else{++it;}
             }
+            const auto cancelBeforeAdvance=[&](auto &queue){
+                for(auto it=queue.begin();it!=queue.end() && processed<8;){
+                    if(isInterruption(*it)){
+                        if(!respond(*it)){return false;}
+                        it=queue.erase(it);++processed;
+                    }
+                    else{++it;}
+                }
+                return true;
+            };
+            if(!cancelBeforeAdvance(s.pending) || !cancelBeforeAdvance(incoming)){return;}
+            const auto cancellationWaiting=[&]{
+                const auto matches=[&](const auto &request){
+                    return isInterruption(request) && s.controller->activeOperation() == request.message.at("params").at("operation_id").template get<std::string>();
+                };
+                return std::any_of(s.pending.begin(),s.pending.end(),matches) || std::any_of(incoming.begin(),incoming.end(),matches);
+            };
             bool advanced=false;
-            if(s.controller->activeOperation() && std::chrono::steady_clock::now()<deadline){
+            if(!cancellationWaiting() && s.controller->activeOperation() && std::chrono::steady_clock::now()<deadline){
                 s.controller->advance(); advanced=true;
                 if(closeOnFault()){ return; }
             }
@@ -210,7 +233,6 @@ namespace aibridge
                 ++processed;
             }
             for(auto &request:incoming){
-                if(request.message.at("method")=="game_stop"){ continue; }
                 if(s.pending.size()<8){ s.pending.push_back(std::move(request)); }
                 else{
                     ++processed;
@@ -219,6 +241,7 @@ namespace aibridge
                     }
                 }
             }
+            incoming.clear();
             // One bounded request may exceed the soft budget; observation cannot starve the queue.
             while(!s.pending.empty() && processed < 8 && (processed==0 || std::chrono::steady_clock::now() < deadline)){
                 auto request = std::move(s.pending.front());
@@ -228,7 +251,7 @@ namespace aibridge
             }
             s.controller->checkDeadlines();
             if(closeOnFault()){ return; }
-            if(!advanced && std::chrono::steady_clock::now() < deadline){ s.controller->advance(); }
+            if(!advanced && !cancellationWaiting() && std::chrono::steady_clock::now() < deadline){ s.controller->advance(); }
             if(closeOnFault()){ return; }
             if(s.game){ s.game->observe(); }
             if(s.trade){ s.trade->observe(); }

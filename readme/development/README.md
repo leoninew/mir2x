@@ -20,7 +20,7 @@
 | [排障与验证基线](troubleshooting-and-baseline.md) | 本次问题、已通过的检查、日志和后续验证缺口 |
 | [当前角色 MCP 使用](ai-mcp.md) | 构建/配置、人工开启与接管、动作结果、经济恢复和限制 |
 | [AI 桥接协议与实现](ai-bridge-protocol.md) | 契约、调度、上下文/句柄、预算、回调及新增能力的入口 |
-| [AI/MCP 验证清单](../../docs/verification/20261031-ai-character-mcp.md) | 35 工具、全部已完成证据与尚未完成的实机/性能/平台事项 |
+| [AI/MCP 验证清单](../../docs/verification/20261031-ai-character-mcp.md) | 历史35工具的已完成证据与尚未完成的实机/性能/平台事项 |
 
 ## 按开发目标查找
 

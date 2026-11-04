@@ -1,5 +1,6 @@
 {
   "allowed_actions": [
+    "game_stop",
     "game_move_to",
     "game_npc_open",
     "game_npc_choose",
@@ -22,7 +23,8 @@
     "game_auction_buy",
     "game_auction_cancel",
     "game_delivery_claim",
-    "game_stop"
+    "game_grant_control",
+    "game_shop_close"
   ],
   "allow_pvp": false,
   "allowed_peer_uids": [],

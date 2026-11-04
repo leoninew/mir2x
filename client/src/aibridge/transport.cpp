@@ -152,14 +152,15 @@ namespace aibridge
                 const auto now = Clock::now();
                 lastActivity = now;
                 if(now - rateWindow >= std::chrono::seconds(1)){ rateWindow = now; rateCount = 0; }
-                if(method != "game_stop" && ++rateCount > Limits::requestsPerSecond){
+                const bool explicitStop = method == "game_stop" && !message.at("params").value("interrupt_only", false);
+                if(!explicitStop && ++rateCount > Limits::requestsPerSecond){
                     send(errorResponse(message.at("id"), "busy")); return;
                 }
                 if(method == "heartbeat"){
                     send({{"v", 1}, {"id", message.at("id")}, {"ok", true}, {"data", {{"alive", true}}}, {"context", nullptr}});
                     return;
                 }
-                if(method == "game_stop"){
+                if(explicitStop){
                     if(owner.priorityStop){ send(errorResponse(message.at("id"), "busy")); }
                     else{ owner.priorityStop = BridgeRequest{id, std::move(message)}; }
                     return;

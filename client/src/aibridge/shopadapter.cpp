@@ -192,6 +192,13 @@ namespace aibridge
         {
             auto &scene=run(); sync();
             if(context!=controller().context()){ throw ProtocolError("stale_context", "角色上下文已变化"); }
+            if(method=="game_shop_close"){
+                if(!scene.aiState().knownAlive()){ throw ProtocolError("paused", "角色当前不能交互"); }
+                if(!shopSource.current(context)){ throw ProtocolError("stale_target", "商店面板来源属于旧场景"); }
+                const auto panel=runtime.npc()->resolvePanel(NpcPanelKind::Shop,params.at("shop_handle").get<std::string>(),context);
+                if(!shop().show() || shop().npcUid()!=panel.npcUid){ throw ProtocolError("stale_target", "商店面板已改变"); }
+                return {};
+            }
             if(!scene.aiState().alive){ throw ProtocolError("paused", "角色当前不能交易"); }
             if(!scene.getMyHero()->aiCanStartMove() || scene.getFocusUID(FOCUS_ATTACK) || scene.getFocusUID(FOCUS_FOLLOW)
                 || scene.getFocusUID(FOCUS_MAGIC) || board<InputStringBoard>("InputStringBoard").showModal()
@@ -251,6 +258,20 @@ namespace aibridge
         OperationUpdate begin(const OperationView &view)
         {
             validate(view.method,view.params,view.context);
+            if(view.method=="game_shop_close"){
+                ensureCurrent(view);
+                // Closing the local panel never clears in-flight query slots or purchase watches.
+                shop().closeShop();
+                if(shop().show() || !shop().details().list.empty() || !shop().detailCache().empty()
+                    || !runtime.npc()->panelHandle(NpcPanelKind::Shop).empty()){
+                    throw ProtocolError("unavailable", "商店面板未完成本地关闭");
+                }
+                return {.outcome=OperationOutcome::Succeeded,.submitted=false,.completionScope="client_state",
+                    .evidence=Json::array({{{"source","client"},{"kind","dialogue"},
+                        {"observed_at",std::to_string(wallMs())},{"snapshot_seq",std::to_string(++sequence)},
+                        {"server_code",nullptr},{"description","当前来源商店及详情已本地关闭；不取消已提交购买"}}}),
+                    .result={{"submitted",false}}};
+            }
             if(watches.size()>=256){ throw ProtocolError("unavailable", "商店结果观察已满，需要人工核对"); }
             Watch w; w.view=view; w.scope=economyScope(view.context);
             if(view.method=="game_shop_quote_sell"){
@@ -369,7 +390,7 @@ namespace aibridge
     {
         auto &s=*m_impl;
         s.controller().registerQuery("game_shop_list",[&s](const Json &p,const Json &c){ return s.list(p,c); });
-        for(const std::string method:{"game_shop_buy","game_shop_quote_sell","game_shop_sell"}){
+        for(const std::string method:{"game_shop_close","game_shop_buy","game_shop_quote_sell","game_shop_sell"}){
             ActionAdapter action;
             action.validate=[&s,method](const Json &p,const Json &c){
                 try{ return s.validate(method,p,c); } catch(const ProtocolError &e){ return ValidationResult{.error=error(e.code)}; }

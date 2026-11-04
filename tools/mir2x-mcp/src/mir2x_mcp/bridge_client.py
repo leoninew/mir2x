@@ -126,7 +126,7 @@ class Link:
             raise
         except (OSError, TimeoutError, BridgeError):
             self.abort()
-            action = METHODS.get(request["method"], {}).get("action", False)
+            action = METHODS.get(request["method"], {}).get("write", False)
             raise BridgeError(
                 "transport_lost",
                 "桥接响应丢失；动作结果未知，禁止自动重发" if action and sent else "桥接连接不可用",
@@ -238,13 +238,13 @@ class BridgeClient:
 
     async def call(self, method: str, arguments: dict) -> dict:
         validate_arguments(method, arguments)
-        action = METHODS[method]["action"]
+        action = METHODS[method]["action"] or method == "game_grant_control"
         if action and self.action_lock.locked():
             raise BridgeError("busy", "另一个动作正在等待桥接接收")
         if action:
             async with self.action_lock:
                 if not self.link or self.link.closed or self.last_context is None:
-                    raise BridgeError("paused", "请先读取会话；连接或恢复控制必须由游戏窗口确认")
+                    raise BridgeError("paused", "请先在已有绑定连接读取会话；授权写入不自动连接")
                 if (
                     arguments["context"] != self.last_context
                     or self.character_uid != self.current_character_uid
@@ -252,7 +252,10 @@ class BridgeClient:
                     raise BridgeError(
                         "stale_context", "上下文或绑定角色已变化，请读取会话并检查游戏窗口"
                     )
-                return await self._call(self.link, method, arguments)
+                result = await self._call(self.link, method, arguments)
+                if method == "game_grant_control" and result["ok"]:
+                    self.last_context = None
+                return result
         return await self._call(await self.connect(), method, arguments)
 
     async def _call(self, link: Link, method: str, arguments: dict) -> dict:

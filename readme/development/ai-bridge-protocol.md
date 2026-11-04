@@ -3,7 +3,7 @@
 
 [返回知识库](README.md) · [使用说明](ai-mcp.md) · [验证清单](../../docs/verification/20261031-ai-character-mcp.md)
 
-本页记录当前修订 3 的实现。权威数据契约是 [v1 schema](../../contracts/ai-bridge/v1/contract.schema.json)，协议细节及生成方式见 [contracts README](../../contracts/ai-bridge/v1/README.md)。当前源码接入 35 工具；最终二进制与真实角色证据边界以验证清单为准。
+本页记录当前修订 3 的实现。权威数据契约是 [v1 schema](../../contracts/ai-bridge/v1/contract.schema.json)，协议细节及生成方式见 [contracts README](../../contracts/ai-bridge/v1/README.md)。当前源码接入 37 工具；最终二进制与真实角色证据边界以验证清单为准。
 
 ## 分层和源码
 
@@ -34,7 +34,7 @@ Python 不直接访问游戏网络或数据库。游戏状态只在客户端主�
 
 ## 请求、上下文与句柄
 
-查询包含 `v/id/method/params`；动作另有 UUID `request_id`、`context`、`timeout_ms`。`id` 仅匹配一次 IPC 调用，request_id 才是连接内动作去重键。`game_stop` 需认证，但不要求动作上下文或 request_id。
+查询包含 `v/id/method/params`；动作另有 UUID `request_id`、`context`、`timeout_ms`。`id` 仅匹配一次 IPC 调用，request_id 才是连接内动作去重键。默认 `game_stop` 需认证，但不要求动作上下文或 request_id，表示明确撤销任务。内部取消分支必须显式给出 `interrupt_only=true`、当前 operation_id 与精确 context；仅取消该操作并递增epoch，保留控制状态/任务授权/停止锁存，不清除未知副作用。显式停止优先于有界队列中的内部取消，匹配取消在原生动作推进前处理。
 
 context 为 `instance_id/session_id/world_epoch/control_epoch`。入队、begin 前 validate，以及经济实际发送前再次检查；accepted 与真实提交分开。同进程登出不重建实例，仍须失效旧会话。loading 不允许绕过同次登录预算和 economic_uncertain。
 
@@ -56,7 +56,7 @@ Client 主循环先处理游戏网络和人工输入。runtime 的桥接轮次�
 
 2ms 不是硬实时保证。DTO、审计、适配器观察和单次有界处理仍可能超时；8192 条经济探针已经出现 249060 微秒，真实全帧分布待测。
 
-控制态为 disabled/read_only/active/paused。游戏主窗口冲突输入先暂停并撤销旧 AI 代次，再交原处理；完整控制按钮手势例外，失焦仅取消未完成手势。stopHook 只清显式 AI 意图/焦点，不能无条件清玩家队列。
+控制态为 disabled/read_only/active/paused。新授权模式下普通输入先停止 intent 并更新 epoch，再交原处理；任务保留，动作必须重新观察后规划；完整控制按钮手势例外，失焦仅取消未完成手势。stopHook 只清显式 AI 意图/焦点，不能无条件清玩家队列。
 
 ## 操作、预算与证据
 

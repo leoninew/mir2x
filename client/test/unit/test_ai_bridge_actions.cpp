@@ -673,7 +673,7 @@ TEST_CASE("controller and real action helper retain dedup takeover and late reso
         controller.report(id,receipt.observe(state,1001));
         auto after = status(); CHECK(after.at("state") == "unknown"); REQUIRE_FALSE(after.at("late_resolution").is_null());
         CHECK(after.at("late_resolution").at("state") == "succeeded"); CHECK(sends == 1);
-        CHECK(controller.controlState() == ControlState::Paused);
+        CHECK(controller.controlState() == ControlState::Active);
     }
 }
 
@@ -702,7 +702,7 @@ TEST_CASE("queued combat pickup and consumption cannot execute after human takeo
         controller.manualInput(); controller.advance(); CHECK(begins==0);
         const auto status=controller.handleRequest({1,{{"v",1},{"id","status"},{"method","game_get_operation"},
             {"params",{{"operation_id",accepted.at("data").at("operation_id")}}}}}).at("data");
-        CHECK(status.at("state")=="cancelled"); CHECK(controller.controlState()==ControlState::Paused);
+        CHECK(status.at("state")=="cancelled"); CHECK(controller.controlState()==ControlState::Active);
         request["id"]="after"; request["request_id"]="00000000-0000-4000-8000-000000000002";
         CHECK(controller.handleRequest({1,request}).at("ok")==false); CHECK(begins==0);
     }

@@ -153,7 +153,7 @@ def register_tools(server, bridge):
 
     @server.tool(
         name="game_stop",
-        description="优先暂停并停止当前 AI 意图",
+        description="明确停止撤销授权；interrupt_only须精确操作及context，仅中断该操作并保留控制状态",
         annotations=ToolAnnotations(
             read_only_hint=False, destructive_hint=True, idempotent_hint=True, open_world_hint=False
         ),
@@ -161,11 +161,15 @@ def register_tools(server, bridge):
     async def game_stop(
         *,
         operation_id: Annotated[str, Field(strict=True, min_length=1, max_length=128)] = None,
+        interrupt_only: Annotated[bool, Field(strict=True)] | None = None,
+        context: GameContext | None = None,
     ) -> CallToolResult:
         return await bridge.tool(
             "game_stop",
             {
                 "operation_id": operation_id,
+                "interrupt_only": interrupt_only,
+                "context": context,
             },
         )
 
@@ -451,7 +455,7 @@ def register_tools(server, bridge):
 
     @server.tool(
         name="game_use_item",
-        description="使用药品/技能书或穿戴背包装备（装备count=1，普通槽位选择；真实槽位精确实例为穿戴证据）；返回操作ID后查询进展，unknown不得自动重试。",
+        description="使用背包中的药品或技能书；返回操作ID后查询进展，unknown不得自动重试。",
         annotations=ToolAnnotations(
             read_only_hint=False,
             destructive_hint=True,
@@ -999,6 +1003,80 @@ def register_tools(server, bridge):
             "game_delivery_claim",
             {
                 "delivery_handle": delivery_handle,
+                "request_id": request_id,
+                "context": context,
+                "timeout_ms": timeout_ms,
+            },
+        )
+
+    @server.tool(
+        name="game_grant_control",
+        description="新明确用户任务授权，或同任务在重新观察后续用；旧goal、轮询和重试不得创建新授权，响应丢失不得重发",
+        annotations=ToolAnnotations(
+            read_only_hint=False,
+            destructive_hint=True,
+            idempotent_hint=False,
+            open_world_hint=False,
+        ),
+    )
+    async def game_grant_control(
+        *,
+        mode: Literal["new_task", "continue_task"],
+        grant_id: Annotated[
+            str,
+            Field(
+                strict=True,
+                pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            ),
+        ],
+        request_id: Annotated[
+            str,
+            Field(
+                strict=True,
+                pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            ),
+        ],
+        character_uid: Annotated[str, Field(strict=True, pattern="^(0|[1-9][0-9]{0,19})$")],
+        context: GameContext,
+    ) -> CallToolResult:
+        return await bridge.tool(
+            "game_grant_control",
+            {
+                "mode": mode,
+                "grant_id": grant_id,
+                "request_id": request_id,
+                "character_uid": character_uid,
+                "context": context,
+            },
+        )
+
+    @server.tool(
+        name="game_shop_close",
+        description="关闭当前本地商店面板，不关闭NPC对话、不撤销已提交购买，无网络发送；返回操作ID后查询进展，unknown不得自动重试。",
+        annotations=ToolAnnotations(
+            read_only_hint=False,
+            destructive_hint=True,
+            idempotent_hint=False,
+            open_world_hint=False,
+        ),
+    )
+    async def game_shop_close(
+        *,
+        shop_handle: Annotated[str, Field(strict=True, min_length=1, max_length=128)],
+        request_id: Annotated[
+            str,
+            Field(
+                strict=True,
+                pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            ),
+        ],
+        context: GameContext,
+        timeout_ms: Annotated[int, Field(strict=True, ge=1, le=5000)],
+    ) -> CallToolResult:
+        return await bridge.tool(
+            "game_shop_close",
+            {
+                "shop_handle": shop_handle,
                 "request_id": request_id,
                 "context": context,
                 "timeout_ms": timeout_ms,
