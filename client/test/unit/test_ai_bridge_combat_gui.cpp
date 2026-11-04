@@ -597,6 +597,52 @@ TEST_CASE("Combat actual adapter refuses unknown target health before creating p
     CHECK(test.scene->getFocusUID(FOCUS_ATTACK) == 0);
 }
 
+TEST_CASE("Combat scene retires dead or absent attack focus before MCP movement")
+{
+    AdapterScene test(430, 108);
+    const auto target = test.pig(431, 108);
+    test.scene->setFocusUID(FOCUS_ATTACK, target);
+    const auto destination = freeNeighbors(test).front();
+    const auto blocked = test.move(destination);
+    REQUIRE(blocked.at("ok") == false);
+    REQUIRE(blocked.at("error").at("code") == "busy");
+
+    SECTION("health confirms the focused target is dead"){
+        health(*test.scene, target, 0);
+        REQUIRE(test.scene->findUID(target)->dead() == true);
+    }
+    SECTION("the server removes the focused target"){
+        const SMOffline message{.UID = target, .mapUID = test.scene->mapUID()};
+        test.scene->on_SM_OFFLINE(reinterpret_cast<const uint8_t *>(&message), sizeof(message));
+        REQUIRE(test.scene->findUID(target) == nullptr);
+    }
+    test.scene->update(0);
+    REQUIRE(test.scene->getFocusUID(FOCUS_ATTACK) == 0);
+    REQUIRE(test.hero().actionSendSequence() == 0);
+    REQUIRE(test.move(destination).at("ok") == true);
+    for(int i = 0; i < 100 && test.status().at("state") != "succeeded"; ++i){ test.step(); }
+    CHECK(test.status().at("state") == "succeeded");
+    CHECK(test.hero().actionTypeSendSequence(ACTION_MOVE) == 1);
+    CHECK(test.hero().actionTypeSendSequence(ACTION_ATTACK) == 0);
+}
+
+TEST_CASE("Combat scene preserves live and unknown attack focus ownership")
+{
+    AdapterScene test(430, 108);
+    bool knownHealth = true;
+    SECTION("a live target retains its focus"){}
+    SECTION("unknown target health does not retire the focus"){ knownHealth = false; }
+    const auto target = test.pig(431, 108, knownHealth);
+    test.scene->setFocusUID(FOCUS_ATTACK, target);
+    test.scene->update(0);
+    REQUIRE(test.scene->getFocusUID(FOCUS_ATTACK) == target);
+    const auto blocked = test.move(freeNeighbors(test).front());
+    CHECK(blocked.at("ok") == false);
+    CHECK(blocked.at("error").at("code") == "busy");
+    CHECK_FALSE(test.controller().activeOperation());
+    CHECK(test.hero().actionSendSequence() == 0);
+}
+
 TEST_CASE("Hit movement real GUI right click sends a native move during stationary hit")
 {
     AdapterScene test(430, 108);

@@ -172,6 +172,14 @@ void ProcessRun::update(double fUpdateTime)
         }
     }
 
+    if(const auto uid = getFocusUID(FOCUS_ATTACK); uid){
+        // A completed manual attack must not leave future commands permanently busy.
+        const auto target = findUID(uid);
+        if(!target || !target->alive() || target->dead() == true){
+            setFocusUID(FOCUS_ATTACK, 0);
+        }
+    }
+
     for(auto p = m_fixedLocMagicList.begin(); p != m_fixedLocMagicList.end();){
         if((*p)->update(fUpdateTime)){
             p = m_fixedLocMagicList.erase(p);
