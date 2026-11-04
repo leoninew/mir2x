@@ -9,11 +9,14 @@ import sys
 import time
 import tomllib
 from pathlib import Path
+from types import SimpleNamespace
 
+import psutil
 import pytest
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
+from mir2x_mcp import runtime_process
 from mir2x_mcp.contract import METHODS, validate
 from mir2x_mcp.runtime_cli import host_command, host_config, main
 from mir2x_mcp.runtime_config import POLICIES, RuntimeFailure, load_settings
@@ -50,6 +53,531 @@ def runtime(tmp_path):
     yield manager
     for role in ("client", "server"):
         manager.stop(role, force=True)
+
+
+@pytest.fixture
+def held_tcp_server(tmp_path):
+    script = """
+import json
+import socket
+import sys
+import threading
+from pathlib import Path
+
+root = Path(sys.argv[1])
+released = threading.Event()
+accepted = []
+connections = []
+
+def publish(name, value):
+    path = root / name
+    temporary = path.with_suffix('.tmp')
+    temporary.write_text(json.dumps(value), 'utf-8')
+    temporary.replace(path)
+
+def release():
+    sys.stdin.buffer.read(1)
+    released.set()
+
+with socket.socket() as listener:
+    listener.bind(('127.0.0.1', 0))
+    listener.listen()
+    listener.settimeout(0.1)
+    publish('listener.json', listener.getsockname())
+    threading.Thread(target=release, daemon=True).start()
+    try:
+        while not released.is_set():
+            try:
+                connection, _ = listener.accept()
+            except TimeoutError:
+                continue
+            connections.append(connection)
+            accepted.append({'local': connection.getsockname(), 'peer': connection.getpeername()})
+            publish('accepted.json', accepted)
+    finally:
+        for connection in connections:
+            connection.close()
+"""
+    with (tmp_path / "held-server.log").open("wb") as log:
+        child = subprocess.Popen(
+            [sys._base_executable, "-u", "-c", script, str(tmp_path)],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=log,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+        try:
+            deadline = time.monotonic() + 5
+            while not (tmp_path / "listener.json").exists():
+                assert child.poll() is None, "isolated listener exited before binding"
+                assert time.monotonic() < deadline, "isolated listener did not bind"
+                time.sleep(0.01)
+            _, port = json.loads((tmp_path / "listener.json").read_text("utf-8"))
+            manager = Manager(
+                dataclasses.replace(load_settings(tmp_path), client_port=port, start_timeout=5)
+            )
+            record = runtime_process.identity(psutil.Process(child.pid)) | {
+                "workdir": str(tmp_path)
+            }
+            manager.settings.state.mkdir(parents=True, exist_ok=True)
+            manager.record_path("server").write_text(json.dumps(record), "utf-8")
+            yield manager, child, record
+        finally:
+            child.stdin.close()
+            try:
+                child.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                child.terminate()
+                child.wait(timeout=3)
+
+
+@pytest.fixture
+def readiness(tmp_path, monkeypatch):
+    manager = Manager(dataclasses.replace(load_settings(tmp_path), start_timeout=1))
+    record = {
+        "pid": 12345,
+        "created": 10,
+        "executable": str((tmp_path / "server.exe").resolve()),
+        "workdir": str(tmp_path),
+    }
+    state = SimpleNamespace(
+        manager=manager,
+        record=record,
+        created=record["created"],
+        current_pid=record["pid"],
+        executable=record["executable"],
+        alive=True,
+        connections=[],
+        connection_error=None,
+        identity_error=None,
+        reachable=True,
+        probes=[],
+        on_probe=lambda: None,
+        on_sleep=lambda: None,
+        clock=0,
+        targets=None,
+        connected=False,
+        accepted_by_registered=True,
+        reverse_change=lambda entry: None,
+        timeouts=[],
+        on_addresses=lambda: None,
+        on_connections=lambda: None,
+    )
+
+    def process_for(pid):
+        if state.identity_error:
+            raise state.identity_error
+        if not state.alive or pid != state.current_pid:
+            raise psutil.NoSuchProcess(pid)
+        return process
+
+    def connections(*, kind):
+        assert kind == "tcp"
+        if state.connection_error:
+            raise state.connection_error
+        entries = list(state.connections)
+        if state.connected and state.accepted_by_registered:
+            reverse = SimpleNamespace(
+                family=state.socket_family,
+                type=socket.SOCK_STREAM,
+                laddr=SimpleNamespace(ip=state.socket_peer[0], port=state.socket_peer[1]),
+                raddr=state.socket_local,
+                status=psutil.CONN_ESTABLISHED,
+            )
+            state.reverse_change(reverse)
+            entries.append(reverse)
+        state.on_connections()
+        return entries
+
+    process = SimpleNamespace(
+        pid=record["pid"],
+        create_time=lambda: state.created,
+        exe=lambda: state.executable,
+        status=lambda: psutil.STATUS_RUNNING,
+        net_connections=connections,
+    )
+    state.process = process
+
+    class Connection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            state.connected = False
+
+        @property
+        def family(self):
+            return state.socket_family
+
+        def getsockname(self):
+            return state.socket_local
+
+        def getpeername(self):
+            return state.socket_peer
+
+    def connect(address, *, timeout):
+        host, port = address
+        assert 0 < timeout <= 0.2
+        state.timeouts.append(timeout)
+        state.probes.append((host, port))
+        if not state.reachable:
+            raise OSError("synthetic unreachable endpoint")
+        state.connected = True
+        state.socket_family = socket.AF_INET6 if ":" in host else socket.AF_INET
+        state.socket_local = (host, 45000)
+        state.socket_peer = (host, port)
+        state.on_probe()
+        return Connection()
+
+    def sleep(seconds):
+        state.clock += seconds
+        state.on_sleep()
+
+    def addresses(host, port, family, kind):
+        assert kind == socket.SOCK_STREAM
+        state.on_addresses()
+        return [
+            (family, kind, 0, "", (target, port))
+            for target in (state.targets if state.targets is not None else [host])
+        ]
+
+    monkeypatch.setattr(manager, "read", lambda role: dict(state.record))
+    monkeypatch.setattr(runtime_process.psutil, "Process", process_for)
+    monkeypatch.setattr(
+        runtime_process.psutil,
+        "net_if_addrs",
+        lambda: {"local": [SimpleNamespace(family=socket.AF_INET, address="192.0.2.10")]},
+    )
+    monkeypatch.setattr(runtime_process.socket, "create_connection", connect)
+    monkeypatch.setattr(runtime_process.socket, "getaddrinfo", addresses)
+    monkeypatch.setattr(runtime_process, "os", SimpleNamespace(name="nt", path=os.path))
+    monkeypatch.setattr(
+        runtime_process, "time", SimpleNamespace(monotonic=lambda: state.clock, sleep=sleep)
+    )
+    return state
+
+
+def readiness_endpoint(readiness, *, address="0.0.0.0", status=psutil.CONN_NONE, **changes):
+    endpoint = SimpleNamespace(
+        family=socket.AF_INET,
+        type=socket.SOCK_STREAM,
+        laddr=SimpleNamespace(ip=address, port=readiness.manager.settings.client_port),
+        raddr=(),
+        status=status,
+    )
+    for name, value in changes.items():
+        setattr(endpoint, name, value)
+    return endpoint
+
+
+def test_wait_server_windows_none_owned_endpoint_becomes_ready(readiness):
+    readiness.connections = [readiness_endpoint(readiness)]
+    readiness.manager.wait_server()
+    assert readiness.probes == [("127.0.0.1", readiness.manager.settings.client_port)]
+
+
+def test_wait_server_known_listener_keeps_existing_path_without_probe(readiness):
+    readiness.connections = [readiness_endpoint(readiness, status=psutil.CONN_LISTEN)]
+    readiness.manager.wait_server()
+    assert not readiness.probes
+
+
+@pytest.mark.parametrize("transient", ["missing", "closing"])
+def test_wait_server_transient_missing_endpoint_requires_fresh_owned_snapshot(
+    readiness, transient
+):
+    endpoint = readiness_endpoint(readiness)
+    readiness.connections = [endpoint]
+
+    def temporarily_missing():
+        if len(readiness.probes) == 1:
+            if transient == "missing":
+                readiness.connections = []
+            else:
+                endpoint.status = psutil.CONN_FIN_WAIT1
+
+    def restored():
+        endpoint.status = psutil.CONN_NONE
+        readiness.connections = [endpoint]
+
+    readiness.on_probe = temporarily_missing
+    readiness.on_sleep = restored
+    readiness.manager.wait_server()
+    assert len(readiness.probes) == 2
+    assert 0 < readiness.clock < 1
+
+
+@pytest.mark.parametrize(
+    ("host", "address", "family", "resolved"),
+    [
+        ("127.0.0.1", "127.0.0.1", socket.AF_INET, None),
+        ("192.0.2.10", "0.0.0.0", socket.AF_INET, None),
+        ("192.0.2.10", "192.0.2.10", socket.AF_INET, None),
+        ("::1", "::", socket.AF_INET6, None),
+        ("::1", "::1", socket.AF_INET6, None),
+        ("localhost", "127.0.0.1", socket.AF_INET, ["127.0.0.1"]),
+    ],
+)
+def test_wait_server_none_binding_covers_actual_configured_target(
+    readiness, host, address, family, resolved
+):
+    readiness.manager.settings = dataclasses.replace(readiness.manager.settings, host=host)
+    readiness.targets = resolved
+    readiness.connections = [readiness_endpoint(readiness, address=address, family=family)]
+    readiness.manager.wait_server()
+    assert readiness.probes == [
+        (resolved[0] if resolved else host, readiness.manager.settings.client_port)
+    ]
+
+
+def test_wait_server_hostname_probes_only_address_bound_by_registered_process(readiness):
+    readiness.manager.settings = dataclasses.replace(readiness.manager.settings, host="localhost")
+    readiness.targets = ["192.0.2.20", "127.0.0.1"]
+    readiness.connections = [readiness_endpoint(readiness, address="127.0.0.1")]
+    readiness.manager.wait_server()
+    assert readiness.probes == [("127.0.0.1", readiness.manager.settings.client_port)]
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        "external_listener_only", "connected_socket", "outbound_socket", "unknown_status",
+        "wrong_port", "wrong_address", "remote_host", "udp", "unreachable", "posix",
+    ],
+)
+def test_wait_server_reachable_port_does_not_replace_owned_listener_evidence(
+    readiness, monkeypatch, scenario
+):
+    endpoint = readiness_endpoint(readiness)
+    readiness.connections = [endpoint]
+    if scenario == "external_listener_only":
+        readiness.connections = []
+    elif scenario == "connected_socket":
+        endpoint.status = psutil.CONN_ESTABLISHED
+        endpoint.raddr = ("192.0.2.20", 9999)
+    elif scenario == "outbound_socket":
+        endpoint.raddr = ("192.0.2.20", 9999)
+    elif scenario == "unknown_status":
+        endpoint.status = "UNRECOGNIZED"
+    elif scenario == "wrong_port":
+        endpoint.laddr.port += 1
+    elif scenario == "wrong_address":
+        endpoint.laddr.ip = "127.0.0.2"
+    elif scenario == "remote_host":
+        readiness.manager.settings = dataclasses.replace(
+            readiness.manager.settings, host="203.0.113.10"
+        )
+    elif scenario == "udp":
+        endpoint.type = socket.SOCK_DGRAM
+    elif scenario == "unreachable":
+        readiness.reachable = False
+    elif scenario == "posix":
+        monkeypatch.setattr(runtime_process, "os", SimpleNamespace(name="posix", path=os.path))
+    with pytest.raises(RuntimeFailure, match="尚未就绪"):
+        readiness.manager.wait_server()
+    assert readiness.clock >= 1
+    assert bool(readiness.probes) == (scenario == "unreachable")
+
+
+@pytest.mark.parametrize(
+    "mismatch",
+    [
+        "accepted_by_other_pid", "client_port", "client_address", "server_port",
+        "server_address", "family", "socket_type",
+    ],
+)
+def test_wait_server_requires_exact_probe_reverse_connection_owned_by_registered_pid(
+    readiness, mismatch
+):
+    readiness.connections = [readiness_endpoint(readiness)]
+    readiness.accepted_by_registered = mismatch != "accepted_by_other_pid"
+
+    def changed(entry):
+        if mismatch == "client_port":
+            entry.raddr = (entry.raddr[0], entry.raddr[1] + 1)
+        elif mismatch == "client_address":
+            entry.raddr = ("127.0.0.2", entry.raddr[1])
+        elif mismatch == "server_port":
+            entry.laddr.port += 1
+        elif mismatch == "server_address":
+            entry.laddr.ip = "127.0.0.2"
+        elif mismatch == "family":
+            entry.family = socket.AF_INET6
+        elif mismatch == "socket_type":
+            entry.type = socket.SOCK_DGRAM
+
+    readiness.reverse_change = changed
+    with pytest.raises(RuntimeFailure, match="尚未就绪"):
+        readiness.manager.wait_server()
+    assert readiness.probes and readiness.clock >= 1
+    assert not readiness.connected
+
+
+@pytest.mark.parametrize("replacement", ["created", "executable", "pid"])
+def test_wait_server_never_adopts_replaced_registration_between_polls(readiness, replacement):
+    readiness.connections = [readiness_endpoint(readiness)]
+    readiness.reachable = False
+
+    def replaced():
+        if replacement == "created":
+            readiness.created += 1
+            readiness.record = readiness.record | {"created": readiness.created}
+        elif replacement == "executable":
+            readiness.executable += ".replacement"
+            readiness.record = readiness.record | {"executable": readiness.executable}
+        else:
+            readiness.current_pid += 1
+            readiness.process.pid = readiness.current_pid
+            readiness.record = readiness.record | {"pid": readiness.current_pid}
+        readiness.reachable = True
+
+    readiness.on_sleep = replaced
+    with pytest.raises(RuntimeFailure):
+        readiness.manager.wait_server()
+    assert len(readiness.probes) == 1
+
+
+@pytest.mark.parametrize("stage", ["resolution", "connect", "ownership"])
+def test_wait_server_cannot_report_ready_after_original_deadline(readiness, stage):
+    readiness.connections = [readiness_endpoint(readiness)]
+    if stage == "resolution":
+        readiness.on_addresses = lambda: setattr(readiness, "clock", 1.01)
+    elif stage == "connect":
+        readiness.on_probe = lambda: setattr(readiness, "clock", 1.01)
+    else:
+        readiness.on_connections = lambda: (
+            setattr(readiness, "clock", 1.01) if readiness.connected else None
+        )
+    with pytest.raises(RuntimeFailure, match="尚未就绪"):
+        readiness.manager.wait_server()
+    assert not readiness.connected
+    assert bool(readiness.probes) == (stage != "resolution")
+
+
+def test_wait_server_connect_timeout_is_limited_by_remaining_startup_time(readiness):
+    readiness.connections = [readiness_endpoint(readiness)]
+    readiness.on_addresses = lambda: setattr(readiness, "clock", 0.95)
+    readiness.manager.wait_server()
+    assert readiness.timeouts == [pytest.approx(0.05)]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "exit", "reused_pid", "executable", "record", "endpoint", "endpoint_replaced",
+        "connected_after_probe", "identity_denied", "endpoint_denied",
+    ],
+)
+def test_wait_server_rechecks_registration_and_endpoint_after_probe(readiness, change):
+    readiness.connections = [readiness_endpoint(readiness)]
+
+    def changed():
+        if change == "exit":
+            readiness.alive = False
+        elif change == "reused_pid":
+            readiness.created += 1
+        elif change == "executable":
+            readiness.executable += ".other"
+        elif change == "record":
+            readiness.record = readiness.record | {"created": 11}
+        elif change == "endpoint":
+            readiness.connections = []
+        elif change == "endpoint_replaced":
+            readiness.connections[0].laddr.ip = "127.0.0.2"
+        elif change == "connected_after_probe":
+            readiness.connections[0].status = psutil.CONN_ESTABLISHED
+            readiness.connections[0].raddr = ("192.0.2.20", 9999)
+        elif change == "identity_denied":
+            readiness.identity_error = psutil.AccessDenied(12345)
+        elif change == "endpoint_denied":
+            readiness.connection_error = psutil.AccessDenied(12345)
+
+    readiness.on_probe = changed
+    with pytest.raises(RuntimeFailure):
+        readiness.manager.wait_server()
+    assert len(readiness.probes) == 1
+
+
+@pytest.mark.parametrize("stage", ["identity", "connections"])
+@pytest.mark.parametrize("error", [psutil.AccessDenied(12345), psutil.NoSuchProcess(12345)])
+def test_wait_server_process_exit_or_unreadable_ownership_fails_closed(readiness, stage, error):
+    if stage == "identity":
+        readiness.identity_error = error
+    else:
+        readiness.connection_error = error
+    with pytest.raises(RuntimeFailure):
+        readiness.manager.wait_server()
+    assert not readiness.probes
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows unknown TCP state fallback")
+def test_wait_server_windows_none_with_real_held_registered_connection(
+    held_tcp_server, monkeypatch,
+):
+    manager, child, record = held_tcp_server
+    real_connections = psutil.Process.net_connections
+    real_connect = socket.create_connection
+    probes = []
+    snapshots = []
+    observed = []
+
+    def unknown_listener(process, kind):
+        assert process.pid == child.pid
+        raw = real_connections(process, kind=kind)
+        observed.extend(raw)
+        entries = [
+            entry._replace(status=psutil.CONN_NONE)
+            if entry.laddr
+            and entry.laddr.port == manager.settings.client_port
+            and not entry.raddr
+            and entry.status in (psutil.CONN_LISTEN, psutil.CONN_NONE)
+            else entry
+            for entry in raw
+        ]
+        snapshots.append({"pid": process.pid, "raw_entries": [repr(entry) for entry in raw]})
+        return entries
+
+    def connect(address, *, timeout):
+        connection = real_connect(address, timeout=timeout)
+        try:
+            probe = {
+                "local": list(connection.getsockname()),
+                "peer": list(connection.getpeername()),
+            }
+            deadline = time.monotonic() + 2
+            while True:
+                path = manager.settings.root / "accepted.json"
+                accepted = json.loads(path.read_text("utf-8")) if path.exists() else []
+                if {"local": probe["peer"], "peer": probe["local"]} in accepted:
+                    probes.append(probe)
+                    return connection
+                assert child.poll() is None, "isolated server exited before accepting probe"
+                assert time.monotonic() < deadline, "isolated server did not accept probe"
+                time.sleep(0.01)
+        except BaseException:
+            connection.close()
+            raise
+
+    monkeypatch.setattr(psutil.Process, "net_connections", unknown_listener)
+    monkeypatch.setattr(runtime_process.socket, "create_connection", connect)
+    monkeypatch.setattr(runtime_process, "os", SimpleNamespace(name="nt", path=os.path))
+    try:
+        manager.wait_server()
+        assert probes and owned_process(record)
+        assert any(
+            entry.status == psutil.CONN_ESTABLISHED
+            and entry.family == socket.AF_INET
+            and entry.type == socket.SOCK_STREAM
+            and entry.laddr == tuple(probe["peer"])
+            and entry.raddr == tuple(probe["local"])
+            for entry in observed
+            for probe in probes
+        )
+    finally:
+        (manager.settings.root / "readiness-held-snapshots.json").write_text(
+            json.dumps({"record": record, "probes": probes, "snapshots": snapshots}, indent=2),
+            "utf-8",
+        )
 
 
 def test_default_policy_ready_without_local_preparation(tmp_path):

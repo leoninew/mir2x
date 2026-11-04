@@ -3,6 +3,7 @@
 import contextlib
 import ctypes
 import hashlib
+import ipaddress
 import json
 import os
 import signal
@@ -76,6 +77,88 @@ def port_open(host: str, port: int) -> bool:
         with socket.create_connection((host, port), timeout=0.2):
             return True
     except OSError:
+        return False
+
+
+def _unknown_listener_targets(entry, host: str, port: int) -> tuple[str, ...]:
+    if (
+        entry.status != psutil.CONN_NONE
+        or entry.type != socket.SOCK_STREAM
+        or entry.family not in (socket.AF_INET, socket.AF_INET6)
+        or not entry.laddr
+        or entry.laddr.port != port
+        or entry.raddr
+    ):
+        return ()
+    try:
+        bound = ipaddress.ip_address(entry.laddr.ip)
+        targets = {
+            ipaddress.ip_address(address[4][0])
+            for address in socket.getaddrinfo(host, port, entry.family, socket.SOCK_STREAM)
+        }
+        local = (
+            {
+                ipaddress.ip_address(address.address)
+                for addresses in psutil.net_if_addrs().values()
+                for address in addresses
+                if address.family == entry.family
+            }
+            if bound.is_unspecified
+            else set()
+        )
+        return tuple(
+            str(target)
+            for target in targets
+            if target.version == bound.version
+            and not target.is_unspecified
+            and not target.is_multicast
+            and (
+                target == bound
+                or (bound.is_unspecified and (target.is_loopback or target in local))
+            )
+        )
+    except (ValueError, OSError):
+        return ()
+
+
+def _owned_port_open(host: str, port: int, record: dict, endpoint: tuple, deadline: float) -> bool:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        return False
+    try:
+        with socket.create_connection((host, port), timeout=min(0.2, remaining)) as connection:
+            peer = connection.getpeername()
+            local = connection.getsockname()
+            process = owned_process(record)
+            if not process:
+                return False
+            entries = process.net_connections(kind="tcp")
+            owns_binding = any(
+                (entry.family, entry.type, entry.laddr.ip, entry.laddr.port) == endpoint
+                and not entry.raddr
+                and entry.status in (psutil.CONN_NONE, psutil.CONN_LISTEN)
+                for entry in entries
+                if entry.laddr
+            )
+            # Keep the probe open: a bound socket alone need not have accepted it.
+            owns_connection = any(
+                entry.family == connection.family
+                and entry.type == socket.SOCK_STREAM
+                and entry.laddr
+                and entry.raddr
+                and ipaddress.ip_address(entry.laddr.ip) == ipaddress.ip_address(peer[0])
+                and entry.laddr.port == peer[1]
+                and ipaddress.ip_address(entry.raddr[0]) == ipaddress.ip_address(local[0])
+                and entry.raddr[1] == local[1]
+                for entry in entries
+            )
+            return (
+                owns_binding
+                and owns_connection
+                and owned_process(record) is not None
+                and time.monotonic() < deadline
+            )
+    except (ValueError, OSError):
         return False
 
 
@@ -252,16 +335,46 @@ class Manager:
 
     def wait_server(self):
         deadline = time.monotonic() + self.settings.start_timeout
+        record = self.read("server")
         while time.monotonic() < deadline:
-            if self.status("server")["state"] != "running":
+            if self.read("server") != record:
+                raise RuntimeFailure("server 登记已变化，未确认就绪")
+            process = owned_process(record) if record else None
+            if not process:
                 raise RuntimeFailure("server 已退出，查看 logs server 和游戏日志")
-            process = owned_process(self.read("server"))
-            if process and any(
-                entry.status == psutil.CONN_LISTEN and entry.laddr.port == self.settings.client_port
-                for entry in process.net_connections(kind="tcp")
-            ):
-                return
-            time.sleep(0.1)
+            try:
+                entries = process.net_connections(kind="tcp")
+                ready = any(
+                    entry.status == psutil.CONN_LISTEN
+                    and entry.laddr
+                    and entry.laddr.port == self.settings.client_port
+                    for entry in entries
+                )
+                if not ready and os.name == "nt":
+                    for entry in entries:
+                        for target in _unknown_listener_targets(
+                            entry, self.settings.host, self.settings.client_port
+                        ):
+                            endpoint = (entry.family, entry.type, entry.laddr.ip, entry.laddr.port)
+                            if not _owned_port_open(
+                                target, self.settings.client_port, record, endpoint, deadline
+                            ):
+                                continue
+                            ready = True
+                            break
+                        if ready:
+                            break
+                if ready:
+                    if self.read("server") != record or not owned_process(record):
+                        raise RuntimeFailure("server 登记或进程身份已变化，未确认就绪")
+                    if time.monotonic() < deadline:
+                        return
+                    break
+            except psutil.NoSuchProcess as exc:
+                raise RuntimeFailure("server 已退出，查看 logs server 和游戏日志") from exc
+            except psutil.AccessDenied as exc:
+                raise RuntimeFailure("无法核对服务器端口归属，未确认就绪") from exc
+            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
         raise RuntimeFailure("服务器尚未就绪；进程保留可诊断，查看 status 或 logs server")
 
     def stop(self, role: str, force: bool = False) -> dict:
