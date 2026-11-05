@@ -15,9 +15,10 @@ define_property(GLOBAL PROPERTY MIR2X_TEST_BUILD_TARGETS
 
 # mir2x_add_unit_test(NAME <name> SOURCES <src...>
 #                    [LIBS <lib...>] [DEPENDS <target...>]
-#                    [ARGS <args...>] [WORKING_DIRECTORY <dir>])
+#                    [ARGS <args...>] [WORKING_DIRECTORY <dir>]
+#                    [ENVIRONMENT <key=value...>])
 function(mir2x_add_unit_test)
-    cmake_parse_arguments(T "" "NAME;WORKING_DIRECTORY" "SOURCES;LIBS;DEPENDS;ARGS" ${ARGN})
+    cmake_parse_arguments(T "" "NAME;WORKING_DIRECTORY" "SOURCES;LIBS;DEPENDS;ARGS;ENVIRONMENT" ${ARGN})
     if(T_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "mir2x_add_unit_test: unexpected arguments: ${T_UNPARSED_ARGUMENTS}")
     endif()
@@ -40,6 +41,16 @@ function(mir2x_add_unit_test)
         EXTRA_ARGS ${T_ARGS}
         WORKING_DIRECTORY "${T_WORKING_DIRECTORY}"
         PROPERTIES TIMEOUT 600)
+    if(T_ENVIRONMENT)
+        # Apply list-valued properties after discovery, which otherwise flattens the list.
+        set(T_ENV_FILE "${CMAKE_CURRENT_BINARY_DIR}/${T_TARGET}_environment.cmake")
+        file(WRITE "${T_ENV_FILE}"
+            "if(DEFINED ${T_TARGET}_TESTS AND NOT \"\${${T_TARGET}_TESTS}\" STREQUAL \"\")\n"
+            "  set_tests_properties(\${${T_TARGET}_TESTS} PROPERTIES\n"
+            "    ENVIRONMENT [==[${T_ENVIRONMENT}]==])\n"
+            "endif()\n")
+        set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES "${T_ENV_FILE}")
+    endif()
     set_property(GLOBAL APPEND PROPERTY MIR2X_TEST_BUILD_TARGETS ${T_TARGET})
 endfunction()
 

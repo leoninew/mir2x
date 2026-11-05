@@ -1,62 +1,76 @@
 # mir2x
 
 <a href="https://github.com/etorth/mir2x/actions/workflows/build.yml">
-  <img alt="GitHub Actions Build Status"
+  <img alt="GitHub Actions 构建状态"
        src="https://github.com/etorth/mir2x/actions/workflows/build.yml/badge.svg"/>
 </a>
 <a href="https://scan.coverity.com/projects/etorth-mir2x">
-  <img alt="Coverity Scan Build Status"
+  <img alt="Coverity Scan 扫描状态"
        src="https://scan.coverity.com/projects/9270/badge.svg"/>
 </a>
 <a href="https://gitter.im/mir2x/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link">
-  <img alt="Gitter chat"
+  <img alt="Gitter 聊天"
        src="https://badges.gitter.im/org.png"/>
 </a>
 
-mir2x is an experimental project that verifies actor-model based parallelism for MMORPG, it's c/s based with various platforms supported and contains all need components for game players and developers:
+mir2x 是一个验证 MMORPG 中基于 Actor 模型的并行处理能力的实验项目，采用客户端/服务端架构，支持多个平台，包含玩家和开发者使用的组件：
 
-  - client
-  - server
-  - pkgviewer
-  - animaker
-  - mapeditor
+  - `client`：客户端
+  - `server`：服务端
+  - `pkgviewer`：资源包查看器
+  - `animaker`：动画制作工具
+  - `mapeditor`：地图编辑器
 
-### Prebuilt binaries
+<a id="prebuilt-binaries"></a>
+### 预编译制品
 
-Each push to the repository publishes a rolling `latest` GitHub release containing Linux and Windows MinGW UCRT64 install trees, the full release page is at <https://github.com/etorth/mir2x/releases/tag/latest>.
+`release` 分支构建成功后会更新滚动的 `latest` GitHub Release，其中包含 Linux 和 Windows MinGW UCRT64 安装目录；其他分支进行构建验证，但不会替换该发布版本。发布页面：<https://github.com/etorth/mir2x/releases/tag/latest>。
 
-### Notes
-- This repo uses C++ coroutine to implement actor model, requires compiler to support c++23.
-- This repo uses classic v1.45 mir2 as a reference implementation, you can try the original game:
-  - Install [win-xp](https://github.com/etorth/winxp-zh) to host and run the game server/client, tested on real machine or virtualbox machine.
-  - Install server/client from [mir2-v1.45](https://github.com/etorth/CBWCQ3).
-  - Change screen resolution to 16bit mode to run the game.
+<a id="development-knowledge-base"></a>
+### 开发知识库
 
-### Public Server
-- Check the tutorial [here](https://github.com/etorth/mir2x/wiki/Host-your-monoserver-on-Oracle-Cloud) for how to run the ```server``` with Oracle Cloud as a public server.
-- You can try the public test server ```192.9.241.118``` by
+请从[开发知识库](readme/development/README.md)查阅代码地图、启动和登录流程、业务与持久化模型、Lua 内容开发、测试和排障。[Windows 开发指南](readme/development/windows-development.md)记录了已经验证的 MSYS2 UCRT64 环境，以及将构建和安装目录保留在仓库内的方式。
+
+日常 Windows 构建可使用 [UCRT64 辅助脚本](scripts/README.md)。地图、装备与技能见[玩法参考](readme/gameplay/README.md)，已有配置的可视化管理讨论见[研究记录](docs/research/20261104-runtime-gameplay-config.md)。
+
+配置的现有 owner、持久化方式和生效时机见[配置系统分析](readme/development/configuration.md)。
+
+<a id="notes"></a>
+### 说明
+- 本项目使用 C++ 协程实现 Actor 模型；当前 CMake 配置要求 C++26，CI 使用 GCC 16。
+- 本项目以经典的 mir2 v1.45 作为参考实现，可通过以下方式体验原版游戏：
+  - 安装 [win-xp](https://github.com/etorth/winxp-zh) 以运行游戏服务端和客户端；已在实体机和 VirtualBox 虚拟机上尝试。
+  - 安装 [mir2-v1.45](https://github.com/etorth/CBWCQ3) 的服务端和客户端。
+  - 将屏幕颜色模式改为 16 位后运行游戏。
+
+<a id="public-server"></a>
+### 公共服务器
+- 参照[教程](https://github.com/etorth/mir2x/wiki/Host-your-monoserver-on-Oracle-Cloud)，可在 Oracle Cloud 上运行公共 `server`。
+- 可尝试通过以下命令连接公共测试服务器 `192.9.241.118`；该服务器近期未维护：
   ```shell
-  client --server-ip=192.9.241.118 # not maintained recently
+  client --server-ip=192.9.241.118
   ```
 
-YouTube links: [1](https://youtu.be/Yz-bGOkDyEQ) [2](https://youtu.be/jl1LPxe2EAA) [3](https://youtu.be/TtGONA83Mb8)
+YouTube 视频：[1](https://youtu.be/Yz-bGOkDyEQ) [2](https://youtu.be/jl1LPxe2EAA) [3](https://youtu.be/TtGONA83Mb8)
 
 <https://user-images.githubusercontent.com/1754214/162589720-7dd9453b-55e4-4119-a1ee-c879093cf017.mp4>
 
 
-An IME for SDL fullscreen mode:
+SDL 全屏模式的输入法：
 
 <https://user-images.githubusercontent.com/1754214/213572554-785e826c-226d-43fa-a196-ee4f92112db2.mp4>
 
 
-### Building from source
+<a id="building-from-source"></a>
+### 从源码构建
 
-mir2x uses vcpkg manifest mode for third-party dependencies on 64-bit native Linux and 64-bit MSYS2 UCRT64/MinGW. The helper script clones and bootstraps a local vcpkg checkout in the current working directory, configures the CMake build, builds, and installs.
+在 64 位原生 Linux 和 64 位 MSYS2 UCRT64/MinGW 上，mir2x 使用 vcpkg manifest 模式管理第三方依赖。构建脚本会在当前工作目录中克隆并初始化本地 vcpkg，配置 CMake，然后执行编译和安装。
 
 
+<a id="linux-ubuntu-2604"></a>
 #### Linux (Ubuntu 26.04)
 
-mir2x is built with GCC 16:
+使用 GCC 16 构建 mir2x：
 
 ```sh
 sudo apt update
@@ -73,7 +87,7 @@ sudo apt install -y \
     libxi-dev libxkbcommon-dev libxrandr-dev libxss-dev libxtst-dev
 ```
 
-Then clone and build:
+然后克隆并构建：
 
 ```sh
 git clone https://github.com/etorth/mir2x.git
@@ -81,9 +95,10 @@ mkdir b_mir2x && cd b_mir2x
 python3 /path/to/mir2x/build.py --c-compiler=gcc-16 --cxx-compiler=g++-16 --parallel=10
 ```
 
+<a id="windows-msys2-ucrt64"></a>
 #### Windows (MSYS2 UCRT64)
 
-Install [MSYS2](https://www.msys2.org/), then from a UCRT64 shell install the toolchain:
+安装 [MSYS2](https://www.msys2.org/)，然后在 UCRT64 终端安装工具链：
 
 ```sh
 pacman -S --needed \
@@ -95,54 +110,58 @@ pacman -S --needed \
     mingw-w64-ucrt-x86_64-python
 ```
 
-Then clone and build from the same UCRT64 shell; the helper selects the `x64-mingw-static` vcpkg triplet by default:
+随后在同一 UCRT64 终端克隆并构建；脚本默认选择 `x64-mingw-static` vcpkg triplet：
 
 ```sh
 git clone https://github.com/etorth/mir2x.git
-make b_mir2x && cd b_mir2x
+mkdir b_mir2x && cd b_mir2x
 python3 /path/to/mir2x/build.py --build-dir=/path/to/b_mir2x --parallel=10
 ```
 
-#### Helper script options
+<a id="helper-script-options"></a>
+#### 构建脚本选项
 
-Builds are incremental by default: rerunning the same command keeps `<build-dir>/build`, including CMake object files, `vcpkg_installed`, and the default assets clone. Use `--fresh` only when you want a real clean build: it deletes `<build-dir>/build`, including `vcpkg_installed` and `<build-dir>/build/assets/mir2x_assets`, so vcpkg dependencies are reinstalled/rebuilt and the default assets are cloned again.
+默认执行增量构建：重复运行同一命令会保留 `<build-dir>/build`，包括 CMake 对象文件、`vcpkg_installed` 和默认资源克隆。只有确实需要全新构建时才使用 `--fresh`：它会删除整个 `<build-dir>/build`，包括 `vcpkg_installed` 和 `<build-dir>/build/assets/mir2x_assets`，之后依赖需要重新安装或编译，默认资源也需要重新克隆。
 
-Install-time client/server resource packing always runs. If `--assets-path` is omitted, the CMake build clones `https://github.com/etorth/mir2x_assets.git` to `<build-dir>/build/assets/mir2x_assets` during the build stage. To use an existing assets checkout, pass:
+安装阶段始终执行客户端和服务端资源打包。省略 `--assets-path` 时，CMake 会在构建阶段将 `https://github.com/etorth/mir2x_assets.git` 克隆到 `<build-dir>/build/assets/mir2x_assets`。要使用已有资源仓库，可指定：
 
 ```sh
 /path/to/mir2x/build.py [options] --assets-path=/path/to/mir2x_assets
 ```
 
-Other useful options:
+其他常用选项：
 
-- `--c-compiler=<cc> --cxx-compiler=<cxx>` selects a compiler for both vcpkg ports and mir2x targets (enables `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` internally).
-- `--parallel=<N>` controls build parallelism.
-- `--verbose` shows detailed CMake/vcpkg command output.
-### First time run
-To start the monoserver, find a linux machine to host the server, I tried to host it on ```Oracle Cloud Infrastructure```, it works perfectly with the ```always-free``` plan. Click menu server/launch to start the service before start client:
+- `--c-compiler=<cc> --cxx-compiler=<cxx>` 为 vcpkg ports 和 mir2x 构建目标选择编译器，内部会启用 `VCPKG_CHAINLOAD_TOOLCHAIN_FILE`。
+- `--parallel=<N>` 控制构建并行度。
+- `--verbose` 显示详细的 CMake/vcpkg 命令输出。
+
+<a id="first-time-run"></a>
+### 首次运行
+单节点服务端可以部署在 Linux 机器上，项目作者曾使用 `Oracle Cloud Infrastructure` 的 `always-free` 方案。启动客户端之前，需要通过服务端菜单 `server/launch` 或启动参数启动服务：
 
 ```sh
 cd b_mir2x/install/server
 ./server --auto-launch
 ```
 
-Start client, currently you can use default account (id = test, pwd = 123456) to try it:
+启动客户端；当前可以使用默认账号（账号 `test`，密码 `123456`）进行尝试：
 
 ```sh
 cd b_mir2x/install/client
 ./client --server-ip=localhost --auto-login=test:123456
 ```
 
-### Packages
+<a id="packages"></a>
+### 开源依赖
 
-mir2x uses a number of open source projects to work properly, and of course itself is open source with a public repository on github, please remind me if I missed anything.
+mir2x 使用以下开源项目，自身也在 GitHub 上开源；如有遗漏，欢迎提醒。
 
-* [SDL3](https://www.libsdl.org/) - A cross-platform development library designed to provide a hardware abstraction layer.
-* [FLTK](http://www.fltk.org) - A cross-platform C++ GUI toolkit for UNIX®/Linux® (X11), Microsoft® Windows®, and MacOS® X.
-* [asio](http://www.think-async.com/) - A cross-platform C++ library for network and low-level I/O programming.
-* [g3log](https://github.com/KjellKod/g3log) - An asynchronous, "crash safe", logger that is easy to use.
-* [lua](https://www.lua.org/) - A powerful, efficient, lightweight, embeddable scripting language.
-* [sol2](https://github.com/ThePhD/sol2) - A fast, simple C++ and Lua binding.
-* [tinyxml2](http://www.grinninglizard.com/tinyxml2/) - A simple, small, efficient, C++ XML parser.
-* [utf8-cpp](http://utfcpp.sourceforge.net/) - A simple, portable and lightweigt C++ library for UTF-8 string handling.
-* [SQLiteCpp](https://github.com/SRombauts/SQLiteCpp) - SQLiteC++ (SQLiteCpp) is a smart and easy to use C++ SQLite3 wrapper.
+* [SDL3](https://www.libsdl.org/)：提供硬件抽象层的跨平台开发库。
+* [FLTK](http://www.fltk.org)：支持 UNIX/Linux（X11）、Windows 和 macOS 的跨平台 C++ GUI 工具包。
+* [asio](http://www.think-async.com/)：用于网络和底层 I/O 编程的跨平台 C++ 库。
+* [g3log](https://github.com/KjellKod/g3log)：易于使用的异步日志库，支持崩溃安全处理。
+* [lua](https://www.lua.org/)：高效、轻量、可嵌入的脚本语言。
+* [sol2](https://github.com/ThePhD/sol2)：C++ 和 Lua 之间的绑定库。
+* [tinyxml2](http://www.grinninglizard.com/tinyxml2/)：小巧高效的 C++ XML 解析器。
+* [utf8-cpp](http://utfcpp.sourceforge.net/)：用于处理 UTF-8 字符串的可移植 C++ 库。
+* [SQLiteCpp](https://github.com/SRombauts/SQLiteCpp)：C++ SQLite3 封装库。

@@ -1,16 +1,19 @@
-# Manual: How to Install and Run Docker in WSL (Ubuntu 26.04)
+<a id="manual-how-to-install-and-run-docker-in-wsl-ubuntu-2604"></a>
+# 手册：在 WSL（Ubuntu 26.04）中安装和运行 Docker
 
-This manual guides you through installing Docker natively inside an Ubuntu 26.04 WSL (Windows Subsystem for Linux) environment and launching a pristine, isolated non-root user sandbox for testing installation and build scripts.
+本手册介绍如何在 Ubuntu 26.04 WSL（适用于 Linux 的 Windows 子系统）环境中直接安装 Docker，并启动一个干净、隔离的非 root 用户沙箱，用于测试安装和构建脚本。
 
 ---
 
-## Part 1: Installing Docker Engine Natively in WSL
+<a id="part-1-installing-docker-engine-natively-in-wsl"></a>
+## 一、在 WSL 中直接安装 Docker Engine
 
-Because WSL 2 runs on a real Linux kernel, you can install the lightweight Docker Engine directly inside your distro via `apt` without needing Windows-based desktop applications.
+WSL 2 运行 Linux 内核，因此可以通过 `apt` 直接在发行版内安装 Docker Engine，无需依赖 Windows 桌面应用。
 
-### Step 1: Update Packages & Install Prerequisites
+<a id="step-1-update-packages--install-prerequisites"></a>
+### 步骤 1：更新软件包并安装前置依赖
 
-Open your Ubuntu WSL terminal and run:
+打开 Ubuntu WSL 终端并执行：
 
 ```bash
 sudo apt update
@@ -18,7 +21,8 @@ sudo apt install -y ca-certificates curl gnupg
 
 ```
 
-### Step 2: Add Docker's Official GPG Key and Repository
+<a id="step-2-add-dockers-official-gpg-key-and-repository"></a>
+### 步骤 2：添加 Docker 官方 GPG 密钥和软件源
 
 ```bash
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -32,7 +36,8 @@ echo \
 
 ```
 
-### Step 3: Install Docker Engine Components
+<a id="step-3-install-docker-engine-components"></a>
+### 步骤 3：安装 Docker Engine 组件
 
 ```bash
 sudo apt update
@@ -40,9 +45,10 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 
 ```
 
-### Step 4: Manage Background Services
+<a id="step-4-manage-background-services"></a>
+### 步骤 4：管理后台服务
 
-WSL does not always boot system services automatically. You must start the Docker daemon manually when beginning a work session:
+WSL 不一定自动启动系统服务。如果 Docker 守护进程尚未启动，可在工作会话开始时手动启动：
 
 ```bash
 sudo service docker start
@@ -51,20 +57,23 @@ sudo service docker start
 
 ---
 
-## Part 2: Configuring Non-Sudo Permissions
+<a id="part-2-configuring-non-sudo-permissions"></a>
+## 二、配置无 sudo 执行权限
 
-By default, the Docker Unix socket is owned by `root`. To avoid typing `sudo` before every single `docker` command, assign your WSL user to the docker security group.
+默认情况下，Docker Unix socket 归 `root` 所有。要避免每次运行 `docker` 命令都输入 `sudo`，可以将 WSL 用户加入 `docker` 用户组。**该组成员实际上具有接近 root 的权限**，只应授予可信用户。
 
-### Step 1: Add User to the Group
+<a id="step-1-add-user-to-the-group"></a>
+### 步骤 1：将用户加入用户组
 
 ```bash
 sudo usermod -aG docker $USER
 
 ```
 
-### Step 2: Refresh Group Assignments
+<a id="step-2-refresh-group-assignments"></a>
+### 步骤 2：刷新用户组
 
-Instead of restarting your whole WSL instance, force your current terminal session to reload your group memberships immediately:
+无需重启整个 WSL 实例，可让当前终端会话立即重新加载用户组：
 
 ```bash
 newgrp docker
@@ -73,15 +82,17 @@ newgrp docker
 
 ---
 
-## Part 3: Launching the Sandbox Environment
+<a id="part-3-launching-the-sandbox-environment"></a>
+## 三、启动沙箱环境
 
-Official Ubuntu Docker images are stripped down to minimize size. Out of the box, they **do not include the `sudo` package**, and the default `ubuntu` user has no password assigned (meaning commands like `su` or `sudo` will fail with authentication errors).
+官方 Ubuntu Docker 镜像为减小体积进行了精简，默认**不包含 `sudo` 软件包**；默认 `ubuntu` 用户也没有设置密码，因此相关 `su` 或 `sudo` 操作可能因认证失败而无法执行。
 
-To bypass this roadblock, use the automated command below. It spins up the container as root momentarily to install `sudo`, grants the standard `ubuntu` user passwordless administrative privileges, maps your current directory, and drops you into a non-root environment.
+下面的命令会先以 root 身份启动容器并安装 `sudo`，为普通 `ubuntu` 用户授予免密码管理权限，挂载当前目录，然后进入非 root 环境。此配置只适合可信的本地测试。
 
-### The Comprehensive Test Command
+<a id="the-comprehensive-test-command"></a>
+### 完整测试命令
 
-Navigate (`cd`) to your project folder inside WSL and execute:
+在 WSL 中进入项目目录，然后执行：
 
 ```bash
 docker run --rm -it \
@@ -91,41 +102,44 @@ docker run --rm -it \
 
 ```
 
-### Command Parameter Breakdown
+<a id="command-parameter-breakdown"></a>
+### 命令参数说明
 
-* `--rm`: Automatically deletes the container and its internal file modifications immediately upon exit, keeping your machine completely free of leftover junk.
-* `-it`: Keeps the terminal window interactive, connecting your keyboard input directly to the shell inside the container.
-* `-v "$(pwd)":/workspace`: Creates a volume mount portal linking your host WSL directory (`$(pwd)`) to the `/workspace` folder inside the container.
-* `-w /workspace`: Sets the default container working directory, executing an automatic `cd /workspace` so you start exactly where your files reside.
-* `bash -c "..."`: Safely handles initialization under the root user profile before dropping terminal permissions down to the target test account.
+* `--rm`：退出后自动删除容器及其内部文件变更，**不会删除或还原挂载目录中的文件变更**。
+* `-it`：保持终端交互，将键盘输入连接到容器内的 shell。
+* `-v "$(pwd)":/workspace`：将宿主机 WSL 当前目录（`$(pwd)`）挂载到容器的 `/workspace`。
+* `-w /workspace`：设置容器默认工作目录，使进程从 `/workspace` 开始。
+* `bash -c "..."`：先以 root 身份完成初始化，再切换到目标测试账号。
 
 ---
 
-## Part 4: Testing Inside the Sandbox
+<a id="part-4-testing-inside-the-sandbox"></a>
+## 四、在沙箱中测试
 
-Once execution finishes, you may see some warning message like:
+命令启动后可能出现类似警告：
 
 ```text
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 ```
 
-You can ignore the warnings, and your prompt will change to:
+这些警告可以忽略，提示符会变为：
 
 ```text
 ubuntu@<container_id>:/workspace$
 
 ```
 
-You are now a normal, non-root user sitting inside a clean environment, ready to evaluate permission limits and execution safety.
+此时已作为普通非 root 用户进入干净环境，可以检查权限限制和脚本执行情况。
 
-### Verification Checkmarks
+<a id="verification-checkmarks"></a>
+### 验证项目
 
-1. **Identity Check:** Type `whoami`. The output will read `ubuntu`.
-2. **Elevated Execution:** Run `sudo apt update`. The package lists will update cleanly without prompting you for a password.
-3. **File Synchronization:** Any changes made to code files or dependencies inside `/workspace` will reflect instantly on your host hard drive.
+1. **身份检查**：输入 `whoami`，输出应为 `ubuntu`。
+2. **提权执行**：运行 `sudo apt update`，应无需输入密码即可更新软件包列表。
+3. **文件同步**：对 `/workspace` 中代码或依赖的修改会立即反映到宿主机目录。
 
-To destroy the sandbox and return to your primary terminal environment, simply type:
+要删除容器并返回原终端环境，输入：
 
 ```bash
 exit
