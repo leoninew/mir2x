@@ -1,0 +1,30 @@
+server:
+  host: 127.0.0.1
+  port: 8000
+  reload: false
+
+desktop:
+  title: Mir2x Gameplay Workbench
+  width: 1200
+  height: 800
+  min_width: 800
+  min_height: 600
+  debug: false
+  frontend_url: http://localhost:8081
+
+greeting:
+  prefix: Hello
+
+static:
+  directory: ./static
+
+logging:
+  body:
+    limit: 4096
+  request:
+    begin: "Request begin request_id=%s method=%s path=%s"
+    body: "Request body request_id=%s body=%s"
+    end: "Request end request_id=%s method=%s path=%s status=%d duration_ms=%d"
+    failed: "Request failed request_id=%s method=%s path=%s status=%d duration_ms=%d"
+  response:
+    body: "Response body request_id=%s body=%s"
