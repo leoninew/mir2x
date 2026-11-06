@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "monster_id": 110,
+  "monster_name": "羊",
+  "items": [
+    {
+      "item_id": 194,
+      "item_name": "羊肉",
+      "group": 0,
+      "prob_recip": 1,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 194,
+      "item_name": "羊肉",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

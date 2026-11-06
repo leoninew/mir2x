@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "map_id": 348,
+  "map_name": "北部天桥1_D445",
+  "groups": [
+    {
+      "monster_id": 87,
+      "monster_name": "僵尸1",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 89,
+      "monster_name": "僧侣僵尸",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 92,
+      "monster_name": "僵尸3",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 95,
+      "monster_name": "僵尸4",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 98,
+      "monster_name": "僵尸5",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    }
+  ]
+}

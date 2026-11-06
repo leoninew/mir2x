@@ -1,0 +1,367 @@
+{
+  "schema_version": 1,
+  "monster_id": 204,
+  "monster_name": "赤血恶魔",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 3,
+      "repeat": 1,
+      "count": 450
+    },
+    {
+      "item_id": 6,
+      "item_name": "金创药（小）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 10,
+      "item_name": "魔法药（小）",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 8,
+      "item_name": "金创药（大）",
+      "group": 0,
+      "prob_recip": 30,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 12,
+      "item_name": "魔法药（大）",
+      "group": 0,
+      "prob_recip": 120,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1011,
+      "item_name": "指甲",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 479,
+      "item_name": "三眼手镯",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 503,
+      "item_name": "思贝儿手镯",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 555,
+      "item_name": "蓝翡翠项链",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 658,
+      "item_name": "放大镜",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 612,
+      "item_name": "竹笛",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 311,
+      "item_name": "沃玛头盔",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 782,
+      "item_name": "重盔甲（男）",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 790,
+      "item_name": "重盔甲（女）",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 810,
+      "item_name": "魔法长袍（男）",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 817,
+      "item_name": "魔法长袍（女）",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 798,
+      "item_name": "灵魂战衣（男）",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 804,
+      "item_name": "灵魂战衣（女）",
+      "group": 0,
+      "prob_recip": 750,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 394,
+      "item_name": "巨龙戒指",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 367,
+      "item_name": "火玉戒指",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 351,
+      "item_name": "天鸣戒指",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 453,
+      "item_name": "金手镯",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 467,
+      "item_name": "死神手套",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 449,
+      "item_name": "幽灵手套",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 631,
+      "item_name": "荣耀项链",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 670,
+      "item_name": "愤怒之钟",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 590,
+      "item_name": "莲花宝镜",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 558,
+      "item_name": "幽灵项链",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1040,
+      "item_name": "五彩鞋",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 322,
+      "item_name": "斗笠",
+      "group": 0,
+      "prob_recip": 1500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 476,
+      "item_name": "黑皮手套",
+      "group": 0,
+      "prob_recip": 6000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 715,
+      "item_name": "震天项链",
+      "group": 0,
+      "prob_recip": 6000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 714,
+      "item_name": "银镜项链",
+      "group": 0,
+      "prob_recip": 6000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 663,
+      "item_name": "五彩项链",
+      "group": 0,
+      "prob_recip": 6000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 619,
+      "item_name": "遗魂项链",
+      "group": 0,
+      "prob_recip": 6000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 623,
+      "item_name": "勇士项链",
+      "group": 0,
+      "prob_recip": 6000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 320,
+      "item_name": "天藤头盔",
+      "group": 0,
+      "prob_recip": 6000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 438,
+      "item_name": "虹魔戒指",
+      "group": 0,
+      "prob_recip": 100000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 736,
+      "item_name": "虹魔项链",
+      "group": 0,
+      "prob_recip": 100000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 540,
+      "item_name": "虹魔手镯",
+      "group": 0,
+      "prob_recip": 100000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 560,
+      "item_name": "绿色项链",
+      "group": 0,
+      "prob_recip": 100000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 665,
+      "item_name": "恶魔铃铛",
+      "group": 0,
+      "prob_recip": 100000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 621,
+      "item_name": "灵魂项链",
+      "group": 0,
+      "prob_recip": 100000,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

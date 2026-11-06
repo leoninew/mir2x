@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "map_id": 156,
+  "map_name": "半兽洞穴1层_D001",
+  "groups": [
+    {
+      "monster_id": 61,
+      "monster_name": "洞蛆",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 150,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 46,
+      "monster_name": "蝎子",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 150,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 52,
+      "monster_name": "骷髅",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 150,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 53,
+      "monster_name": "骷髅0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 2,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 56,
+      "monster_name": "骷髅战士",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 150,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 57,
+      "monster_name": "骷髅战士0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 2,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 60,
+      "monster_name": "骷髅精灵",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "map_id": 465,
+  "map_name": "北部蚂蚁洞穴1层4_D8101",
+  "groups": [
+    {
+      "monster_id": 27,
+      "monster_name": "劳动蚂蚁",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 28,
+      "monster_name": "劳动蚂蚁0",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 50,
+          "h": 50,
+          "count": 2,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 183,
+      "monster_name": "爆毒蚂蚁",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 184,
+      "monster_name": "爆毒蚂蚁0",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 50,
+          "h": 50,
+          "count": 2,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 15,
+      "monster_name": "盔甲蚂蚁0",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 50,
+          "h": 50,
+          "count": 2,
+          "time": 3600
+        },
+        {
+          "x": 100,
+          "y": 100,
+          "w": 50,
+          "h": 50,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 14,
+      "monster_name": "蚂蚁将军",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 90,
+          "h": 90,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    },
+    {
+      "monster_id": 24,
+      "monster_name": "蚂蚁战士",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 25,
+      "monster_name": "蚂蚁战士0",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    }
+  ]
+}

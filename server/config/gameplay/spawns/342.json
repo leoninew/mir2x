@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "map_id": 342,
+  "map_name": "北部废矿南面洞穴_D436",
+  "groups": [
+    {
+      "monster_id": 87,
+      "monster_name": "僵尸1",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 89,
+      "monster_name": "僧侣僵尸",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 90,
+      "monster_name": "僵尸20",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 92,
+      "monster_name": "僵尸3",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 93,
+      "monster_name": "僵尸30",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 95,
+      "monster_name": "僵尸4",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 96,
+      "monster_name": "僵尸40",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 98,
+      "monster_name": "僵尸5",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 100,
+      "monster_name": "尸王",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 90,
+          "h": 90,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    }
+  ]
+}

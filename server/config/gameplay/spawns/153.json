@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "map_id": 153,
+  "map_name": "暗黑封印_B139_001",
+  "groups": [
+    {
+      "monster_id": 166,
+      "monster_name": "祖玛教主62",
+      "loc": [
+        {
+          "x": 19,
+          "y": 24,
+          "w": 1,
+          "h": 1,
+          "count": 1,
+          "time": 300
+        }
+      ]
+    }
+  ]
+}

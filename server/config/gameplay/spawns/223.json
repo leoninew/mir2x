@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "map_id": 223,
+  "map_name": "潘夜神殿_D1116",
+  "groups": [
+    {
+      "monster_id": 241,
+      "monster_name": "守卫右狮",
+      "loc": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 90,
+          "h": 90,
+          "count": 20,
+          "time": 300
+        }
+      ]
+    },
+    {
+      "monster_id": 237,
+      "monster_name": "潘夜右护卫",
+      "loc": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 90,
+          "h": 90,
+          "count": 70,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 240,
+      "monster_name": "潘夜右护卫95",
+      "loc": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 90,
+          "h": 90,
+          "count": 70,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 242,
+      "monster_name": "潘夜左护卫",
+      "loc": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 90,
+          "h": 90,
+          "count": 70,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 245,
+      "monster_name": "潘夜左护卫94",
+      "loc": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 90,
+          "h": 90,
+          "count": 70,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 266,
+      "monster_name": "潘夜牛魔王",
+      "loc": [
+        {
+          "x": 51,
+          "y": 51,
+          "w": 1,
+          "h": 1,
+          "count": 1,
+          "time": 18000
+        }
+      ]
+    }
+  ]
+}

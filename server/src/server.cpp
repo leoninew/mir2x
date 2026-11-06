@@ -42,6 +42,22 @@ extern MainWindow *g_mainWindow;
 extern ServerArgParser *g_serverArgParser;
 extern ServerConfigureWindow *g_serverConfigureWindow;
 
+void Server::initializeGameplayConfig(const std::filesystem::path &root)
+{
+    if(m_gameplayConfig){
+        throw std::logic_error("gameplay configuration already initialized");
+    }
+    m_gameplayConfig.emplace(GameplayConfig::load(root));
+}
+
+const GameplayConfig &Server::gameplayConfig() const
+{
+    if(!m_gameplayConfig){
+        throw std::logic_error("gameplay configuration not initialized");
+    }
+    return *m_gameplayConfig;
+}
+
 void Server::addFatal(const char *format, ...)
 {
     std::string s;

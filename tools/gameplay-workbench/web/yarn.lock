@@ -3762,6 +3762,36 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mir2x-gameplay-workbench-web@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "mir2x-gameplay-workbench-web@workspace:."
+  dependencies:
+    "@tailwindcss/vite": "npm:^4.2.2"
+    "@testing-library/vue": "npm:^8.1.0"
+    "@tsconfig/node22": "npm:^22.0.0"
+    "@types/node": "npm:^22.10.0"
+    "@vitejs/plugin-vue": "npm:^5.2.0"
+    "@vue/compiler-dom": "npm:^3.5.0"
+    "@vue/eslint-config-typescript": "npm:^14.3.0"
+    "@vue/test-utils": "npm:^2.4.0"
+    "@vue/tsconfig": "npm:^0.7.0"
+    axios: "npm:^1.20.0"
+    eslint: "npm:^9.17.0"
+    eslint-plugin-vue: "npm:^9.32.0"
+    jsdom: "npm:^25.0.0"
+    pinia: "npm:^3.0.3"
+    prettier: "npm:^3.4.0"
+    reka-ui: "npm:^2.9.7"
+    tailwindcss: "npm:^4.2.2"
+    typescript: "npm:^5.7.0"
+    vite: "npm:^6.0.0"
+    vitest: "npm:^2.1.0"
+    vue: "npm:^3.5.0"
+    vue-router: "npm:^4.5.1"
+    vue-tsc: "npm:^2.2.0"
+  languageName: unknown
+  linkType: soft
+
 "mitt@npm:^3.0.1":
   version: 3.0.1
   resolution: "mitt@npm:3.0.1"
@@ -4973,36 +5003,6 @@ __metadata:
   checksum: 10c0/6c5159c064bc0a8628510bea1f55083a9ad03de35150e1d9ba5811b4e2c3fbc2a4c4d55fbe2d62fcad25c48771f62656e1b47ea5b072386914945707f97d7d65
   languageName: node
   linkType: hard
-
-"vue-vite-project-structure@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "vue-vite-project-structure@workspace:."
-  dependencies:
-    "@tailwindcss/vite": "npm:^4.2.2"
-    "@testing-library/vue": "npm:^8.1.0"
-    "@tsconfig/node22": "npm:^22.0.0"
-    "@types/node": "npm:^22.10.0"
-    "@vitejs/plugin-vue": "npm:^5.2.0"
-    "@vue/compiler-dom": "npm:^3.5.0"
-    "@vue/eslint-config-typescript": "npm:^14.3.0"
-    "@vue/test-utils": "npm:^2.4.0"
-    "@vue/tsconfig": "npm:^0.7.0"
-    axios: "npm:^1.20.0"
-    eslint: "npm:^9.17.0"
-    eslint-plugin-vue: "npm:^9.32.0"
-    jsdom: "npm:^25.0.0"
-    pinia: "npm:^3.0.3"
-    prettier: "npm:^3.4.0"
-    reka-ui: "npm:^2.9.7"
-    tailwindcss: "npm:^4.2.2"
-    typescript: "npm:^5.7.0"
-    vite: "npm:^6.0.0"
-    vitest: "npm:^2.1.0"
-    vue: "npm:^3.5.0"
-    vue-router: "npm:^4.5.1"
-    vue-tsc: "npm:^2.2.0"
-  languageName: unknown
-  linkType: soft
 
 "vue@npm:^3.5.0":
   version: 3.5.42

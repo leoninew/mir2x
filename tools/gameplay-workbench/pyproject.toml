@@ -46,6 +46,18 @@ packages = ["src/mir2x_workbench"]
 [tool.hatch.build.targets.wheel.force-include]
 "config/config.yaml" = "mir2x_workbench/config.yaml"
 
+[tool.hatch.build.hooks.custom]
+path = "build_hooks.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src", "/config/config.yaml", "/web/src", "/web/tests", "/web/index.html",
+  "/web/*.json", "/web/*.ts", "/web/yarn.lock", "/web/.yarnrc.yml", "/tests",
+  "/pyproject.toml", "/uv.lock", "/build_hooks.py", "/build_desktop.py",
+  "/CMakeLists.txt", "/README.md", "/Makefile",
+]
+exclude = ["/.env*", "/web/node_modules", "/web/.yarn"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

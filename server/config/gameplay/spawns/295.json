@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "map_id": 295,
+  "map_name": "诺玛勇士墓穴_D1606",
+  "groups": [
+    {
+      "monster_id": 352,
+      "monster_name": "诺玛司令",
+      "loc": [
+        {
+          "x": 23,
+          "y": 26,
+          "w": 50,
+          "h": 50,
+          "count": 8,
+          "time": 1800
+        }
+      ]
+    },
+    {
+      "monster_id": 350,
+      "monster_name": "诺玛抛石兵",
+      "loc": [
+        {
+          "x": 23,
+          "y": 26,
+          "w": 50,
+          "h": 50,
+          "count": 8,
+          "time": 1800
+        }
+      ]
+    },
+    {
+      "monster_id": 357,
+      "monster_name": "诺玛教主",
+      "loc": [
+        {
+          "x": 31,
+          "y": 41,
+          "w": 1,
+          "h": 1,
+          "count": 1,
+          "time": 14400
+        }
+      ]
+    },
+    {
+      "monster_id": 355,
+      "monster_name": "诺玛斧兵",
+      "loc": [
+        {
+          "x": 23,
+          "y": 26,
+          "w": 50,
+          "h": 50,
+          "count": 8,
+          "time": 1800
+        }
+      ]
+    },
+    {
+      "monster_id": 348,
+      "monster_name": "诺玛装甲兵",
+      "loc": [
+        {
+          "x": 23,
+          "y": 26,
+          "w": 50,
+          "h": 50,
+          "count": 8,
+          "time": 1800
+        }
+      ]
+    },
+    {
+      "monster_id": 346,
+      "monster_name": "诺玛骑兵",
+      "loc": [
+        {
+          "x": 23,
+          "y": 26,
+          "w": 50,
+          "h": 50,
+          "count": 8,
+          "time": 1800
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "map_id": 527,
+  "map_name": "参谋室_D9031",
+  "groups": [
+    {
+      "monster_id": 177,
+      "monster_name": "爆毒神魔",
+      "loc": [
+        {
+          "x": 10,
+          "y": 10,
+          "w": 5,
+          "h": 5,
+          "count": 1,
+          "time": 1200
+        }
+      ]
+    }
+  ]
+}

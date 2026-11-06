@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "map_id": 262,
+  "map_name": "西部石矿2层_D1422",
+  "groups": [
+    {
+      "monster_id": 87,
+      "monster_name": "僵尸1",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 88,
+      "monster_name": "僵尸10",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 180,
+          "h": 180,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 89,
+      "monster_name": "僧侣僵尸",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 90,
+      "monster_name": "僵尸20",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 180,
+          "h": 180,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 92,
+      "monster_name": "僵尸3",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 95,
+      "monster_name": "僵尸4",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 98,
+      "monster_name": "僵尸5",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 61,
+      "monster_name": "洞蛆",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 55,
+          "time": 600
+        }
+      ]
+    }
+  ]
+}

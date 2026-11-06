@@ -64,7 +64,6 @@ struct MonsterRecord
 
     const int hp  = 0;
     const int mp  = 0;
-    const int exp = 0;
 
     const int  dc[2] = {0, 0};
     const int  mc[2] = {0, 0};

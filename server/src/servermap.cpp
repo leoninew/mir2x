@@ -22,6 +22,7 @@
 #include "rotatecoord.hpp"
 #include "serverargparser.hpp"
 #include "serverconfigurewindow.hpp"
+#include "gameplayspawn.hpp"
 
 extern MapBinDB *g_mapBinDB;
 extern Server *g_server;
@@ -39,6 +40,11 @@ ServerMap::LuaThreadRunner::LuaThreadRunner(ServerMap *serverMapPtr)
     bindFunction("getMapID", [this]() -> int
     {
         return to_d(getServerMap()->ID());
+    });
+
+    bindFunction("getMapSpawnConfig", [this](sol::this_state state)
+    {
+        return makeMapSpawnTable(sol::state_view(state), g_server->gameplayConfig().mapSpawns(getServerMap()->ID()));
     });
 
     bindFunction("getMapName", [this]() -> std::string

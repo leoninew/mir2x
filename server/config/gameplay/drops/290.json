@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "monster_id": 290,
+  "monster_name": "红甲虫",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 1,
+      "repeat": 1,
+      "count": 40000
+    },
+    {
+      "item_id": 167,
+      "item_name": "魔晶石",
+      "group": 0,
+      "prob_recip": 10000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 15,
+      "item_name": "强效太阳水",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 8,
+      "item_name": "金创药（大）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 12,
+      "item_name": "魔法药（大）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 58,
+      "item_name": "攻击神水（小）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 49,
+      "item_name": "自然神水（小）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 44,
+      "item_name": "灵魂神水（小）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 40,
+      "item_name": "疾风神水（小）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 62,
+      "item_name": "体力强效神水（小）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 54,
+      "item_name": "魔法强效神水（小）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 29,
+      "item_name": "祝福油",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 24,
+      "item_name": "武器强化油",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

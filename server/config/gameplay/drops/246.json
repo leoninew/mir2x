@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "monster_id": 246,
+  "monster_name": "腐蚀人鬼",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 4,
+      "repeat": 1,
+      "count": 1200
+    },
+    {
+      "item_id": 6,
+      "item_name": "金创药（小）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 10,
+      "item_name": "魔法药（小）",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 11,
+      "item_name": "魔法药（中）",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1026,
+      "item_name": "潘夜珠",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 59,
+      "item_name": "攻击神水（中）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 50,
+      "item_name": "自然神水（中）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 45,
+      "item_name": "灵魂神水（中）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 41,
+      "item_name": "疾风神水（中）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 63,
+      "item_name": "体力强效神水（中）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 55,
+      "item_name": "魔力强效神水（中）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

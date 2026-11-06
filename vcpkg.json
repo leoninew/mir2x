@@ -13,6 +13,7 @@
     "libpopcnt",
     "lua",
     "lz4",
+    "nlohmann-json",
     "parallel-hashmap",
     "sdl3",
     "sdl3-gfx",

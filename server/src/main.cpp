@@ -57,6 +57,14 @@ int main(int argc, char *argv[])
 
         g_mir2xLog  = new Log("mir2x-server-v0.1");
         g_server    = new Server();
+        try{
+            g_server->initializeGameplayConfig("config/gameplay");
+        }
+        catch(const std::exception &e){
+            g_mir2xLog->addLog(LOGTYPE_WARNING, "Invalid gameplay configuration: %s", e.what());
+            std::fprintf(stderr, "Invalid gameplay configuration: %s\n", e.what());
+            return EXIT_FAILURE;
+        }
         g_mapBinDB  = new MapBinDB();
         g_actorPool = new ActorPool(g_serverArgParser->actorPoolThread);
 

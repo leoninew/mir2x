@@ -8,14 +8,13 @@ RUFF_CHECK_ARGS := $(if $(filter 1,$(fix)),--fix,)
 RUFF_FORMAT_ARGS := $(if $(filter 1,$(fix)),.,--check .)
 
 ifeq ($(OS),Windows_NT)
-PYINSTALLER_DATA_SEPARATOR := ;
 PROJECT_ROOT := $(shell cygpath -w "$(CURDIR)")
 else
-PYINSTALLER_DATA_SEPARATOR := :
 PROJECT_ROOT := $(CURDIR)
 endif
+NATIVE_BUILD_DIR ?= $(PROJECT_ROOT)/../../build
 
-.PHONY: help deps check test binary desktop web webapi
+.PHONY: help deps check test binary package install desktop web webapi
 
 help:
 	@printf "Available targets:\n"
@@ -24,7 +23,8 @@ help:
 	@printf "  make check fix=1      Apply backend and frontend lint and format fixes\n"
 	@printf "  make desktop          Open the native window with built web assets\n"
 	@printf "  make desktop dev=1    Start FastAPI and Vite in desktop development mode\n"
-	@printf "  make binary           Build the current platform PyInstaller package\n"
+	@printf "  make binary           Build and install the workbench through the native CMake tree\n"
+	@printf "  make package          Build the workbench package without installing\n"
 	@printf "  make web              Start the Vite development server on port 8081\n"
 	@printf "  make webapi           Start the FastAPI development server on port 8000\n"
 	@printf "  profile=dev           Select .env.dev (default); use profile=qa for .env.qa\n"
@@ -44,9 +44,13 @@ test:
 	$(MAKE) -C web test
 
 binary:
-	uv sync --extra desktop --all-groups --locked
-	cd web && corepack yarn install --immutable && corepack yarn build
-	uv run --locked --no-sync pyinstaller --noconfirm --clean --windowed --onedir --name Mir2xWorkbench --paths src --collect-all webview --hidden-import webview.platforms.winforms --add-data "$(PROJECT_ROOT)/web/dist$(PYINSTALLER_DATA_SEPARATOR)static" --add-data "$(PROJECT_ROOT)/src/mir2x_workbench/logging.yaml$(PYINSTALLER_DATA_SEPARATOR)mir2x_workbench" --add-data "$(PROJECT_ROOT)/config/config.yaml$(PYINSTALLER_DATA_SEPARATOR)mir2x_workbench" --workpath build/pyinstaller --specpath build/pyinstaller src/mir2x_workbench/desktop.py
+	uv run --locked --extra desktop python build_desktop.py --build-dir "$(NATIVE_BUILD_DIR)"
+
+install:
+	cmake --install "$(NATIVE_BUILD_DIR)" --component workbench
+
+package:
+	uv run --locked --extra desktop python build_desktop.py --build-dir "$(NATIVE_BUILD_DIR)" --no-install
 
 desktop: export MIR2X_WORKBENCH_PROFILE = $(profile)
 desktop:

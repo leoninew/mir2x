@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "monster_id": 295,
+  "monster_name": "圣诞树",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 100,
+      "repeat": 1,
+      "count": 15000
+    },
+    {
+      "item_id": 6,
+      "item_name": "金创药（小）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 10,
+      "item_name": "魔法药（小）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 11,
+      "item_name": "魔法药（中）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 8,
+      "item_name": "金创药（大）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 12,
+      "item_name": "魔法药（大）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 9,
+      "item_name": "金创药（特）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 13,
+      "item_name": "魔法药（特）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 3,
+      "count": 1
+    },
+    {
+      "item_id": 986,
+      "item_name": "雪球",
+      "group": 0,
+      "prob_recip": 1000,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

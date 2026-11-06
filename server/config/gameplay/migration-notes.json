@@ -1,0 +1,6682 @@
+{
+  "schema_version": 1,
+  "source_revision": "97d7fd049d024f602c6782f9d5ae6124bcf152fa",
+  "records": [
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 89,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 1,
+        "count": 250,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 90,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "金创药（小）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 6,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 91,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "魔法药（小）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 10,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 92,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "金创药（中）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 7,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 93,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "魔法药（中）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 11,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 94,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "僵尸骨头",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 952,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 95,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "基本剑术",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 198,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 96,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "攻杀剑术",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 199,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 97,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "刺杀剑术",
+        "group": 0,
+        "prob_recip": 2500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 200,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 98,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "半月弯刀",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 201,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 99,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "火球术",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 206,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 100,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "霹雳掌",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 222,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 101,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "冰月神掌",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 220,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 102,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "风掌",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 224,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 103,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "抗拒火环",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 208,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 104,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "诱惑之光",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 207,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 105,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "瞬息移动",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 210,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 106,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "大火球",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 211,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 107,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "雷电术",
+        "group": 0,
+        "prob_recip": 2500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 209,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 108,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "冰月震天",
+        "group": 0,
+        "prob_recip": 2500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 221,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 109,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "击风",
+        "group": 0,
+        "prob_recip": 2500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 227,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 110,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "地狱火",
+        "group": 0,
+        "prob_recip": 2500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 212,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 111,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "疾光电影",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 214,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 112,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "冰沙掌",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 223,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 113,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "风震天",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 226,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 114,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "火墙",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 215,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 115,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "治愈术",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 230,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 116,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "精神力战法",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 229,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 117,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "施毒术",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 231,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 118,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "灵魂火符",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 232,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 119,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "月魂断玉",
+        "group": 0,
+        "prob_recip": 1250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 242,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 120,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "召唤骷髅",
+        "group": 0,
+        "prob_recip": 2500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 235,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 121,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "隐身术",
+        "group": 0,
+        "prob_recip": 2500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 237,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 122,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "幽灵盾",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 233,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 123,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "集体隐身术",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 238,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 124,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "月魂灵波",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 243,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 125,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "神圣战甲术",
+        "group": 0,
+        "prob_recip": 5000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 234,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 126,
+      "raw": {
+        "monster_name": "僵尸",
+        "item_name": "回城卷",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 153,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 368,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 4,
+        "repeat": 1,
+        "count": 550,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 369,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 370,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "魔法药（大）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 12,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 371,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 372,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "魔法药（大）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 12,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 373,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "金创药（特）",
+        "group": 0,
+        "prob_recip": 30,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 9,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 374,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "魔法药（特）",
+        "group": 0,
+        "prob_recip": 120,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 13,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 375,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "震天魔印",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1106,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 376,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "黑皮手套",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 476,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 377,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "震天项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 715,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 378,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "银镜项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 714,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 379,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "五彩项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 663,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 380,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "遗魂项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 619,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 381,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "勇士项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 623,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 382,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "天藤头盔",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 320,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 383,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "幸运降妖除魔戒指",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 335,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 384,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "恶魔长袍（男）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 814,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 385,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "恶魔长袍（女）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 821,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 386,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "战神盔甲（男）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 785,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 387,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "战神盔甲（女）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 793,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 388,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "幽灵战衣（男）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 801,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 389,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "幽灵战衣（女）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 807,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 390,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "天极道衣（男）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 802,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 391,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "天极道衣（女）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 808,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 392,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "龙鳞战甲（男）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 786,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 393,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "龙鳞战甲（女）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 794,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 394,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "袁灵法衣（男）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 815,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 395,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "袁灵法衣（女）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 822,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 396,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "帝王戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 370,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 397,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "雷神戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 672,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 398,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "润神戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 337,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 399,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "阎罗手套",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 451,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 400,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "黑铁头盔",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 314,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 401,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "赤飞靴子",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1036,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 402,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "天掌靴子",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1035,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 403,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "行者帽",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 326,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 404,
+      "raw": {
+        "monster_name": "地牢女神",
+        "item_name": "霸龙头盔",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 325,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 405,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 3,
+        "repeat": 1,
+        "count": 1000,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 406,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "金创药（小）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 6,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 407,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "魔法药（小）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 10,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 408,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "金创药（中）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 7,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 409,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "魔法药（中）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 11,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 410,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "跳蚤皮",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1113,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 411,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "攻击神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 58,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 412,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "自然神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 49,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 413,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "灵魂神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 44,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 414,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "疾风神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 40,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 415,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "体力强效神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 62,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 416,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "魔法强效神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 54,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 417,
+      "raw": {
+        "monster_name": "多脚虫",
+        "item_name": "回城卷",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 153,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 582,
+      "raw": {
+        "monster_name": "威思而小虫",
+        "item_name": "金创药（小）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 6,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 583,
+      "raw": {
+        "monster_name": "威思而小虫",
+        "item_name": "魔法药（小）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 10,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1197,
+      "raw": {
+        "monster_name": "沃玛教主",
+        "item_name": "沃玛号角",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 81,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1204,
+      "raw": {
+        "monster_name": "沙漠威思而小虫",
+        "item_name": "金创药（小）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 6,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1205,
+      "raw": {
+        "monster_name": "沙漠威思而小虫",
+        "item_name": "魔法药（小）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 10,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1488,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 1,
+        "repeat": 1,
+        "count": 4000,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1489,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "强效太阳水",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 4,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 15,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1490,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 8,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1491,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "魔法药（大）",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 2,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 12,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1492,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "降魔",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 906,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1493,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "偃月",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 886,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1494,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "斩马刀",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 856,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1495,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "修罗",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 858,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1496,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "道德戒指",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 349,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1497,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "珊瑚戒指",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 392,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1498,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "金戒指",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 333,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1499,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "坚固手套",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 450,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1500,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "道士头盔",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 300,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1501,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "三眼手镯",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 479,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1502,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "思贝儿手镯",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 503,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1503,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "蓝翡翠项链",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 555,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1504,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "放大镜",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 658,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1505,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "竹笛",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 612,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1506,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "沃玛头盔",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 311,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1507,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "重盔甲（男）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 782,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1508,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "重盔甲（女）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 790,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1509,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "魔法长袍（男）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 810,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1510,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "魔法长袍（女）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 817,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1511,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "灵魂战衣（男）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 798,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1512,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "灵魂战衣（女）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 804,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1513,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "巨龙戒指",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 394,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1514,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "火玉戒指",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 367,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1515,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "天鸣戒指",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 351,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1516,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "金手镯",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 453,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1517,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "死神手套",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 467,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1518,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "幽灵手套",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 449,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1519,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "荣耀项链",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 631,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1520,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "愤怒之钟",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 670,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1521,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "莲花宝镜",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 590,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1522,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "五彩鞋",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1040,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1523,
+      "raw": {
+        "monster_name": "沙魔树魔",
+        "item_name": "斗笠",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 322,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1524,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 1,
+        "repeat": 1,
+        "count": 4000,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1525,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "强效太阳水",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 4,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 15,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1526,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 8,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1527,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "魔法药（大）",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 2,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 12,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1528,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "降魔",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 906,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1529,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "偃月",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 886,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1530,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "斩马刀",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 856,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1531,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "修罗",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 858,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1532,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "道德戒指",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 349,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1533,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "珊瑚戒指",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 392,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1534,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "金戒指",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 333,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1535,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "坚固手套",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 450,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1536,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "道士头盔",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 300,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1537,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "三眼手镯",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 479,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1538,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "思贝儿手镯",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 503,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1539,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "蓝翡翠项链",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 555,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1540,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "放大镜",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 658,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1541,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "竹笛",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 612,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1542,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "沃玛头盔",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 311,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1543,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "重盔甲（男）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 782,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1544,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "重盔甲（女）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 790,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1545,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "魔法长袍（男）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 810,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1546,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "魔法长袍（女）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 817,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1547,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "灵魂战衣（男）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 798,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1548,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "灵魂战衣（女）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 804,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1549,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "巨龙戒指",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 394,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1550,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "火玉戒指",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 367,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1551,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "天鸣戒指",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 351,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1552,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "金手镯",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 453,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1553,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "死神手套",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 467,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1554,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "幽灵手套",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 449,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1555,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "荣耀项链",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 631,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1556,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "愤怒之钟",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 670,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1557,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "莲花宝镜",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 590,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1558,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "五彩鞋",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1040,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 1559,
+      "raw": {
+        "monster_name": "沙魔鱼魔",
+        "item_name": "斗笠",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 322,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2251,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 3,
+        "repeat": 1,
+        "count": 400,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2252,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "金创药（小）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 6,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2253,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "魔法药（小）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 10,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2254,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "金创药（中）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 7,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2255,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "金创药（中）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 7,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2256,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 30,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2257,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "魔法药（大）",
+        "group": 0,
+        "prob_recip": 120,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 12,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2258,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "蜘蛛线",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 102,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2259,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "降魔",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 906,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2260,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "偃月",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 886,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2261,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "斩马刀",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 856,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2262,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "修罗",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 858,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2263,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "道德戒指",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 349,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2264,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "珊瑚戒指",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 392,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2265,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "金戒指",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 333,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2266,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "坚固手套",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 450,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2267,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "道士头盔",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 300,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2268,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "三眼手镯",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 479,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2269,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "思贝儿手镯",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 503,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2270,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "蓝翡翠项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 555,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2271,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "放大镜",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 658,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2272,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "竹笛",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 612,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2273,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "沃玛头盔",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 311,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2274,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "重盔甲（男）",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 782,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2275,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "重盔甲（女）",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 790,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2276,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "魔法长袍（男）",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 810,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2277,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "魔法长袍（女）",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 817,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2278,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "灵魂战衣（男）",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 798,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2279,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "灵魂战衣（女）",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 804,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2280,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "巨龙戒指",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 394,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2281,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "火玉戒指",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 367,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2282,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "天鸣戒指",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 351,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2283,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "金手镯",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 453,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2284,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "死神手套",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 467,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2285,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "幽灵手套",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 449,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2286,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "荣耀项链",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 631,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2287,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "愤怒之钟",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 670,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2288,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "莲花宝镜",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 590,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2289,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "五彩鞋",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1040,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2290,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "斗笠",
+        "group": 0,
+        "prob_recip": 4000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 322,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2291,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "魔血戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 439,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2292,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "魔血手镯",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 541,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2293,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "魔血项链",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 742,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2294,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "复血",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 592,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2295,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "神谕项链",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 677,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2296,
+      "raw": {
+        "monster_name": "独眼蜘蛛",
+        "item_name": "猫眼",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 633,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2473,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 3,
+        "repeat": 1,
+        "count": 300,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2474,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "金创药（小）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 6,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2475,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "魔法药（小）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 10,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2476,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "金创药（中）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 7,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2477,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "魔法药（中）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 11,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2478,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "蚂蚁卵",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 95,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2479,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "大手镯",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 452,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2480,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "道士手镯",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 477,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2481,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "黑檀手镯",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 499,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2482,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "魔法手镯",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 460,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2483,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "黑色水晶项链",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 553,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2484,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "黑檀项链",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 651,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2485,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "黄色水晶项链",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 607,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2486,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "青铜头盔",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 297,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2487,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "轻型盔甲（男）",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 768,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2488,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "轻型盔甲（女）",
+        "group": 0,
+        "prob_recip": 250,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 773,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2489,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "青铜斧",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 851,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2490,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "海魂",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 885,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2491,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "半月",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 904,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2492,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "珍珠戒指",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 347,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2493,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "蛇眼戒指",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 361,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2494,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "黑色水晶戒指",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 386,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2495,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "小手镯",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 461,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2496,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "灯笼项链",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 698,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2497,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "琥珀项链",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 657,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2498,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "魔鬼项链",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 554,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2499,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "真善项链",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 608,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2500,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "皮靴",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1034,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2501,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "魔法头盔",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 298,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2502,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "降魔",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 906,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2503,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "偃月",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 886,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2504,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "斩马刀",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 856,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2505,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "修罗",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 858,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2506,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "魅力戒指",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 365,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2507,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "道德戒指",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 349,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2508,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "珊瑚戒指",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 392,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2509,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "金戒指",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 333,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2510,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "坚固手套",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 450,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2511,
+      "raw": {
+        "monster_name": "盔甲蚂蚁",
+        "item_name": "道士头盔",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 300,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2592,
+      "raw": {
+        "monster_name": "祖玛教主",
+        "item_name": "捧里格吧捞",
+        "group": 0,
+        "prob_recip": 8,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 165,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2863,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 3,
+        "repeat": 1,
+        "count": 1000,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2864,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "金创药（小）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 6,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2865,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "魔法药（小）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 10,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2866,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "金创药（中）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 7,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2867,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "魔法药（中）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 11,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2868,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "跳蚤皮",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1113,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2869,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "攻击神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 58,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2870,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "自然神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 49,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2871,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "灵魂神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 44,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2872,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "疾风神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 40,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2873,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "体力强效神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 62,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 2874,
+      "raw": {
+        "monster_name": "胞眼虫",
+        "item_name": "魔法强效神水（小）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 54,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3136,
+      "raw": {
+        "monster_name": "蜈蚣",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 122,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3211,
+      "raw": {
+        "monster_name": "蝴蝶虫",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 133,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3395,
+      "raw": {
+        "monster_name": "触龙神",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 124,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3430,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 4,
+        "repeat": 1,
+        "count": 600,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3431,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "万年雪霜",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 2,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 38,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3432,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3433,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "魔法药（大）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 12,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3434,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "金创药（特）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 9,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3435,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "魔法药（特）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 13,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3436,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "遗物",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1115,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3437,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "黑皮手套",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 476,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3438,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "震天项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 715,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3439,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "银镜项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 714,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3440,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "五彩项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 663,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3441,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "遗魂项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 619,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3442,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "勇士项链",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 623,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3443,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "天藤头盔",
+        "group": 0,
+        "prob_recip": 1000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 320,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3444,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "幸运降妖除魔戒指",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 335,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3445,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "恶魔长袍（男）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 814,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3446,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "恶魔长袍（女）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 821,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3447,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "战神盔甲（男）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 785,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3448,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "战神盔甲（女）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 793,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3449,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "幽灵战衣（男）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 801,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3450,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "幽灵战衣（女）",
+        "group": 0,
+        "prob_recip": 2000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 807,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3451,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "天极道衣（男）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 802,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3452,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "天极道衣（女）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 808,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3453,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "龙鳞战甲（男）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 786,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3454,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "龙鳞战甲（女）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 794,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3455,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "袁灵法衣（男）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 815,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3456,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "袁灵法衣（女）",
+        "group": 0,
+        "prob_recip": 8000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 822,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3457,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "破荒项链",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 598,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3458,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "魔云项链",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 687,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3459,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "定心项链",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 642,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3460,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "师承戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 400,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3461,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "龙马戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 373,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3462,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "青云戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 412,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3463,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "赤血宝剑",
+        "group": 0,
+        "prob_recip": 120000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 925,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3464,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "裁决之杖",
+        "group": 0,
+        "prob_recip": 140000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 869,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3465,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "无极棍",
+        "group": 0,
+        "prob_recip": 140000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 914,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3466,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "骨玉权杖",
+        "group": 0,
+        "prob_recip": 140000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 894,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3467,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "旋风流星刀",
+        "group": 0,
+        "prob_recip": 160000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 843,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3468,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "封魔剑",
+        "group": 0,
+        "prob_recip": 160000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 839,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 3469,
+      "raw": {
+        "monster_name": "诺玛",
+        "item_name": "飞魂魔刃",
+        "group": 0,
+        "prob_recip": 160000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 853,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4170,
+      "raw": {
+        "monster_name": "赤月恶魔",
+        "item_name": "捧里格吧捞",
+        "group": 0,
+        "prob_recip": 15,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 194,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4185,
+      "raw": {
+        "monster_name": "赤月恶魔",
+        "item_name": "玫访肯",
+        "group": 0,
+        "prob_recip": 200,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 194,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4240,
+      "raw": {
+        "monster_name": "超级圣诞树",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 1,
+        "repeat": 1,
+        "count": 32000,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4259,
+      "raw": {
+        "monster_name": "跳跳蜂",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 131,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4346,
+      "raw": {
+        "monster_name": "邪恶钳虫",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 130,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4418,
+      "raw": {
+        "monster_name": "钳虫",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 127,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4650,
+      "raw": {
+        "monster_name": "骨鬼将",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 268,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4742,
+      "raw": {
+        "monster_name": "骷髅士兵",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 273,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4792,
+      "raw": {
+        "monster_name": "骷髅弓箭手",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 276,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4923,
+      "raw": {
+        "monster_name": "骷髅教主",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 5,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 272,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 4975,
+      "raw": {
+        "monster_name": "骷髅武士",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 275,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5025,
+      "raw": {
+        "monster_name": "骷髅武将",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 269,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5100,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 1,
+        "repeat": 1,
+        "count": 5500,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5101,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "万年雪霜",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 4,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 38,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5102,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "金创药（特）",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 8,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 9,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5103,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "魔法药（特）",
+        "group": 0,
+        "prob_recip": 2,
+        "repeat": 2,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 13,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5104,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "黑皮手套",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 476,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5105,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "震天项链",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 715,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5106,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "银镜项链",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 714,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5107,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "五彩项链",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 663,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5108,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "遗魂项链",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 619,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5109,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "勇士项链",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 623,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5110,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "天藤头盔",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 320,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5111,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "幸运降妖除魔戒指",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 335,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5112,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "恶魔长袍（男）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 814,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5113,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "恶魔长袍（女）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 821,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5114,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "战神盔甲（男）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 785,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5115,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "战神盔甲（女）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 793,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5116,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "幽灵战衣（男）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 801,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5117,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "幽灵战衣（女）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 807,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5118,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "天极道衣（男）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 802,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5119,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "天极道衣（女）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 808,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5120,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "龙鳞战甲（男）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 786,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5121,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "龙鳞战甲（女）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 794,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5122,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "袁灵法衣（男）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 815,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5123,
+      "raw": {
+        "monster_name": "魔力神将",
+        "item_name": "袁灵法衣（女）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 822,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5124,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金币（小）",
+        "group": 0,
+        "prob_recip": 4,
+        "repeat": 1,
+        "count": 500,
+        "monster_id": 0,
+        "item_id": 1,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5125,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金创药（中）",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 7,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5126,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "魔法药（中）",
+        "group": 0,
+        "prob_recip": 40,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 11,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5127,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 20,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5128,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金创药（大）",
+        "group": 0,
+        "prob_recip": 80,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 8,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5129,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金创药（特）",
+        "group": 0,
+        "prob_recip": 30,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 9,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5130,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "魔法药（特）",
+        "group": 0,
+        "prob_recip": 120,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 13,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5131,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "思念珍珠",
+        "group": 0,
+        "prob_recip": 10,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1022,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5132,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "生存游戏场地地图1",
+        "group": 0,
+        "prob_recip": 20000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 133,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5133,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "生存游戏场地地图2",
+        "group": 0,
+        "prob_recip": 20000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 140,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5134,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "生存游戏场地地图3",
+        "group": 0,
+        "prob_recip": 20000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 141,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5135,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "生存游戏场地地图4",
+        "group": 0,
+        "prob_recip": 20000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 142,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5136,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "巨龙戒指",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 394,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5137,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "火玉戒指",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 367,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5138,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "天鸣戒指",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 351,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5139,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金手镯",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 453,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5140,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "死神手套",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 467,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5141,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "幽灵手套",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 449,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5142,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "荣耀项链",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 631,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5143,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "愤怒之钟",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 670,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5144,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "莲花宝镜",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 590,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5145,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "幽灵项链",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 558,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5146,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "五彩鞋",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 1040,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5147,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "斗笠",
+        "group": 0,
+        "prob_recip": 750,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 322,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5148,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "黑皮手套",
+        "group": 0,
+        "prob_recip": 1500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 476,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5149,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "震天项链",
+        "group": 0,
+        "prob_recip": 1500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 715,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5150,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "银镜项链",
+        "group": 0,
+        "prob_recip": 1500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 714,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5151,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "五彩项链",
+        "group": 0,
+        "prob_recip": 1500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 663,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5152,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "遗魂项链",
+        "group": 0,
+        "prob_recip": 1500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 619,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5153,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "勇士项链",
+        "group": 0,
+        "prob_recip": 1500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 623,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5154,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "天藤头盔",
+        "group": 0,
+        "prob_recip": 1500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 320,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5155,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "幸运降妖除魔戒指",
+        "group": 0,
+        "prob_recip": 6000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 335,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5156,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "恶魔长袍（男）",
+        "group": 0,
+        "prob_recip": 6000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 814,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5157,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "恶魔长袍（女）",
+        "group": 0,
+        "prob_recip": 6000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 821,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5158,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "战神盔甲（男）",
+        "group": 0,
+        "prob_recip": 6000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 785,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5159,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "战神盔甲（女）",
+        "group": 0,
+        "prob_recip": 6000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 793,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5160,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "幽灵战衣（男）",
+        "group": 0,
+        "prob_recip": 6000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 801,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5161,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "幽灵战衣（女）",
+        "group": 0,
+        "prob_recip": 6000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 807,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5162,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金刚魔法指环",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 440,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5163,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金刚精神戒指",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 441,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5164,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金刚防御手镯",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 542,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5165,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金刚魔法手镯",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 543,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5166,
+      "raw": {
+        "monster_name": "魔神怪",
+        "item_name": "金刚铃铛",
+        "group": 0,
+        "prob_recip": 100000,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 0,
+        "item_id": 743,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects monster_id"
+    },
+    {
+      "domain": "drops",
+      "source_path": "server/src/dropitemconfig.inc",
+      "source_position": 5190,
+      "raw": {
+        "monster_name": "黑色恶蛆",
+        "item_name": "曼急狼备浇",
+        "group": 0,
+        "prob_recip": 500,
+        "repeat": 1,
+        "count": 1,
+        "monster_id": 125,
+        "item_id": 0,
+        "active": 0
+      },
+      "reason": "Production InnDropItemConfig rejects item_id"
+    },
+    {
+      "domain": "spawns",
+      "source_path": "server/script/map/沙漠_43.lua",
+      "source_position": 12,
+      "raw": {
+        "name": "沙漠鱼魔0",
+        "loc": [
+          {
+            "x": 200,
+            "y": 200,
+            "w": 180,
+            "h": 180,
+            "count": 1,
+            "time": 3600
+          }
+        ]
+      },
+      "reason": "DBCOM_MONSTERID returns zero; original monGener removes this group"
+    },
+    {
+      "domain": "spawns",
+      "source_path": "server/script/map/沙漠_44.lua",
+      "source_position": 12,
+      "raw": {
+        "name": "沙漠鱼魔0",
+        "loc": [
+          {
+            "x": 200,
+            "y": 200,
+            "w": 180,
+            "h": 180,
+            "count": 1,
+            "time": 3600
+          }
+        ]
+      },
+      "reason": "DBCOM_MONSTERID returns zero; original monGener removes this group"
+    },
+    {
+      "domain": "spawns",
+      "source_path": "server/script/map/灌木林_12.lua",
+      "source_position": 7,
+      "raw": {
+        "name": "独眼蜘蛛",
+        "loc": [
+          {
+            "x": 200,
+            "y": 250,
+            "w": 200,
+            "h": 200,
+            "count": 154,
+            "time": 600
+          }
+        ]
+      },
+      "reason": "DBCOM_MONSTERID returns zero; original monGener removes this group"
+    },
+    {
+      "domain": "spawns",
+      "source_path": "server/script/map/灌木林_122.lua",
+      "source_position": 7,
+      "raw": {
+        "name": "独眼蜘蛛",
+        "loc": [
+          {
+            "x": 200,
+            "y": 200,
+            "w": 200,
+            "h": 200,
+            "count": 154,
+            "time": 600
+          }
+        ]
+      },
+      "reason": "DBCOM_MONSTERID returns zero; original monGener removes this group"
+    },
+    {
+      "domain": "spawns",
+      "source_path": "server/script/map/灌木林_125.lua",
+      "source_position": 7,
+      "raw": {
+        "name": "独眼蜘蛛",
+        "loc": [
+          {
+            "x": 200,
+            "y": 200,
+            "w": 200,
+            "h": 200,
+            "count": 154,
+            "time": 600
+          }
+        ]
+      },
+      "reason": "DBCOM_MONSTERID returns zero; original monGener removes this group"
+    },
+    {
+      "domain": "spawns",
+      "source_path": "server/script/map/诺玛村庄_41.lua",
+      "source_position": 12,
+      "raw": {
+        "name": "沙漠鱼魔0",
+        "loc": [
+          {
+            "x": 200,
+            "y": 200,
+            "w": 180,
+            "h": 180,
+            "count": 1,
+            "time": 3600
+          }
+        ]
+      },
+      "reason": "DBCOM_MONSTERID returns zero; original monGener removes this group"
+    }
+  ]
+}

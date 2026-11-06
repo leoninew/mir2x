@@ -19,19 +19,7 @@ addGuard('沙漠战士', 207, 271, DIR_DOWNRIGHT)
 
 local addmon = require('map.addmonster')
 local addMonCo = addmon.monGener( -- 沙漠土城_5
-{
-    {
-        name = '羊',
-        loc = {
-            {x = 150, y = 50, w = 40, h = 40, count = 10, time = 1800},
-            {x = 150, y = 150, w = 40, h = 40, count = 10, time = 1800},
-            {x = 150, y = 250, w = 40, h = 40, count = 10, time = 1800},
-            {x = 250, y = 50, w = 40, h = 40, count = 10, time = 1800},
-            {x = 250, y = 150, w = 40, h = 40, count = 10, time = 1800},
-            {x = 250, y = 250, w = 40, h = 40, count = 10, time = 1800},
-        }
-    },
-})
+getMapSpawnConfig())
 
 function main()
     while true do

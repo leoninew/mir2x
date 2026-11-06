@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "monster_id": 51,
+  "monster_name": "食人花",
+  "items": [
+    {
+      "item_id": 112,
+      "item_name": "食人树叶",
+      "group": 0,
+      "prob_recip": 1,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 113,
+      "item_name": "食人树的果实",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

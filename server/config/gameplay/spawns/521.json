@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "map_id": 521,
+  "map_name": "神舰地下二层_D9022",
+  "groups": [
+    {
+      "monster_id": 175,
+      "monster_name": "恶形鬼",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 15,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 176,
+      "monster_name": "恶形鬼8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 16,
+      "monster_name": "海神将领",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 45,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 17,
+      "monster_name": "海神将领8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 5,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 177,
+      "monster_name": "爆毒神魔",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 35,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 178,
+      "monster_name": "爆毒神魔8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 19,
+      "monster_name": "犬猴魔",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 20,
+      "monster_name": "犬猴魔8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 188,
+      "monster_name": "神舰守卫",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 35,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 189,
+      "monster_name": "神舰守卫8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 33,
+      "monster_name": "红衣法师",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 35,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 34,
+      "monster_name": "红衣法师8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 4,
+      "monster_name": "触角神魔",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 30,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 5,
+      "monster_name": "触角神魔8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 10,
+      "monster_name": "轻甲守卫",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 25,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 11,
+      "monster_name": "轻甲守卫8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 18,
+      "monster_name": "霸王守卫",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    }
+  ]
+}

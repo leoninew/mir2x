@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "map_id": 173,
+  "map_name": "沃玛神殿1层_D042",
+  "groups": [
+    {
+      "monster_id": 47,
+      "monster_name": "山洞蝙蝠",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 52,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 48,
+      "monster_name": "山洞蝙蝠0",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 70,
+      "monster_name": "沃玛勇士",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 60,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 71,
+      "monster_name": "沃玛勇士0",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 73,
+      "monster_name": "沃玛勇士60",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 2,
+          "time": 7200
+        }
+      ]
+    },
+    {
+      "monster_id": 80,
+      "monster_name": "沃玛卫士",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 240,
+          "h": 240,
+          "count": 2,
+          "time": 7200
+        }
+      ]
+    },
+    {
+      "monster_id": 68,
+      "monster_name": "沃玛战士",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 60,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 170,
+      "monster_name": "沃玛战将",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 60,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 171,
+      "monster_name": "沃玛战将0",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 74,
+      "monster_name": "火焰沃玛",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 60,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 85,
+      "monster_name": "粪虫",
+      "loc": [
+        {
+          "x": 250,
+          "y": 250,
+          "w": 250,
+          "h": 250,
+          "count": 60,
+          "time": 600
+        }
+      ]
+    }
+  ]
+}

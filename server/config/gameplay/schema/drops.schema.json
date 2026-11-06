@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "monster_id",
+    "monster_name",
+    "items"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "type": "integer"
+    },
+    "monster_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "monster_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "item_name",
+          "group",
+          "prob_recip",
+          "repeat",
+          "count"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295
+          },
+          "item_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "group": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "prob_recip": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "repeat": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@
 
 mir2x 当前没有一个覆盖整个游戏的统一配置文件。名称里带 `config` 的结构分属不同 owner、生命周期和保存方式；新增设置前先确定配置作用于构建、服务进程、玩家角色，还是静态游戏内容。玩法配置的 UI 评估另见[游戏玩法配置与可视化管理研究](../../docs/research/20261104-runtime-gameplay-config.md)。
 
-2026-11-06 的[集中配置管理评估](../../docs/research/20261106-centralized-configuration-management.md)按“不增加配置项、前期不要求即时生效”讨论可视化方向；[全量配置盘点意图](../../docs/intent/20261106-centralized-configuration-catalog.md)要求先列出全部仓库可见配置，具体改动范围和方式由用户决策。
+2026-11-06 的玩法配置实现将基础经验、金币/物品掉落和地图刷怪集中到 [`server/config/gameplay`](../../server/config/gameplay/README.md)。服务端启动时读取完整只读快照；地图从该快照生成独立 Lua table。管理应用位于 [`tools/gameplay-workbench`](../../tools/gameplay-workbench/README.md)，保存后下次启动生效。[总计划](../../docs/plan/20261106-centralized-configuration-catalog.md)记录范围和实际验收。端口、并发和构建参数不在本期迁移范围；本文保留各配置层的事实资料。
 
 ## 配置分层
 
@@ -15,6 +15,7 @@ mir2x 当前没有一个覆盖整个游戏的统一配置文件。名称里带 `
 | 服务端主窗口配置 | [`ServerConfigureWindow`](../../server/src/serverconfigurewindow.fl) / `ServerConfig` | 当前进程的内存对象，由互斥锁保护；没有跨重启持久化 | 由各使用点读取。地图、脚本在加载时读取；监听端口与最大连接槽在网络启动时使用；掉落倍率在每次计算时读取 |
 | 玩家运行时配置 | [`SDRuntimeConfig`](../../common/src/sdruntimeconfig.hpp)，属于 `SDPlayerConfig` | 以序列化 BLOB 写入 [`tbl_playerconfig`](../../server/src/server.sql) 的 `fld_runtimeconfig`，主键为玩家 `fld_dbid` | 游戏窗口修改后发 `CM_SETRUNTIMECONFIG`；Player 持久化，登录场景时通过 `SM_PLAYERCONFIG` 下发 |
 | 主从节点配置 | `ServerArgParser::MasterSharedConfig` 与 [`SDPeerConfig`](../../common/src/serdesmsg.hpp) | 共享启动参数随 peer 初始化发送；掉落/金币倍率由 master 经 `AM_PEERCONFIG` 更新到 slave 的 [`PeerConfig`](../../server/src/peerconfig.hpp) | actor 初始化配置只在握手时传递；倍率通过独立更新消息提供给 slave |
+| 玩法数据快照 | [`GameplayConfig`](../../server/src/gameplayconfig.hpp)、`server/config/gameplay/*.json` | UTF-8 JSON；GUI 逐文件校验、备份、revision 检查后保存 | master/slave 启动完整读取；保存不改变当前进程快照 |
 | 游戏静态与脚本数据 | `common/src/*record.inc`、`server/script/`、资源 DB | 编译期记录、脚本文件或已打包资源；不是上述运行时配置对象 | 静态记录需要重编相关程序；地图/NPC/任务 Lua 按服务端加载时机读取；资源修改要重新打包并部署 |
 
 这些层可以在同一个界面出现，但不是可以互换的存储后端。尤其 `SDRuntimeConfig` 的“runtime”指角色运行时偏好与选项，不表示它能热更新服务端掉率、经验、刷怪或地图脚本。

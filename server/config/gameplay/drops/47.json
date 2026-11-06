@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "monster_id": 47,
+  "monster_name": "山洞蝙蝠",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 1,
+      "count": 200
+    },
+    {
+      "item_id": 6,
+      "item_name": "金创药（小）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 10,
+      "item_name": "魔法药（小）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 11,
+      "item_name": "魔法药（中）",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 153,
+      "item_name": "回城卷",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

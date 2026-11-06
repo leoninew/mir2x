@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "monster_id": 138,
+  "monster_name": "楔蛾",
+  "items": [
+    {
+      "item_id": 8,
+      "item_name": "金创药（大）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 12,
+      "item_name": "魔法药（大）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

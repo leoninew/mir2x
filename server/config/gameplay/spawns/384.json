@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "map_id": 384,
+  "map_name": "万年谷_D6011",
+  "groups": [
+    {
+      "monster_id": 122,
+      "monster_name": "蜈蚣",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 133,
+      "monster_name": "蝴蝶虫",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 134,
+      "monster_name": "蝴蝶虫0",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 90,
+          "h": 90,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 131,
+      "monster_name": "跳跳蜂",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 132,
+      "monster_name": "跳跳蜂0",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 90,
+          "h": 90,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 127,
+      "monster_name": "钳虫",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 128,
+      "monster_name": "钳虫0",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 90,
+          "h": 90,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 125,
+      "monster_name": "黑色恶蛆",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 40,
+          "time": 600
+        }
+      ]
+    }
+  ]
+}

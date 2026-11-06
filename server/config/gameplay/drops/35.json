@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "monster_id": 35,
+  "monster_name": "鸡",
+  "items": [
+    {
+      "item_id": 195,
+      "item_name": "鸡肉",
+      "group": 0,
+      "prob_recip": 1,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 195,
+      "item_name": "鸡肉",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 16,
+      "item_name": "鸡血",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "monster_id": 288,
+  "monster_name": "蜘蛛娃",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 3,
+      "repeat": 1,
+      "count": 1000
+    },
+    {
+      "item_id": 6,
+      "item_name": "金创药（小）",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 10,
+      "item_name": "魔法药（小）",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 11,
+      "item_name": "魔法药（中）",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1113,
+      "item_name": "跳蚤皮",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 58,
+      "item_name": "攻击神水（小）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 49,
+      "item_name": "自然神水（小）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 44,
+      "item_name": "灵魂神水（小）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 40,
+      "item_name": "疾风神水（小）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 62,
+      "item_name": "体力强效神水（小）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 54,
+      "item_name": "魔法强效神水（小）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "map_id": 283,
+  "map_name": "黑度宫2层_D15111",
+  "groups": [
+    {
+      "monster_id": 328,
+      "monster_name": "地牢女神1",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 70,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 330,
+      "monster_name": "地牢女神8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 7,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 314,
+      "monster_name": "火焰狮子",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 100,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 315,
+      "monster_name": "火焰狮子8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 10,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 319,
+      "monster_name": "石像狮子",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 30,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 320,
+      "monster_name": "石像狮子8",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 3,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 325,
+      "monster_name": "震天首将",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 90,
+          "h": 90,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "monster_id": 151,
+  "monster_name": "祖玛弓箭手",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 4,
+      "repeat": 1,
+      "count": 2000
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 11,
+      "item_name": "魔法药（中）",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 8,
+      "item_name": "金创药（大）",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 2,
+      "count": 1
+    },
+    {
+      "item_id": 9,
+      "item_name": "金创药（特）",
+      "group": 0,
+      "prob_recip": 60,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 13,
+      "item_name": "魔法药（特）",
+      "group": 0,
+      "prob_recip": 60,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1091,
+      "item_name": "神灵雕像",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 61,
+      "item_name": "攻击神水（特）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 52,
+      "item_name": "自然神水（特）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 47,
+      "item_name": "灵魂神水（特）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 42,
+      "item_name": "疾风神水（特）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 65,
+      "item_name": "体力强效神水（特）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 57,
+      "item_name": "魔力强效神水（特）",
+      "group": 0,
+      "prob_recip": 2000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 984,
+      "item_name": "祖玛裁决之杖",
+      "group": 0,
+      "prob_recip": 14000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 978,
+      "item_name": "祖玛无极棍",
+      "group": 0,
+      "prob_recip": 14000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 972,
+      "item_name": "祖玛骨玉权杖",
+      "group": 0,
+      "prob_recip": 14000,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

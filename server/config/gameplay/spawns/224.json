@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "map_id": 224,
+  "map_name": "罪孽洞穴1层_D1201",
+  "groups": [
+    {
+      "monster_id": 294,
+      "monster_name": "怒龙神",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 150,
+          "h": 150,
+          "count": 5,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 292,
+      "monster_name": "赤黄猪王",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 150,
+          "h": 150,
+          "count": 5,
+          "time": 3600
+        }
+      ]
+    }
+  ]
+}

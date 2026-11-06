@@ -23,6 +23,7 @@ find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(SQLiteCpp CONFIG REQUIRED)
 find_package(unofficial-tiny-aes-c CONFIG REQUIRED)
 find_package(argh CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
 pkg_check_modules(LIBPINYIN REQUIRED IMPORTED_TARGET libpinyin)

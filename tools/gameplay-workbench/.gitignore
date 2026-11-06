@@ -34,3 +34,5 @@ build/
 logs/
 *.log
 *.tmp
+game-launch.json
+game-launch-invalid-*.json.bak

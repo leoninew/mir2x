@@ -16,11 +16,19 @@
 #include "totype.hpp"
 #include "raiitimer.hpp"
 #include "commandluamodule.hpp"
+#include "gameplayconfig.hpp"
 
 class ServiceCore;
 class ServerObject;
 class Server final
 {
+    private:
+        std::optional<GameplayConfig> m_gameplayConfig;
+
+    public:
+        void initializeGameplayConfig(const std::filesystem::path &);
+        const GameplayConfig &gameplayConfig() const;
+
     private:
         std::mutex m_logLock;
         std::vector<char> m_logBuf;

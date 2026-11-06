@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "map_id": 376,
+  "map_name": "祖玛教主宫廷_D515",
+  "groups": [
+    {
+      "monster_id": 159,
+      "monster_name": "守卫神将",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 10,
+          "time": 300
+        }
+      ]
+    },
+    {
+      "monster_id": 138,
+      "monster_name": "楔蛾",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 139,
+      "monster_name": "楔蛾93",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 160,
+      "monster_name": "祖玛卫士",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 163,
+      "monster_name": "祖玛卫士90",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 151,
+      "monster_name": "祖玛弓箭手",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 154,
+      "monster_name": "祖玛弓箭手92",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 165,
+      "monster_name": "祖玛教主",
+      "loc": [
+        {
+          "x": 19,
+          "y": 24,
+          "w": 1,
+          "h": 1,
+          "count": 1,
+          "time": 18000
+        }
+      ]
+    },
+    {
+      "monster_id": 155,
+      "monster_name": "祖玛雕像",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 158,
+      "monster_name": "祖玛雕像91",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 135,
+      "monster_name": "角蝇",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 2,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 136,
+      "monster_name": "角蝇80",
+      "loc": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 20,
+          "h": 20,
+          "count": 2,
+          "time": 3600
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "map_id": 533,
+  "map_name": "调控室_D904",
+  "groups": [
+    {
+      "monster_id": 16,
+      "monster_name": "海神将领",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 15,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 177,
+      "monster_name": "爆毒神魔",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 10,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 188,
+      "monster_name": "神舰守卫",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 15,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 33,
+      "monster_name": "红衣法师",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 10,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 223,
+      "monster_name": "霸王教主",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 1,
+          "time": 10800
+        }
+      ]
+    }
+  ]
+}

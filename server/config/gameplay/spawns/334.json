@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "map_id": 334,
+  "map_name": "尸王房_D432_001",
+  "groups": [
+    {
+      "monster_id": 100,
+      "monster_name": "尸王",
+      "loc": [
+        {
+          "x": 15,
+          "y": 15,
+          "w": 5,
+          "h": 5,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    },
+    {
+      "monster_id": 101,
+      "monster_name": "尸王2",
+      "loc": [
+        {
+          "x": 15,
+          "y": 15,
+          "w": 5,
+          "h": 5,
+          "count": 20,
+          "time": 7200
+        }
+      ]
+    }
+  ]
+}

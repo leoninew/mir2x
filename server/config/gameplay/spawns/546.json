@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "map_id": 546,
+  "map_name": "连接通路_E402",
+  "groups": [
+    {
+      "monster_id": 87,
+      "monster_name": "僵尸1",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 5,
+          "time": 1380,
+          "cratio": 50
+        }
+      ]
+    },
+    {
+      "monster_id": 89,
+      "monster_name": "僧侣僵尸",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 3,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 92,
+      "monster_name": "僵尸3",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 3,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 95,
+      "monster_name": "僵尸4",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 3,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 98,
+      "monster_name": "僵尸5",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 3,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 47,
+      "monster_name": "山洞蝙蝠",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 5,
+          "time": 1380,
+          "cratio": 50
+        }
+      ]
+    },
+    {
+      "monster_id": 54,
+      "monster_name": "掷斧骷髅",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 5,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 61,
+      "monster_name": "洞蛆",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 5,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 52,
+      "monster_name": "骷髅",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 10,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 56,
+      "monster_name": "骷髅战士",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 10,
+          "time": 1380
+        }
+      ]
+    },
+    {
+      "monster_id": 58,
+      "monster_name": "骷髅战将",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 10,
+          "time": 1380
+        }
+      ]
+    }
+  ]
+}

@@ -1369,7 +1369,7 @@ void Monster::dispatchOffenderExp()
                     AMExp amE;
                     std::memset(&amE, 0, sizeof(amE));
 
-                    amE.exp = std::max<int>(1, std::lround((to_df(offender.damage) / sumDamage) * getMR().exp));
+                    amE.exp = std::max<int>(1, std::lround((to_df(offender.damage) / sumDamage) * g_server->gameplayConfig().monsterExp(monsterID())));
                     m_actorPod->post(offender.uid, {AM_EXP, amE});
                     break;
                 }

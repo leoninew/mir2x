@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "monster_id": 292,
+  "monster_name": "赤黄猪王",
+  "items": [
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 11,
+      "item_name": "魔法药（中）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1110,
+      "item_name": "藏罪据证",
+      "group": 0,
+      "prob_recip": 20,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 31,
+      "item_name": "回生神水",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

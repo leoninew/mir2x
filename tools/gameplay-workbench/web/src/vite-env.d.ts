@@ -1,11 +1,21 @@
 /// <reference types="vite/client" />
 
+import type { LaunchSettingsResult } from "@/services/gameLauncher";
+
 interface DesktopResult {
   success: boolean;
   message?: string;
 }
 
 interface PyWebViewAPI {
+  get_game_launch_status(): Promise<LaunchSettingsResult>;
+  save_game_launch_paths(
+    clientPath: string,
+    serverPath: string,
+    revision: string,
+  ): Promise<LaunchSettingsResult>;
+  launch_game(kind: string, revision: string): Promise<DesktopResult & { pid?: number }>;
+  select_gameplay_workspace(): Promise<DesktopResult>;
   say_hello(name: string): Promise<{ success: boolean; message: string; timestamp: string }>;
   get_system_info(): Promise<{
     success: boolean;

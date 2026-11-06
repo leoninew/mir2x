@@ -16,7 +16,7 @@
 | 构建工具 | CMake 4.4.5、Ninja 1.13.2 |
 | 构建脚本运行时 | Python 3.14.9 |
 | CMake 工作树 | `build/` |
-| 安装结果 | `install/client/`、`install/server/`、`install/tools/` |
+| 安装结果 | `install/client/`、`install/server/`、`install/tools/`；已构建的工作台安装到 `install/workbench/` |
 | vcpkg 源码与下载 | `vcpkg/` |
 | 已安装依赖 | `build/vcpkg_installed/` |
 | 原始游戏资源 | `build/assets/mir2x_assets/` |
@@ -91,6 +91,10 @@ cmake --build build --target client server --parallel 8
 # 将构建结果和内容脚本安装到运行目录。
 cmake --install build --config Release
 ```
+
+工作台也使用这棵构建和安装树：`cmake --build build --target workbench` 构建后执行相同的 `cmake --install build --config Release`，正式入口为 `install/workbench/Mir2xWorkbench.exe`；`build.py` 的 `--target workbench` 也可使用。需已安装 uv、Node.js/Corepack 及 WebView2，默认启动路径对应同级client/server，可在工作台「路径设置」中修改。工具目录的Makefile仅是相同打包脚本的便捷入口，不要求为主CMake流程安装GNU Make。完整安装保留工作台本地偏好和日志。
+
+已有完整资源的运行目录可按组件增量安装：`--component runtime` 更新client/server和脚本，`--component gameplay-config`首次安装玩法默认目录或校验保留已有目录，`--component workbench`更新工作台。`--component resources`重打包地图、纹理等资源，要求构建资源源目录完整；无组件的完整安装仍包含这些步骤。
 
 修改 CMake、编译器、依赖或构建类型时，用 `build.py` 重新配置。增加新 C++ 文件后也应重新配置，因为源文件列表由配置阶段的目录扫描生成。
 

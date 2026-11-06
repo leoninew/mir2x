@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "map_id": 377,
+  "map_name": "绝命谷1层南部_D60011",
+  "groups": [
+    {
+      "monster_id": 122,
+      "monster_name": "蜈蚣",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 125,
+          "h": 125,
+          "count": 50,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 133,
+      "monster_name": "蝴蝶虫",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 125,
+          "h": 125,
+          "count": 50,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 134,
+      "monster_name": "蝴蝶虫0",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 115,
+          "h": 115,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 131,
+      "monster_name": "跳跳蜂",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 125,
+          "h": 125,
+          "count": 50,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 132,
+      "monster_name": "跳跳蜂0",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 115,
+          "h": 115,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 130,
+      "monster_name": "邪恶钳虫",
+      "loc": [
+        {
+          "x": 100,
+          "y": 100,
+          "w": 100,
+          "h": 100,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    },
+    {
+      "monster_id": 127,
+      "monster_name": "钳虫",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 125,
+          "h": 125,
+          "count": 50,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 128,
+      "monster_name": "钳虫0",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 115,
+          "h": 115,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 125,
+      "monster_name": "黑色恶蛆",
+      "loc": [
+        {
+          "x": 125,
+          "y": 125,
+          "w": 125,
+          "h": 125,
+          "count": 50,
+          "time": 600
+        }
+      ]
+    }
+  ]
+}

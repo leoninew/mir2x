@@ -25,3 +25,5 @@ add_subdirectory(soundlistdecoder)
 
 add_subdirectory(xmltran)
 add_subdirectory(installres)
+add_subdirectory(gameplayconfig)
+add_subdirectory(gameplay-workbench)

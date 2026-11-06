@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "map_id": 389,
+  "map_name": "万年谷北部_D60134",
+  "groups": [
+    {
+      "monster_id": 122,
+      "monster_name": "蜈蚣",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 133,
+      "monster_name": "蝴蝶虫",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 131,
+      "monster_name": "跳跳蜂",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 127,
+      "monster_name": "钳虫",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 125,
+      "monster_name": "黑色恶蛆",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "monster_id": 61,
+  "monster_name": "洞蛆",
+  "items": [
+    {
+      "item_id": 108,
+      "item_name": "蛆卵",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

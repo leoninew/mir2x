@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "monster_id": 100,
+  "monster_name": "尸王",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 1,
+      "repeat": 1,
+      "count": 10000
+    },
+    {
+      "item_id": 167,
+      "item_name": "魔晶石",
+      "group": 0,
+      "prob_recip": 10000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 15,
+      "item_name": "强效太阳水",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 8,
+      "item_name": "金创药（大）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 12,
+      "item_name": "魔法药（大）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 202,
+      "item_name": "野蛮冲撞",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 203,
+      "item_name": "烈火剑法",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 205,
+      "item_name": "翔空剑法",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 204,
+      "item_name": "莲月剑法",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 218,
+      "item_name": "圣言术",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 228,
+      "item_name": "异形换位",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 217,
+      "item_name": "魔法盾",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 213,
+      "item_name": "爆裂火焰",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 216,
+      "item_name": "地狱雷光",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 219,
+      "item_name": "冰咆哮",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 225,
+      "item_name": "龙卷风",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 236,
+      "item_name": "困魔咒",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 241,
+      "item_name": "空拳刀法",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 245,
+      "item_name": "强魔震法",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 240,
+      "item_name": "召唤神兽",
+      "group": 0,
+      "prob_recip": 40,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 239,
+      "item_name": "群体治愈术",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 247,
+      "item_name": "超强召唤骷髅",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 246,
+      "item_name": "猛虎强势",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 244,
+      "item_name": "回生术",
+      "group": 0,
+      "prob_recip": 80,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 29,
+      "item_name": "祝福油",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

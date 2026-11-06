@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "monster_id": 144,
+  "monster_name": "白野猪",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 1,
+      "repeat": 1,
+      "count": 56000
+    },
+    {
+      "item_id": 167,
+      "item_name": "魔晶石",
+      "group": 0,
+      "prob_recip": 10000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 38,
+      "item_name": "万年雪霜",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 9,
+      "item_name": "金创药（特）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 13,
+      "item_name": "魔法药（特）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 5,
+      "count": 1
+    },
+    {
+      "item_id": 60,
+      "item_name": "攻击神水（大）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 51,
+      "item_name": "自然神水（大）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 46,
+      "item_name": "灵魂神水（大）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 43,
+      "item_name": "疾风神水（大）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 64,
+      "item_name": "体力强效神水（大）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 56,
+      "item_name": "魔力强效神水（大）",
+      "group": 0,
+      "prob_recip": 5,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 24,
+      "item_name": "武器强化油",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

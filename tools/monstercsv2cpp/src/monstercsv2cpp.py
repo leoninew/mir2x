@@ -28,7 +28,6 @@ def parse_mon(mon_dict):
         print('    .mp = %d,'  % mon_dict['mp'])
 
     if mon_dict['exp'] > 0:
-        print('    .exp = %d,' % mon_dict['exp'])
 
     if mon_dict['dc'] > 0 or mon_dict['dcmax'] > 0:
         print('    .dc = {%d, %d},' % (mon_dict['dc'], mon_dict['dcmax']))

@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "map_id": 170,
+  "map_name": "沃玛神殿_D024",
+  "groups": [
+    {
+      "monster_id": 78,
+      "monster_name": "守卫沃玛",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 20,
+          "time": 300
+        }
+      ]
+    },
+    {
+      "monster_id": 82,
+      "monster_name": "暗黑战士",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 84,
+      "monster_name": "暗黑战士40",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 70,
+      "monster_name": "沃玛勇士",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 72,
+      "monster_name": "沃玛勇士10",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 170,
+      "monster_name": "沃玛战将",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 172,
+      "monster_name": "沃玛战将20",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 81,
+      "monster_name": "沃玛教主",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 40,
+          "h": 40,
+          "count": 1,
+          "time": 18000
+        }
+      ]
+    },
+    {
+      "monster_id": 74,
+      "monster_name": "火焰沃玛",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 76,
+      "monster_name": "火焰沃玛30",
+      "loc": [
+        {
+          "x": 50,
+          "y": 50,
+          "w": 50,
+          "h": 50,
+          "count": 25,
+          "time": 3600
+        }
+      ]
+    }
+  ]
+}

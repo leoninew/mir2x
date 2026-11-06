@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "map_id": 281,
+  "map_name": "真天宫_D1506",
+  "groups": [
+    {
+      "monster_id": 323,
+      "monster_name": "守卫狮子",
+      "loc": [
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 10,
+          "time": 300
+        }
+      ]
+    },
+    {
+      "monster_id": 324,
+      "monster_name": "武力神将",
+      "loc": [
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 5,
+          "time": 480
+        }
+      ]
+    },
+    {
+      "monster_id": 327,
+      "monster_name": "武力神将81",
+      "loc": [
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 5,
+          "time": 480
+        }
+      ]
+    },
+    {
+      "monster_id": 314,
+      "monster_name": "火焰狮子",
+      "loc": [
+        {
+          "x": 22,
+          "y": 40,
+          "w": 5,
+          "h": 5,
+          "count": 5,
+          "time": 240
+        },
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 10,
+          "time": 480
+        }
+      ]
+    },
+    {
+      "monster_id": 316,
+      "monster_name": "火焰狮子97",
+      "loc": [
+        {
+          "x": 22,
+          "y": 40,
+          "w": 5,
+          "h": 5,
+          "count": 5,
+          "time": 240
+        }
+      ]
+    },
+    {
+      "monster_id": 317,
+      "monster_name": "火焰狮子99",
+      "loc": [
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 10,
+          "time": 480
+        }
+      ]
+    },
+    {
+      "monster_id": 319,
+      "monster_name": "石像狮子",
+      "loc": [
+        {
+          "x": 22,
+          "y": 40,
+          "w": 5,
+          "h": 5,
+          "count": 5,
+          "time": 240
+        },
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 10,
+          "time": 480
+        }
+      ]
+    },
+    {
+      "monster_id": 321,
+      "monster_name": "石像狮子96",
+      "loc": [
+        {
+          "x": 22,
+          "y": 40,
+          "w": 5,
+          "h": 5,
+          "count": 5,
+          "time": 240
+        }
+      ]
+    },
+    {
+      "monster_id": 322,
+      "monster_name": "石像狮子98",
+      "loc": [
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 10,
+          "time": 480
+        }
+      ]
+    },
+    {
+      "monster_id": 331,
+      "monster_name": "震天魔神",
+      "loc": [
+        {
+          "x": 30,
+          "y": 50,
+          "w": 20,
+          "h": 20,
+          "count": 1,
+          "time": 18000
+        }
+      ]
+    }
+  ]
+}

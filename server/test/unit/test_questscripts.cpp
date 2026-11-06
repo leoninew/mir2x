@@ -2,6 +2,8 @@
 #include <sol/sol.hpp>
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -13,6 +15,30 @@ namespace
         lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::coroutine,
                            sol::lib::string, sol::lib::math, sol::lib::table,
                            sol::lib::io, sol::lib::os, sol::lib::debug, sol::lib::utf8);
+#ifdef _WIN32
+        // Lua's narrow fopen uses the Windows code page; fixture names are UTF-8.
+        lua["_readTestScriptUtf8"] = [](const std::string &path) -> sol::optional<std::string>
+        {
+            std::ifstream input(std::filesystem::u8path(path), std::ios::binary);
+            if(!input){
+                return sol::nullopt;
+            }
+            return std::string(std::istreambuf_iterator<char>(input), {});
+        };
+        lua.script(R"lua(
+            function loadfile(path, mode, env)
+                local code = _readTestScriptUtf8(path)
+                if not code then return nil, 'unable to open ' .. path end
+                if env == nil then return load(code, '@' .. path, mode) end
+                return load(code, '@' .. path, mode, env)
+            end
+            function dofile(path)
+                local chunk, message = loadfile(path)
+                if not chunk then error(message, 2) end
+                return chunk()
+            end
+        )lua");
+#endif
         const std::string root = MIR2X_TEST_SOURCE_DIR;
         auto arg = lua.create_table();
         for(size_t i = 0; i < arguments.size(); ++i){
@@ -56,7 +82,8 @@ TEST_CASE("Merchant contracts and NPC entry paths", "[merchants]")
     for(const auto &entry: std::filesystem::directory_iterator(
             std::filesystem::path(MIR2X_TEST_SOURCE_DIR) / "server/script/npc")){
         if(entry.is_regular_file() && entry.path().extension() == ".lua"){
-            scripts.push_back(entry.path().string());
+            const auto utf8 = entry.path().u8string();
+            scripts.emplace_back(reinterpret_cast<const char *>(utf8.data()), utf8.size());
         }
     }
     std::ranges::sort(scripts);

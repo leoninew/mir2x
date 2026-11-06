@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "map_id": 517,
+  "map_name": "机械室_D90212",
+  "groups": [
+    {
+      "monster_id": 175,
+      "monster_name": "恶形鬼",
+      "loc": [
+        {
+          "x": 13,
+          "y": 13,
+          "w": 13,
+          "h": 13,
+          "count": 1,
+          "time": 1200
+        }
+      ]
+    }
+  ]
+}

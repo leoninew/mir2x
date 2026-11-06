@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "map_id": 523,
+  "map_name": "厨房_D90222",
+  "groups": [
+    {
+      "monster_id": 4,
+      "monster_name": "触角神魔",
+      "loc": [
+        {
+          "x": 3,
+          "y": 15,
+          "w": 25,
+          "h": 25,
+          "count": 1,
+          "time": 1200
+        }
+      ]
+    }
+  ]
+}

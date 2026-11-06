@@ -16,9 +16,9 @@ target_link_libraries(client_objs PUBLIC
 add_executable(client ${CLIENT_MAIN_SRC})
 target_link_libraries(client PRIVATE client_objs)
 
-install(TARGETS client DESTINATION client)
+install(TARGETS client DESTINATION client COMPONENT runtime)
 if(MIR2X_LIBPINYIN_DATA_DIR)
-    install(DIRECTORY ${MIR2X_LIBPINYIN_DATA_DIR} DESTINATION client)
+    install(DIRECTORY ${MIR2X_LIBPINYIN_DATA_DIR} DESTINATION client COMPONENT runtime)
 endif()
 install(CODE "execute_process(
     COMMAND ${MIR2X_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/installres/src/install_res.py
@@ -28,4 +28,4 @@ install(CODE "execute_process(
             --input-dir=${MIR2X_ASSETS_REPO_PATH}
             --output-dir=${CMAKE_INSTALL_PREFIX}/client/res
     COMMAND_ERROR_IS_FATAL ANY
-)")
+)" COMPONENT resources)

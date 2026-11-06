@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "map_id": 322,
+  "map_name": "神圣战甲术空间_D420_001",
+  "groups": [
+    {
+      "monster_id": 102,
+      "monster_name": "尸王61",
+      "loc": [
+        {
+          "x": 25,
+          "y": 25,
+          "w": 25,
+          "h": 25,
+          "count": 10,
+          "time": 60
+        }
+      ]
+    }
+  ]
+}

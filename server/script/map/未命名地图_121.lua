@@ -1,13 +1,6 @@
 local addmon = require('map.addmonster')
 local addMonCo = addmon.monGener( -- 未命名地图_121
-{
-    {
-        name = '夜行鬼09',
-        loc = {
-            {x = 200, y = 200, w = 200, h = 200, count = 100, time = 1200},
-        }
-    },
-})
+getMapSpawnConfig())
 
 function main()
     while true do

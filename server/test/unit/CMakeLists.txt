@@ -50,3 +50,24 @@ mir2x_add_unit_test(
 )
 target_compile_definitions(test_questscripts PRIVATE
     MIR2X_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
+mir2x_add_unit_test(
+    NAME gameplayconfig
+    SOURCES test_gameplayconfig.cpp
+    LIBS mir2x_gameplay_config
+)
+target_compile_definitions(test_gameplayconfig PRIVATE MIR2X_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
+mir2x_add_unit_test(
+    NAME gameplayspawn
+    SOURCES test_gameplayspawn.cpp
+    LIBS mir2x_gameplay_config mir2x::lua
+)
+target_compile_definitions(test_gameplayspawn PRIVATE MIR2X_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
+mir2x_add_unit_test(
+    NAME gameplaydrop
+    SOURCES test_gameplaydrop.cpp
+    LIBS server_objs
+)
+target_compile_definitions(test_gameplaydrop PRIVATE MIR2X_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")

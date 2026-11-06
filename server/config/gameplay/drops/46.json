@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "monster_id": 46,
+  "monster_name": "蝎子",
+  "items": [
+    {
+      "item_id": 111,
+      "item_name": "蝎子的尾巴",
+      "group": 0,
+      "prob_recip": 1,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

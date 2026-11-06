@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "map_id": 406,
+  "map_name": "石阁1层_D711",
+  "groups": [
+    {
+      "monster_id": 144,
+      "monster_name": "白野猪",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    },
+    {
+      "monster_id": 140,
+      "monster_name": "红野猪",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 320,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 141,
+      "monster_name": "红野猪0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 3,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 142,
+      "monster_name": "黑野猪",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 300,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 143,
+      "monster_name": "黑野猪0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 200,
+          "h": 200,
+          "count": 3,
+          "time": 3600
+        }
+      ]
+    }
+  ]
+}

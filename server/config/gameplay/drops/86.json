@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "monster_id": 86,
+  "monster_name": "雷电僵尸",
+  "items": [
+    {
+      "item_id": 1,
+      "item_name": "金币（小）",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 1,
+      "count": 200
+    },
+    {
+      "item_id": 952,
+      "item_name": "僵尸骨头",
+      "group": 0,
+      "prob_recip": 10,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 6,
+      "item_name": "金创药（小）",
+      "group": 0,
+      "prob_recip": 30,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 10,
+      "item_name": "魔法药（小）",
+      "group": 0,
+      "prob_recip": 30,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 7,
+      "item_name": "金创药（中）",
+      "group": 0,
+      "prob_recip": 60,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 11,
+      "item_name": "魔法药（中）",
+      "group": 0,
+      "prob_recip": 60,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 198,
+      "item_name": "基本剑术",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 199,
+      "item_name": "攻杀剑术",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 200,
+      "item_name": "刺杀剑术",
+      "group": 0,
+      "prob_recip": 2500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 201,
+      "item_name": "半月弯刀",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 206,
+      "item_name": "火球术",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 222,
+      "item_name": "霹雳掌",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 220,
+      "item_name": "冰月神掌",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 224,
+      "item_name": "风掌",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 208,
+      "item_name": "抗拒火环",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 207,
+      "item_name": "诱惑之光",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 210,
+      "item_name": "瞬息移动",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 211,
+      "item_name": "大火球",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 209,
+      "item_name": "雷电术",
+      "group": 0,
+      "prob_recip": 2500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 221,
+      "item_name": "冰月震天",
+      "group": 0,
+      "prob_recip": 2500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 227,
+      "item_name": "击风",
+      "group": 0,
+      "prob_recip": 2500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 212,
+      "item_name": "地狱火",
+      "group": 0,
+      "prob_recip": 2500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 214,
+      "item_name": "疾光电影",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 223,
+      "item_name": "冰沙掌",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 226,
+      "item_name": "风震天",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 215,
+      "item_name": "火墙",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 230,
+      "item_name": "治愈术",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 229,
+      "item_name": "精神力战法",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 231,
+      "item_name": "施毒术",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 232,
+      "item_name": "灵魂火符",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 242,
+      "item_name": "月魂断玉",
+      "group": 0,
+      "prob_recip": 1250,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 235,
+      "item_name": "召唤骷髅",
+      "group": 0,
+      "prob_recip": 2500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 237,
+      "item_name": "隐身术",
+      "group": 0,
+      "prob_recip": 2500,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 233,
+      "item_name": "幽灵盾",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 238,
+      "item_name": "集体隐身术",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 243,
+      "item_name": "月魂灵波",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 234,
+      "item_name": "神圣战甲术",
+      "group": 0,
+      "prob_recip": 5000,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

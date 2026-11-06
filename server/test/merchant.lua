@@ -22,6 +22,7 @@ WLG_WEAPON = 1
 LOGTYPE_WARNING = 1
 
 local function read(path)
+    if _readTestScriptUtf8 then return assert(_readTestScriptUtf8(path)) end
     local file = assert(io.open(path, 'r'))
     local text = file:read('a')
     file:close()

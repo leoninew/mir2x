@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "monster_id": 232,
+  "monster_name": "栗子树",
+  "items": [
+    {
+      "item_id": 1070,
+      "item_name": "褐色栗子",
+      "group": 0,
+      "prob_recip": 2,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1070,
+      "item_name": "褐色栗子",
+      "group": 0,
+      "prob_recip": 25,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1076,
+      "item_name": "铜色栗子",
+      "group": 0,
+      "prob_recip": 50,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1074,
+      "item_name": "银色栗子",
+      "group": 0,
+      "prob_recip": 150,
+      "repeat": 1,
+      "count": 1
+    },
+    {
+      "item_id": 1072,
+      "item_name": "金色栗子",
+      "group": 0,
+      "prob_recip": 300,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}

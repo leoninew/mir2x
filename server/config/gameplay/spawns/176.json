@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "map_id": 176,
+  "map_name": "沃玛神殿2层_D053",
+  "groups": [
+    {
+      "monster_id": 80,
+      "monster_name": "沃玛卫士",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    }
+  ]
+}

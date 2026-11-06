@@ -1,0 +1,7 @@
+add_executable(gameplay_config_tool src/main.cpp)
+target_link_libraries(gameplay_config_tool PRIVATE mir2x_gameplay_config)
+if(WIN32)
+    target_link_libraries(gameplay_config_tool PRIVATE shell32)
+endif()
+set_target_properties(gameplay_config_tool PROPERTIES OUTPUT_NAME gameplay-config)
+install(TARGETS gameplay_config_tool DESTINATION server)

@@ -1,0 +1,37 @@
+# A complete gameplay directory is the unit of installation. Never overlay defaults
+# on an existing directory, including one that is incomplete or from another version.
+function(mir2x_install_gameplay source destination validator)
+    cmake_path(ABSOLUTE_PATH destination NORMALIZE OUTPUT_VARIABLE destination)
+    if(EXISTS "${destination}")
+        if(NOT IS_DIRECTORY "${destination}")
+            message(FATAL_ERROR "Existing gameplay path is not a directory; retained: ${destination}")
+        endif()
+        execute_process(COMMAND "${validator}" validate "${destination}"
+            RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+        if(NOT result STREQUAL "0")
+            message(FATAL_ERROR "Existing gameplay directory retained but is incompatible/incomplete: ${destination}\n${error}\nBack up and explicitly replace the entire directory; defaults were not merged.")
+        endif()
+        message(STATUS "Preserving existing gameplay configuration: ${destination}")
+        return()
+    endif()
+
+    get_filename_component(parent "${destination}" DIRECTORY)
+    file(MAKE_DIRECTORY "${parent}")
+    file(REAL_PATH "${parent}" resolved_parent)
+    string(RANDOM LENGTH 16 ALPHABET 0123456789abcdef staging_suffix)
+    set(staging "${resolved_parent}/.gameplay-install-${staging_suffix}")
+    # Both rename targets are direct children of the explicitly selected install parent.
+    get_filename_component(destination_name "${destination}" NAME)
+    set(destination "${resolved_parent}/${destination_name}")
+    file(COPY "${source}/" DESTINATION "${staging}")
+    execute_process(COMMAND "${validator}" validate "${staging}"
+        RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+    if(NOT result STREQUAL "0")
+        message(FATAL_ERROR "New gameplay data failed validation; no destination published. Staging retained: ${staging}\n${error}")
+    endif()
+    file(RENAME "${staging}" "${destination}" NO_REPLACE RESULT result)
+    if(NOT result STREQUAL "0")
+        message(FATAL_ERROR "Gameplay destination appeared during installation; no overlay performed. Staging retained: ${staging}\n${result}")
+    endif()
+    message(STATUS "Installed complete gameplay configuration: ${destination}")
+endfunction()

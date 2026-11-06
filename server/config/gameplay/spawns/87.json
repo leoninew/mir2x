@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "map_id": 87,
+  "map_name": "盟重县_74",
+  "groups": [
+    {
+      "monster_id": 117,
+      "monster_name": "多角虫",
+      "loc": [
+        {
+          "x": 300,
+          "y": 300,
+          "w": 250,
+          "h": 250,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 3,
+      "monster_name": "夜行鬼09",
+      "loc": [
+        {
+          "x": 300,
+          "y": 300,
+          "w": 300,
+          "h": 300,
+          "count": 150,
+          "time": 1200
+        }
+      ]
+    },
+    {
+      "monster_id": 116,
+      "monster_name": "威思尔小虫",
+      "loc": [
+        {
+          "x": 300,
+          "y": 300,
+          "w": 250,
+          "h": 250,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 119,
+      "monster_name": "巨型多角虫",
+      "loc": [
+        {
+          "x": 300,
+          "y": 300,
+          "w": 290,
+          "h": 290,
+          "count": 2,
+          "time": 7200
+        }
+      ]
+    },
+    {
+      "monster_id": 115,
+      "monster_name": "沙漠威思尔小虫",
+      "loc": [
+        {
+          "x": 300,
+          "y": 300,
+          "w": 250,
+          "h": 250,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 111,
+      "monster_name": "猎鹰",
+      "loc": [
+        {
+          "x": 300,
+          "y": 300,
+          "w": 250,
+          "h": 250,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 113,
+      "monster_name": "盔甲虫",
+      "loc": [
+        {
+          "x": 300,
+          "y": 300,
+          "w": 250,
+          "h": 250,
+          "count": 20,
+          "time": 600
+        },
+        {
+          "x": 300,
+          "y": 300,
+          "w": 250,
+          "h": 250,
+          "count": 20,
+          "time": 600
+        }
+      ]
+    }
+  ]
+}

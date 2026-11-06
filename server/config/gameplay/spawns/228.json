@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "map_id": 228,
+  "map_name": "罪孽洞穴4层_D1204",
+  "groups": [
+    {
+      "monster_id": 294,
+      "monster_name": "怒龙神",
+      "loc": [
+        {
+          "x": 150,
+          "y": 150,
+          "w": 150,
+          "h": 150,
+          "count": 9,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 292,
+      "monster_name": "赤黄猪王",
+      "loc": [
+        {
+          "x": 150,
+          "y": 150,
+          "w": 150,
+          "h": 150,
+          "count": 9,
+          "time": 3600
+        }
+      ]
+    }
+  ]
+}

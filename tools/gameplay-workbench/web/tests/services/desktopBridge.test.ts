@@ -18,6 +18,10 @@ describe("desktop bridge", () => {
 
   it("forwards calls to the native PyWebView API", async () => {
     const api = {
+      select_gameplay_workspace: vi.fn().mockResolvedValue({ success: true }),
+      get_game_launch_status: vi.fn().mockResolvedValue({ success: true }),
+      save_game_launch_paths: vi.fn().mockResolvedValue({ success: true }),
+      launch_game: vi.fn().mockResolvedValue({ success: true }),
       say_hello: vi.fn().mockResolvedValue({ success: true, message: "Hello", timestamp: "now" }),
       get_system_info: vi.fn().mockResolvedValue({ success: true, data: { system: "Windows" } }),
       resize_window: vi.fn().mockResolvedValue({ success: true }),

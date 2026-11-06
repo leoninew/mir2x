@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "map_id": 160,
+  "map_name": "半兽洞穴3层_D003",
+  "groups": [
+    {
+      "monster_id": 54,
+      "monster_name": "掷斧骷髅",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 120,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 55,
+      "monster_name": "掷斧骷髅0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 61,
+      "monster_name": "洞蛆",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 120,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 52,
+      "monster_name": "骷髅",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 120,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 53,
+      "monster_name": "骷髅0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 56,
+      "monster_name": "骷髅战士",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 120,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 57,
+      "monster_name": "骷髅战士0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 1,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 58,
+      "monster_name": "骷髅战将",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 120,
+          "time": 600
+        }
+      ]
+    },
+    {
+      "monster_id": 59,
+      "monster_name": "骷髅战将0",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 2,
+          "time": 3600
+        }
+      ]
+    },
+    {
+      "monster_id": 60,
+      "monster_name": "骷髅精灵",
+      "loc": [
+        {
+          "x": 200,
+          "y": 200,
+          "w": 190,
+          "h": 190,
+          "count": 1,
+          "time": 7200
+        }
+      ]
+    }
+  ]
+}

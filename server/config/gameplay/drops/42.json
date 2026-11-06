@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "monster_id": 42,
+  "monster_name": "毒蜘蛛",
+  "items": [
+    {
+      "item_id": 110,
+      "item_name": "毒蜘蛛牙齿",
+      "group": 0,
+      "prob_recip": 3,
+      "repeat": 1,
+      "count": 1
+    }
+  ]
+}
