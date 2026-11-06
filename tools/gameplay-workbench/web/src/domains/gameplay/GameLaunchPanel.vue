@@ -61,9 +61,9 @@
         @escape-key-down="preventBusyClose"
         @interact-outside="preventBusyClose"
       >
-        <DialogTitle class="text-lg font-semibold">启动设置</DialogTitle>
+        <DialogTitle class="text-lg font-semibold">路径设置</DialogTitle>
         <DialogDescription class="mt-1 text-sm text-slate-500">
-          程序路径相对于工作台所在目录。
+          路径相对于工作台所在目录。
         </DialogDescription>
 
         <form v-if="status" class="mt-5" @submit.prevent="savePaths">
@@ -96,6 +96,35 @@
               </p>
               <p v-else-if="missingSavedFile(kind)" class="mt-1 text-xs text-amber-800">
                 未找到该程序
+              </p>
+            </div>
+            <div>
+              <label for="server-config-path" class="text-sm font-medium">
+                服务端配置目录 <span class="text-red-600">*</span>
+              </label>
+              <input
+                id="server-config-path"
+                v-model="draft.server_config_path"
+                type="text"
+                spellcheck="false"
+                autocomplete="off"
+                :aria-invalid="Boolean(errors.server_config_path)"
+                aria-describedby="server-config-path-help"
+                :class="[
+                  'mt-2 w-full rounded-md border px-3 py-2 font-mono text-sm',
+                  errors.server_config_path ? 'border-red-600' : 'border-slate-300',
+                ]"
+                @input="delete errors.server_config_path"
+              />
+              <p
+                id="server-config-path-help"
+                :role="errors.server_config_path ? 'alert' : undefined"
+                :class="[
+                  'mt-1 text-xs',
+                  errors.server_config_path ? 'text-red-600' : 'text-slate-500',
+                ]"
+              >
+                {{ configPathHelp }}
               </p>
             </div>
           </fieldset>
@@ -190,13 +219,20 @@
   const message = ref("");
   const failed = ref(false);
   const formMessage = ref("");
-  const draft = reactive<LaunchPaths>({ client_path: "", server_path: "" });
+  const draft = reactive<LaunchPaths>({ client_path: "", server_path: "", server_config_path: "" });
   const errors = ref<Partial<Record<keyof LaunchPaths, string>>>({});
+  const configPathHelp = computed(
+    () =>
+      errors.value.server_config_path ||
+      "填写包含 config/gameplay 的服务端目录，下次打开工作台生效。",
+  );
   let generation = 0;
   const dirty = computed(
     () =>
       status.value !== null &&
-      kinds.some((kind) => draft[fields[kind]] !== status.value!.settings[fields[kind]]),
+      (Object.keys(draft) as (keyof LaunchPaths)[]).some(
+        (field) => draft[field] !== status.value!.settings[field],
+      ),
   );
   const normalized = (path: string) =>
     path.replaceAll("\\", "/").replace(/\/+$/u, "").toLowerCase();
@@ -216,6 +252,7 @@
     if (!status.value) return;
     draft.client_path = status.value.settings.client_path;
     draft.server_path = status.value.settings.server_path;
+    draft.server_config_path = status.value.settings.server_config_path;
     errors.value = {};
     formMessage.value = "";
   }
@@ -259,10 +296,15 @@
         draft.client_path,
         draft.server_path,
         status.value.revision,
+        draft.server_config_path,
       );
       if (current !== generation) return;
       for (const issue of result.issues ?? []) {
-        if (issue.path === "client_path" || issue.path === "server_path")
+        if (
+          issue.path === "client_path" ||
+          issue.path === "server_path" ||
+          issue.path === "server_config_path"
+        )
           errors.value[issue.path] = issue.message;
       }
       accept(result, true);

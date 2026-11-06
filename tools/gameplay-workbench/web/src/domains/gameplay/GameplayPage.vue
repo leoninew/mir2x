@@ -10,15 +10,17 @@
           重启生效
         </span>
       </div>
-      <button
-        v-if="workspace?.bound"
-        type="button"
-        class="secondary-button"
-        :disabled="busy"
-        @click="chooseWorkspace"
-      >
-        更换目录
-      </button>
+      <div v-if="workspace?.bound" class="flex items-center gap-2">
+        <GameplayBackupPanel
+          :workspace-id="workspace.workspace_id"
+          :disabled="busy"
+          :has-unsaved-drafts="hasUnsavedDrafts"
+          @restored="onBackupRestored"
+        />
+        <button type="button" class="secondary-button" :disabled="busy" @click="chooseWorkspace">
+          更换目录
+        </button>
+      </div>
     </div>
 
     <div v-if="workspace?.bound" class="flex min-w-0 items-center gap-3 text-sm text-slate-500">
@@ -315,6 +317,7 @@
 
   import IntegerField from "@/components/IntegerField.vue";
   import { useGameplay } from "@/composables/useGameplay";
+  import GameplayBackupPanel from "@/domains/gameplay/GameplayBackupPanel.vue";
   import GameLaunchPanel from "@/domains/gameplay/GameLaunchPanel.vue";
   import { getDesktopBridge, isDesktopApp } from "@/services/desktopBridge";
   import { gameplayApi, type Domain } from "@/services/gameplayApi";
@@ -402,6 +405,11 @@
       else if (result.message && result.message !== "未选择目录") message.value = result.message;
     } catch (error) {
       message.value = error instanceof Error ? error.message : "选择目录失败";
+    }
+  }
+  async function onBackupRestored(safetyBackupName: string): Promise<void> {
+    if (await refreshWorkspace(true)) {
+      message.value = `已还原；当前配置已自动备份：${safetyBackupName}`;
     }
   }
   async function reload(): Promise<void> {

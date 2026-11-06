@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "client_path": "../client/client.exe",
+  "server_path": "../server/server.exe",
+  "server_config_path": "../server"
+}

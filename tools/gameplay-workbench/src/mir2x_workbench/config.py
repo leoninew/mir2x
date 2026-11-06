@@ -115,4 +115,13 @@ def load_settings(
     values = {
         name.lower(): value for name, value in config.as_dict().items() if name != "LOAD_DOTENV"
     }
-    return Settings.model_validate({**values, "profile": profile})
+    settings = Settings.model_validate({**values, "profile": profile})
+    if settings.gameplay.root is not None:
+        settings = settings.model_copy(
+            update={
+                "gameplay": settings.gameplay.model_copy(
+                    update={"root": (root / settings.gameplay.root).resolve()}
+                )
+            }
+        )
+    return settings

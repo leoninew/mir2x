@@ -8,11 +8,11 @@ Windows 需要 WebView2 Runtime；开发需要 Python 3.12+、uv、Node.js 22+�
 
 正式入口：仓库主安装目录中的 `install/workbench/Mir2xWorkbench.exe`。工作台与同级 `client/`、`server/` 一起交付；工作台自身的 `_internal/` 目录需要保留。
 
-打开后选择源码或安装目录中的 **server 文件夹**。三个视图分别管理经验全表、单怪物掉落文件、单地图刷怪文件；搜索不会重排底层数组。身份/名称及未消费的 cratio 只读；历史未生效记录保留原始来源。
+打开后按 `game-launch.json` 的 `server_config_path` 自动加载玩法配置，预置 `../server`，无需每次选择目录。相对路径以 EXE 所在目录解析；可以在「路径设置」中修改，下次打开工作台生效，也可临时选择其他 **server 文件夹**。升级安装保留已有配置。三个视图分别管理经验全表、单怪物掉落文件、单地图刷怪文件；搜索不会重排底层数组。身份/名称及未消费的 cratio 只读；历史未生效记录保留原始来源。
 
 整数错误显示在对应字段；保存前可查看变更。保存包含字段/引用校验、旧内容备份、同目录原子替换。外部修改、目录切换或元数据版本变化会拒绝旧请求，并保留草稿，可下载后人工比较或重新读取。切换文件会在本次窗口内保留草稿；退出前请保存或下载，草稿不持久化。
 
-备份位于所选 `server/config/gameplay/.backups/`。多文件编辑不提供事务；与其他编辑器同时保存仍存在最终替换前的竞争窗口，建议单人编辑。
+单文件编辑的历史副本位于所选 `server/config/gameplay/.backups/`。完整玩法目录快照集中保存在工作台目录 `backups/gameplay/`；打开“备份管理”可按时间戳查看、创建和还原，创建时可填写说明。备份记录来源服务端目录，只能还原到原目录。还原会先自动备份当前配置并校验快照，只替换 `server/config/gameplay`，不会涉及角色数据库；未保存草稿需在确认时丢弃。还原后的数据在服务端下次启动时生效。多文件编辑不提供事务；与其他编辑器同时保存仍存在最终替换前的竞争窗口，建议单人编辑。
 
 ## 启动客户端与服务端
 
@@ -31,11 +31,14 @@ install/
 {
   "schema_version": 1,
   "client_path": "../client/client.exe",
-  "server_path": "../server/server.exe"
+  "server_path": "../server/server.exe",
+  "server_config_path": "../server"
 }
 ```
 
-支持 `..`、中文、空格及 Windows 反斜杠；只填写相对 `.exe` 文件路径，不附命令行参数。每个进程以自己的程序目录作为工作目录。程序或配套资源不会被自动复制、安装或构建。程序缺失时不能启动；配套资源缺失会显示提示，请自行准备完整运行目录。
+三个路径均支持 `..`、中文、空格及 Windows 反斜杠。client_path/server_path 填写相对 `.exe` 路径，不附命令行参数；server_config_path 填写包含 `config/gameplay` 的服务端目录，可与启动程序目录分别设置。每个进程以自己的程序目录作为工作目录。程序或配套资源不会被自动复制、安装或构建。程序缺失时不能启动；配套资源缺失会显示提示，请自行准备完整运行目录。
+
+旧 `game-launch.json` 会在打开桌面应用时补充 server_config_path，保留已有启动路径；仅首次迁移读取旧 gameplay.root（若存在）。此后桌面配置目录只使用 JSON 中的值，不再由 YAML 或环境变量覆盖。首次安装使用仓库 `config/game-launch.json` 预置文件，已有本地 JSON 不被安装覆盖。配置目录不可用时仍可打开工作台修改路径。
 
 启动使用磁盘配置；未保存的玩法草稿会先提醒，配置管理目录与待启动服务端目录不同时也会提示。服务端只打开原管理窗口，需在该窗口手动启动服务，不传 `--auto-launch`。进程创建成功不代表游戏/服务已就绪，具体错误仍查看游戏自身日志。
 
@@ -65,8 +68,11 @@ uv build
 
 ```bash
 cmake --build build --target workbench
-cmake --install build --config Release --component workbench
 ```
+
+该目标构建完成后自动安装到 `install/workbench/`，无需再手动执行安装命令。开发模式 `.env.dev` 预设源码服务端相对路径 `../../server`。
+
+Windows 程序图标直接复用客户端资源 `client/src/winicon.png`；打包时由 Pillow 转换，无需维护副本。
 
 正式 `build.py` 同样支持 `--target workbench`（沿用主构建的其他参数）；安装目标使用该树的 `CMAKE_INSTALL_PREFIX`，默认仓库 `install/`。未构建工作台时完整安装明确跳过它，显式安装 `--component workbench` 缺包会报错。
 

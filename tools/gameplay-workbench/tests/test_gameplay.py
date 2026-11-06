@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -37,6 +38,21 @@ def client(server_root: Path) -> TestClient:
     return TestClient(app)
 
 
+def test_desktop_loads_workspace_from_game_launch_json(server_root: Path, tmp_path: Path) -> None:
+    from mir2x_workbench.desktop import LocalApiServer
+    from mir2x_workbench.game_launcher import GameLauncher
+
+    application_root = tmp_path / "workbench"
+    application_root.mkdir()
+    launcher = GameLauncher(application_root)
+    launcher.save(
+        "../client/client.exe", "../server/server.exe", "missing", "../server with spaces"
+    )
+    settings = load_settings(Path(__file__).parents[1])
+    api = LocalApiServer(settings, tmp_path / "static", application_root)
+    assert api.workspace.workspace()["server_root"] == str(server_root.resolve())
+
+
 def request_data(
     client: TestClient, domain: str = "monsters", object_id: int | None = None
 ) -> dict[str, Any]:
@@ -64,6 +80,49 @@ def test_real_api_save_validate_read_and_backup(client: TestClient, server_root:
     assert request_data(client)["data"] == payload["data"]
     backups = list((server_root / "config/gameplay/.backups").rglob("*.json"))
     assert len(backups) == 1 and backups[0].read_bytes() == original
+
+
+def test_gameplay_backup_create_list_and_restore(server_root: Path, tmp_path: Path) -> None:
+    backup_root = tmp_path / "workbench" / "backups" / "gameplay"
+    app = create_app(
+        logging.getLogger("tests.gameplay.backups"),
+        settings=load_settings(Path(__file__).parents[1]),
+        workspace=WorkspaceService(server_root),
+        backup_root=backup_root,
+    )
+    with TestClient(app) as test_client:
+        workspace = test_client.get("/api/gameplay/workspace").json()
+        original = (server_root / "config/gameplay/monsters.json").read_bytes()
+        created = test_client.post(
+            "/api/gameplay/backups",
+            json={"workspace_id": workspace["workspace_id"], "description": "改动前"},
+        )
+        assert created.status_code == 200, created.text
+        record = created.json()
+        datetime.strptime(record["name"], "%Y-%m-%d %H:%M:%S")
+        assert record["description"] == "改动前"
+        assert record["source_matches"] is True
+
+        listed = test_client.get(
+            "/api/gameplay/backups", params={"workspace_id": workspace["workspace_id"]}
+        )
+        assert listed.json()["backups"][0]["backup_id"] == record["backup_id"]
+
+        changed = json.loads(original)
+        changed["monsters"][0]["exp"] += 1
+        (server_root / "config/gameplay/monsters.json").write_text(
+            json.dumps(changed), encoding="utf-8"
+        )
+        restored = test_client.post(
+            f"/api/gameplay/backups/{record['backup_id']}/restore",
+            json={"workspace_id": workspace["workspace_id"]},
+        )
+        assert restored.status_code == 200, restored.text
+        result = restored.json()
+        assert result["workspace"]["workspace_id"] != workspace["workspace_id"]
+        assert (server_root / "config/gameplay/monsters.json").read_bytes() == original
+        assert result["safety_backup"]["description"] == "还原前自动备份"
+        assert len(list(backup_root.iterdir())) == 2
 
 
 def test_strict_field_errors_do_not_write(client: TestClient, server_root: Path) -> None:

@@ -84,22 +84,35 @@ export function useGameplay() {
     }
   }
 
-  async function refreshWorkspace(): Promise<void> {
-    remember();
+  async function refreshWorkspace(discardDrafts = false): Promise<boolean> {
+    if (discardDrafts) {
+      drafts.clear();
+      workspace.value = null;
+      base.value = null;
+      draft.value = null;
+      catalog.value = null;
+    } else {
+      remember();
+    }
     const current = ++generation;
     busy.value = true;
+    message.value = "";
+    conflict.value = false;
+    errors.value = {};
     try {
       const next = await gameplayApi.workspace();
-      if (current !== generation) return;
+      if (current !== generation) return false;
       const nextCatalog = next.workspace_id ? await gameplayApi.catalog(next.workspace_id) : null;
-      if (current !== generation) return;
+      if (current !== generation) return false;
       workspace.value = next;
       base.value = null;
       draft.value = null;
       catalog.value = nextCatalog;
       if (next.workspace_id) await load("monsters");
+      return true;
     } catch (error) {
       if (current === generation) report(error);
+      return false;
     } finally {
       if (current === generation) busy.value = false;
     }

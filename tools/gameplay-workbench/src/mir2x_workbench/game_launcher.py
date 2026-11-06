@@ -29,15 +29,21 @@ class LaunchPaths(Model):
     schema_version: Annotated[StrictInt, Field(ge=1, le=1)] = 1
     client_path: str = "../client/client.exe"
     server_path: str = "../server/server.exe"
+    server_config_path: str = "../server"
 
-    @field_validator("client_path", "server_path")
+    @field_validator("client_path", "server_path", "server_config_path")
     @classmethod
-    def relative_executable(cls, value: str) -> str:
+    def relative_path(cls, value: str) -> str:
         if not value.strip() or value != value.strip() or any(ord(c) < 32 for c in value):
-            raise ValueError("请输入不含空白前后缀的相对程序路径")
+            raise ValueError("请输入不含空白前后缀的相对路径")
         windows = PureWindowsPath(value)
         if windows.drive or windows.root or PurePosixPath(value).is_absolute():
             raise ValueError("请使用相对于工作台目录的路径，不要填写绝对路径")
+        return value
+
+    @field_validator("client_path", "server_path")
+    @classmethod
+    def executable(cls, value: str) -> str:
         if PurePosixPath(value.replace("\\", "/")).suffix.lower() != ".exe":
             raise ValueError("请选择 .exe 程序，不支持脚本或命令")
         return value
@@ -50,6 +56,24 @@ class GameLauncher:
         self._lock = RLock()
         self._children: dict[GameKind, subprocess.Popen[bytes]] = {}
         self._launched_paths: dict[GameKind, str] = {}
+
+    def initialize(self, legacy_server_root: Path | None = None) -> None:
+        """Upgrade local preferences once, preserving existing executable paths."""
+        with self._lock:
+            paths, revision, error, _ = self._read()
+            if error:
+                raise LaunchError(error)
+            if "server_config_path" not in paths.model_fields_set:
+                relative = paths.server_config_path
+                if legacy_server_root is not None:
+                    relative = os.path.relpath(legacy_server_root, self.root).replace("\\", "/")
+                self.save(paths.client_path, paths.server_path, revision, relative)
+
+    def server_config_root(self) -> Path:
+        paths, _, error, _ = self._read()
+        if error:
+            raise LaunchError(error)
+        return (self.root / paths.server_config_path.replace("\\", "/")).resolve()
 
     def _read(self) -> tuple[LaunchPaths, str, str | None, bytes | None]:
         try:
@@ -106,12 +130,26 @@ class GameLauncher:
                 "targets": targets,
             }
 
-    def save(self, client_path: str, server_path: str, revision: str) -> dict[str, object]:
-        paths = LaunchPaths(client_path=client_path, server_path=server_path)
+    def save(
+        self,
+        client_path: str,
+        server_path: str,
+        revision: str,
+        server_config_path: str | None = None,
+    ) -> dict[str, object]:
         with self._lock:
-            _, current, error, old_raw = self._read()
+            previous, current, error, old_raw = self._read()
             if revision != current:
                 raise LaunchError("启动配置已被外部修改，请刷新后重新编辑")
+            paths = LaunchPaths(
+                client_path=client_path,
+                server_path=server_path,
+                server_config_path=(
+                    previous.server_config_path
+                    if server_config_path is None
+                    else server_config_path
+                ),
+            )
             content = (json.dumps(paths.model_dump(), ensure_ascii=False, indent=2) + "\n").encode(
                 "utf-8"
             )

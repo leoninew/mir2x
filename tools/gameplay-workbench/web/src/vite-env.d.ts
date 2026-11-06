@@ -13,6 +13,7 @@ interface PyWebViewAPI {
     clientPath: string,
     serverPath: string,
     revision: string,
+    serverConfigPath: string,
   ): Promise<LaunchSettingsResult>;
   launch_game(kind: string, revision: string): Promise<DesktopResult & { pid?: number }>;
   select_gameplay_workspace(): Promise<DesktopResult>;

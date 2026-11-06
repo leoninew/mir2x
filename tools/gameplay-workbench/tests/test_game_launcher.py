@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -16,10 +17,40 @@ def test_relative_paths_are_persisted_and_resolved_from_workbench(tmp_path: Path
         "schema_version": 1,
         "client_path": r"..\游戏 空格\客户端.exe",
         "server_path": "../server/server.exe",
+        "server_config_path": "../server",
     }
     assert saved["targets"]["client"]["executable"] == str(  # type: ignore[index]
         (tmp_path.parent / "游戏 空格/客户端.exe").resolve()
     )
+
+
+def test_existing_paths_gain_config_directory_and_keep_user_edits(tmp_path: Path) -> None:
+    preferences = tmp_path / "game-launch.json"
+    preferences.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "client_path": "custom/client.exe",
+                "server_path": "custom/server.exe",
+            }
+        ),
+        encoding="utf-8",
+    )
+    launcher = GameLauncher(tmp_path)
+    launcher.initialize(tmp_path.parent / "previous-server")
+    migrated = launcher.status()
+    assert migrated["settings"] == {
+        "schema_version": 1,
+        "client_path": "custom/client.exe",
+        "server_path": "custom/server.exe",
+        "server_config_path": "../previous-server",
+    }
+    launcher.save(
+        "custom/client.exe", "custom/server.exe", str(migrated["revision"]), "../chosen-server"
+    )
+    reopened = GameLauncher(tmp_path)
+    reopened.initialize(tmp_path.parent / "previous-server")
+    assert reopened.server_config_root() == (tmp_path.parent / "chosen-server").resolve()
 
 
 def test_normal_launch_uses_saved_executable_and_its_own_working_directory(

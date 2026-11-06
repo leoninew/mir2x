@@ -22,6 +22,8 @@ type Positive = Annotated[StrictInt, Field(ge=1, le=2**31 - 1)]
 type Identity = Annotated[StrictInt, Field(ge=1, le=2**32 - 1)]
 type Name = Annotated[str, Field(min_length=1)]
 type Domain = Literal["monsters", "drops", "spawns"]
+type BackupId = Annotated[str, Field(pattern=r"^[a-f0-9]{32}$")]
+type Sha256 = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 
 
 class Model(BaseModel):
@@ -125,6 +127,26 @@ class ConfigRequest(Model):
 
 class SaveRequest(ConfigRequest):
     revision: Name
+
+
+class BackupCreateRequest(Model):
+    workspace_id: Name
+    description: Annotated[str, Field(max_length=1000)] = ""
+
+
+class BackupRestoreRequest(Model):
+    workspace_id: Name
+
+
+class BackupMetadata(Model):
+    schema_version: Annotated[StrictInt, Field(ge=1, le=1)]
+    backup_id: BackupId
+    name: Name
+    created_at: Name
+    description: Annotated[str, Field(max_length=1000)]
+    source_server_root: Name
+    directories: list[Name]
+    files: dict[Name, Sha256]
 
 
 def load_json(raw: bytes) -> dict[str, JsonValue]:

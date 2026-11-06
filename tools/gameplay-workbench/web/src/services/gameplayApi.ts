@@ -36,6 +36,15 @@ export type Spawns = {
 };
 export type GameplayData = Monsters | Drops | Spawns;
 export type Workspace = { bound: boolean; workspace_id: string | null; server_root: string | null };
+export type GameplayBackup = {
+  backup_id: string;
+  name: string;
+  created_at: string;
+  description: string;
+  available: boolean;
+  source_server_root: string;
+  source_matches: boolean;
+};
 export type Catalog = {
   workspace_id: string;
   catalog_revision: string;
@@ -94,6 +103,32 @@ export const gameplayApi = {
   },
   async save(file: ConfigFile): Promise<ConfigFile> {
     return (await apiClient.put<ConfigFile>("/api/gameplay/config", file)).data;
+  },
+  async backups(workspaceId: string): Promise<GameplayBackup[]> {
+    return (
+      await apiClient.get<{ backups: GameplayBackup[] }>("/api/gameplay/backups", {
+        params: { workspace_id: workspaceId },
+      })
+    ).data.backups;
+  },
+  async createBackup(workspaceId: string, description: string): Promise<GameplayBackup> {
+    return (
+      await apiClient.post<GameplayBackup>("/api/gameplay/backups", {
+        workspace_id: workspaceId,
+        description,
+      })
+    ).data;
+  },
+  async restoreBackup(
+    workspaceId: string,
+    backupId: string,
+  ): Promise<{ safety_backup: GameplayBackup }> {
+    return (
+      await apiClient.post<{ safety_backup: GameplayBackup }>(
+        `/api/gameplay/backups/${backupId}/restore`,
+        { workspace_id: workspaceId },
+      )
+    ).data;
   },
 };
 

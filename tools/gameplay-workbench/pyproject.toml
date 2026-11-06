@@ -32,6 +32,7 @@ dev = [
   "build>=1.2",
   "httpx2>=2.12.0",
   "mypy>=1.15",
+  "pillow>=11.2",
   "pyinstaller>=6.16",
   "pytest>=8.3",
   "ruff>=0.9",
@@ -51,7 +52,7 @@ path = "build_hooks.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/src", "/config/config.yaml", "/web/src", "/web/tests", "/web/index.html",
+  "/src", "/config/config.yaml", "/config/game-launch.json", "/web/src", "/web/tests", "/web/index.html",
   "/web/*.json", "/web/*.ts", "/web/yarn.lock", "/web/.yarnrc.yml", "/tests",
   "/pyproject.toml", "/uv.lock", "/build_hooks.py", "/build_desktop.py",
   "/CMakeLists.txt", "/README.md", "/Makefile",

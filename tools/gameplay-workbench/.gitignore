@@ -32,7 +32,9 @@ build/
 
 # Logs and temp files
 logs/
+backups/gameplay/
 *.log
 *.tmp
 game-launch.json
+!config/game-launch.json
 game-launch-invalid-*.json.bak

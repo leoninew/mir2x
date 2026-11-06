@@ -60,14 +60,14 @@ class DesktopApi:
             return {"success": False, "message": str(error)}
 
     def save_game_launch_paths(
-        self, client_path: str, server_path: str, revision: str
+        self, client_path: str, server_path: str, revision: str, server_config_path: str
     ) -> dict[str, object]:
         if not self._is_trusted_page():
             return {"success": False, "message": "当前页面未获桌面桥接授权"}
         try:
             return {
                 "success": True,
-                "data": self._launcher.save(client_path, server_path, revision),
+                "data": self._launcher.save(client_path, server_path, revision, server_config_path),
             }
         except ValueError as error:
             return {"success": False, "message": "请修正启动路径", "issues": issues_for(error)}
@@ -204,15 +204,32 @@ class DesktopApi:
 
 
 class LocalApiServer:
-    def __init__(self, settings: Settings, static_directory: Path) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        static_directory: Path,
+        application_root: Path | None = None,
+    ) -> None:
         self.settings = settings
         self.static_directory = static_directory
+        self.backup_root = (
+            application_root / "backups" / "gameplay" if application_root is not None else None
+        )
         self.url = ""
         self._socket: socket.socket | None = None
         self._server: uvicorn.Server | None = None
         self._thread: threading.Thread | None = None
         self._error: BaseException | None = None
-        self.workspace = WorkspaceService(settings.gameplay.root)
+        self.workspace = WorkspaceService()
+        if application_root is not None:
+            launcher = GameLauncher(application_root)
+            try:
+                launcher.initialize(settings.gameplay.root)
+                self.workspace.bind(launcher.server_config_root())
+            except (LaunchError, OSError, ValueError, GameplayError):
+                logger.warning("Unable to load configured gameplay directory", exc_info=True)
+        elif settings.gameplay.root is not None:
+            self.workspace.bind(settings.gameplay.root)
 
     def start(self) -> str:
         server_settings = self.settings.server.model_copy(
@@ -231,6 +248,7 @@ class LocalApiServer:
                         settings=self.settings,
                         static_directory=self.static_directory,
                         workspace=self.workspace,
+                        backup_root=self.backup_root,
                     ),
                     host=server_settings.host,
                     port=server_settings.port,
@@ -431,7 +449,7 @@ def run_desktop(*, development: bool = False, project_root: Path | None = None) 
         raise FileNotFoundError(f"Built web app not found: {static_directory / 'index.html'}")
 
     logger.info("Starting the desktop application")
-    with LocalApiServer(settings, static_directory) as api_server:
+    with LocalApiServer(settings, static_directory, root) as api_server:
         frontend = (
             DevelopmentFrontend(
                 root, settings.desktop.frontend_url, api_server.url, profile=settings.profile
