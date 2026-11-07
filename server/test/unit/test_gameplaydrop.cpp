@@ -1,11 +1,15 @@
 #include <chrono>
 #include <fstream>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <nlohmann/json.hpp>
 #include "server.hpp"
 #include "peerconfig.hpp"
 #include "serverargparser.hpp"
 #include "dropitemconfig.hpp"
+#include "dbpod.hpp"
+#include "mainwindow.hpp"
+#include "serverpasswordwindow.hpp"
 
 class ActorPool;
 class DBPod;
@@ -32,6 +36,72 @@ ServerPasswordWindow  *g_serverPasswordWindow = nullptr;
 ServerConfigureWindow *g_serverConfigureWindow = nullptr;
 PodMonitorWindow      *g_podMonitorWindow = nullptr;
 ActorMonitorWindow    *g_actorMonitorWindow = nullptr;
+
+TEST_CASE("server launch rejects missing gameplay configuration before runtime startup")
+{
+    REQUIRE(g_dbPod == nullptr);
+    REQUIRE(g_mapBinDB == nullptr);
+    REQUIRE(g_actorPool == nullptr);
+    Server server;
+    CHECK_THROWS_WITH(server.launch(), "gameplay configuration not initialized");
+}
+
+TEST_CASE("manual launch keeps the validated gameplay snapshot when database startup fails")
+{
+    const auto previousDirectory = std::filesystem::current_path();
+    const auto parent = std::filesystem::canonical(std::filesystem::temp_directory_path());
+    const auto root = parent / ("mir2x-manual-launch-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    std::filesystem::create_directories(root / "mir2x.db3");
+    struct Cleanup
+    {
+        std::filesystem::path previousDirectory;
+        std::filesystem::path root;
+        std::filesystem::path parent;
+        ~Cleanup()
+        {
+            std::filesystem::current_path(previousDirectory);
+            delete g_server;
+            g_server = nullptr;
+            g_dbPod = nullptr;
+            g_mainWindow = nullptr;
+            g_serverPasswordWindow = nullptr;
+            g_serverArgParser = nullptr;
+            if(std::filesystem::weakly_canonical(root).parent_path() == parent){
+                std::filesystem::remove_all(root);
+            }
+        }
+    } cleanup{previousDirectory, root, parent};
+    char program[] = "manual-launch-test";
+    char *argv[] = {program, nullptr};
+    const argf::parser arguments(1, argv);
+    ServerArgParser parser(arguments);
+    g_serverArgParser = &parser;
+    DBPod database;
+    g_dbPod = &database;
+    g_server = new Server();
+    g_server->initializeGameplayConfig(std::filesystem::path(MIR2X_TEST_SOURCE_DIR) / "server/config/gameplay");
+    const auto &before = g_server->gameplayConfig();
+    const auto mapID = DBCOM_MAPID(u8"边境城市_01");
+    const auto expectedGroups = before.mapSpawns(mapID).size();
+    REQUIRE(expectedGroups > 0);
+    ServerPasswordWindow password;
+    MainWindow window;
+    g_mainWindow = &window;
+    g_serverPasswordWindow = &password;
+    std::unique_ptr<Fl_Window> passwordWidgets(password.m_window);
+    std::unique_ptr<Fl_Window> mainWidgets(window.m_window);
+    auto menu = dynamic_cast<Fl_Menu_Bar *>(window.m_window->child(0));
+    REQUIRE(menu != nullptr);
+    window.m_launchMenu->do_callback(menu);
+    password.hideAll();
+    std::filesystem::current_path(root);
+    // Exercise the production callback without starting a database, map or
+    // network listener. A directory cannot be opened as the SQLite database.
+    CHECK_THROWS(password.triggerCallback());
+    REQUIRE_NOTHROW(g_server->gameplayConfig());
+    CHECK(&g_server->gameplayConfig() == &before);
+    CHECK(g_server->gameplayConfig().mapSpawns(mapID).size() == expectedGroups);
+}
 
 TEST_CASE("gameplay production drops retain repeat, group order, gold fluctuation and startup snapshot")
 {

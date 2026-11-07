@@ -452,6 +452,8 @@ void Server::mainLoop()
 
 void Server::launch()
 {
+    // Reject missing configuration before starting any runtime components.
+    gameplayConfig();
     createDBConnection();
     loadMapBinDB();
     g_actorPool->launch();

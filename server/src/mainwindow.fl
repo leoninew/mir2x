@@ -51,9 +51,6 @@ class MainWindow {} {
 	auto fnLaunchCallback = [this](ServerPasswordWindow *)
         {
             extern Server *g_server;
-            delete g_server;
-
-            g_server = new Server();
             g_server->launch();
 
             m_launchMenu->deactivate();
