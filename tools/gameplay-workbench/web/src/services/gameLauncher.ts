@@ -13,12 +13,16 @@ export type LaunchTarget = {
   exit_code: number | null;
   launched_executable: string | null;
   warning: string;
+  listening: boolean | null;
+  ownership: "managed" | "unknown" | null;
+  ownership_warning: string | null;
 };
 export type LaunchStatus = {
   base_directory: string;
   settings: LaunchPaths & { schema_version: number };
   revision: string;
   settings_error: string | null;
+  process_state_error: string | null;
   targets: Record<GameKind, LaunchTarget>;
 };
 export type LaunchSettingsResult = {

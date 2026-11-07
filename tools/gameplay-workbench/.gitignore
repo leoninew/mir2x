@@ -38,3 +38,5 @@ backups/gameplay/
 game-launch.json
 !config/game-launch.json
 game-launch-invalid-*.json.bak
+game-processes.json
+.game-process-state-*

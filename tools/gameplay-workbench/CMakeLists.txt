@@ -19,6 +19,8 @@ if(WIN32)
         COMPONENT workbench OPTIONAL
         PATTERN "logs" EXCLUDE
         PATTERN "game-launch*" EXCLUDE
+        PATTERN "game-processes.json" EXCLUDE
+        PATTERN ".game-process-state-*" EXCLUDE
         PATTERN ".env*" EXCLUDE)
     install(CODE "
         set(workbench_config \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/workbench/game-launch.json\")

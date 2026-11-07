@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import errno
 import logging
 import os
 import platform
@@ -42,6 +44,13 @@ class WindowHandle(Protocol):
     def get_current_url(self) -> str | None: ...
 
 
+class LocalApiPortInUseError(RuntimeError):
+    def __init__(self, host: str, port: int) -> None:
+        self.host = host
+        self.port = port
+        super().__init__(f"{host}:{port}")
+
+
 class DesktopApi:
     def __init__(
         self, workspace: WorkspaceService | None = None, *, application_root: Path | None = None
@@ -80,6 +89,22 @@ class DesktopApi:
         try:
             return {"success": True, **self._launcher.launch(kind, revision)}
         except (LaunchError, OSError) as error:
+            return {"success": False, "message": str(error)}
+
+    def stop_game(self, kind: str, pid: int) -> dict[str, object]:
+        if not self._is_trusted_page():
+            return {"success": False, "message": "当前页面未获桌面桥接授权"}
+        try:
+            return {"success": True, **self._launcher.stop(kind, pid)}
+        except (LaunchError, OSError) as error:
+            return {"success": False, "message": str(error)}
+
+    def get_game_log(self, kind: str) -> dict[str, object]:
+        if not self._is_trusted_page():
+            return {"success": False, "message": "当前页面未获桌面桥接授权"}
+        try:
+            return {"success": True, "data": self._launcher.log_tail(kind)}
+        except LaunchError as error:
             return {"success": False, "message": str(error)}
 
     def select_gameplay_workspace(self) -> dict[str, object]:
@@ -238,7 +263,14 @@ class LocalApiServer:
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket = listener
         try:
-            listener.bind((server_settings.host, server_settings.port))
+            try:
+                listener.bind((server_settings.host, server_settings.port))
+            except OSError as error:
+                if error.errno == errno.EADDRINUSE or getattr(error, "winerror", None) == 10048:
+                    raise LocalApiPortInUseError(
+                        server_settings.host, server_settings.port
+                    ) from error
+                raise
             listener.listen(2048)
             listener.setblocking(False)
             self.url = f"http://{server_settings.host}:{listener.getsockname()[1]}"
@@ -500,8 +532,23 @@ def main() -> None:
             WorkspaceService(arguments.check_workspace)
             return
         run_desktop(development=arguments.dev)
-    except Exception:
+    except Exception as error:
         logger.exception("Desktop application startup failed")
+        root = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path.cwd()
+        log_path = root / "logs" / "mir2x-gameplay-workbench.log"
+        if isinstance(error, LocalApiPortInUseError):
+            detail = (
+                f"本地服务端口 {error.host}:{error.port} 已被占用。\n"
+                "请关闭占用该端口的开发服务或其他程序后重试；"
+                "也可以修改 Workbench 的 config/config.yaml 中的 server.port。"
+            )
+        else:
+            detail = f"{type(error).__name__}: {error}"
+        message = f"Workbench 启动失败。\n\n{detail}\n\n详细日志：\n{log_path}"
+        if os.name == "nt" and getattr(sys, "frozen", False):
+            ctypes.windll.user32.MessageBoxW(None, message, "Mir2x Workbench 启动失败", 0x10)
+        elif sys.stderr is not None:
+            print(message, file=sys.stderr)
         raise SystemExit(1) from None
 
 

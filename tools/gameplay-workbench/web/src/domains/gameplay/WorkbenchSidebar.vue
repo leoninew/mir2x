@@ -37,23 +37,6 @@
         </RouterLink>
       </div>
     </nav>
-    <div class="m-4 hidden rounded-lg border border-slate-200 bg-slate-50 p-3 md:block">
-      <p class="text-xs text-slate-500">当前配置目录</p>
-      <p
-        class="mt-2 break-all font-mono text-xs leading-5 text-slate-700"
-        :title="serverRoot ?? undefined"
-      >
-        {{ serverRoot ?? "尚未选择" }}
-      </p>
-      <button
-        type="button"
-        class="mt-2 text-sm text-indigo-700 hover:text-indigo-900 disabled:opacity-50"
-        :disabled="busy"
-        @click="$emit('choose')"
-      >
-        {{ serverRoot ? "更换目录" : "选择服务端目录" }} <span aria-hidden="true">→</span>
-      </button>
-    </div>
   </aside>
 </template>
 
@@ -61,6 +44,6 @@
   import { RouterLink } from "vue-router";
   import { navigationGroups, type WorkbenchPage } from "./gameplayNavigation";
 
-  defineProps<{ page: WorkbenchPage; serverRoot: string | null; busy: boolean }>();
+  defineProps<{ page: WorkbenchPage; busy: boolean }>();
   defineEmits<{ choose: [] }>();
 </script>

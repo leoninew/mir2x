@@ -1,4 +1,5 @@
 import os
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -12,9 +13,11 @@ from mir2x_workbench.config import load_settings
 from mir2x_workbench.desktop import (
     DesktopApi,
     DevelopmentFrontend,
+    LocalApiPortInUseError,
     LocalApiServer,
     application_paths,
 )
+from mir2x_workbench.game_launcher import LaunchError
 
 
 class FakeWindow:
@@ -115,6 +118,41 @@ def test_shell_confirmation_displays_the_entire_executed_command(
     assert api.run_shell_command(command)["success"] is True
     assert window.dialog == ("确认执行 Shell 命令", command)
     assert run.call_args.args == (command,)
+
+
+def test_game_stop_bridge_requires_a_trusted_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    api = DesktopApi()
+    stop = Mock(return_value={"pid": 1234, "message": "进程已停止"})
+    monkeypatch.setattr(api._launcher, "stop", stop)
+    window = FakeWindow()
+    api._bind_window(window, window.url)
+
+    assert api.stop_game("client", 1234) == {
+        "success": True,
+        "pid": 1234,
+        "message": "进程已停止",
+    }
+    stop.assert_called_once_with("client", 1234)
+
+    window.url = "https://example.com/"
+    assert api.stop_game("client", 1234) == {
+        "success": False,
+        "message": "当前页面未获桌面桥接授权",
+    }
+    stop.assert_called_once()
+
+
+def test_game_stop_bridge_reports_native_stop_failures(monkeypatch: pytest.MonkeyPatch) -> None:
+    api = DesktopApi()
+    stop = Mock(side_effect=LaunchError("无法停止 client 进程"))
+    monkeypatch.setattr(api._launcher, "stop", stop)
+    window = FakeWindow()
+    api._bind_window(window, window.url)
+
+    assert api.stop_game("client", 1234) == {
+        "success": False,
+        "message": "无法停止 client 进程",
+    }
 
 
 def test_development_frontend_stops_its_owned_process(tmp_path: Path) -> None:
@@ -227,6 +265,27 @@ def test_local_api_server_serves_desktop_and_stops(tmp_path: Path, built_fronten
             assert response.text == "桌面应用"
         else:
             assert response.json() == {"text": "Hello, Ada!"}
-
     with pytest.raises(requests.RequestException):
         requests.get(f"{server.url}/static/", timeout=0.5)
+
+
+def test_local_api_server_reports_an_occupied_port(tmp_path: Path) -> None:
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen()
+    port = listener.getsockname()[1]
+    settings = load_settings().model_copy(
+        update={
+            "server": load_settings().server.model_copy(update={"port": port}),
+        }
+    )
+    server = LocalApiServer(settings, tmp_path)
+
+    try:
+        with pytest.raises(LocalApiPortInUseError) as error:
+            server.start()
+    finally:
+        listener.close()
+
+    assert error.value.host == "127.0.0.1"
+    assert error.value.port == port

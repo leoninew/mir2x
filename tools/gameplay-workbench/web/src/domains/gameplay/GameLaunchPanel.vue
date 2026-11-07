@@ -1,56 +1,116 @@
 <template>
   <DialogRoot :open="settingsOpen" @update:open="setSettingsOpen">
-    <section aria-label="游戏启动" class="relative grid gap-5" :aria-busy="busy">
+    <section aria-label="游戏启动" class="relative w-full" :aria-busy="busy">
       <AppLoading
         v-if="busy && pending === 'refresh' && !settingsOpen"
         label="正在加载启动状态…"
         overlay
       />
-      <div class="grid gap-5 lg:grid-cols-2">
+      <div
+        class="mx-auto w-full max-w-2xl overflow-hidden rounded-lg border border-slate-200 bg-white"
+      >
         <article
           v-for="kind in kinds"
           :key="kind"
-          class="flex flex-col rounded-lg border border-slate-200 bg-white p-6"
+          class="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6 sm:px-5 sm:py-4"
+          :class="kind === 'server' ? 'border-t border-slate-200' : ''"
         >
-          <div class="flex flex-wrap items-center gap-3">
-            <h2 class="text-lg font-medium text-slate-900">{{ labels[kind] }}</h2>
-            <p class="flex items-center gap-2 text-sm text-slate-500">
-              <span
-                :class="[
-                  'size-2 rounded-full',
-                  status?.targets[kind].running ? 'bg-emerald-500' : 'bg-slate-300',
-                ]"
-                aria-hidden="true"
-              ></span>
-              {{
-                status?.targets[kind].running
-                  ? "已启动"
-                  : status?.targets[kind].exit_code != null
-                    ? `已退出 · 退出码 ${status.targets[kind].exit_code}`
-                    : "未启动"
-              }}
-              <span v-if="status?.targets[kind].running">· PID {{ status.targets[kind].pid }}</span>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 class="text-base font-semibold text-slate-900">{{ labels[kind] }}</h2>
+              <p
+                class="flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium"
+                :class="
+                  status?.targets[kind].ownership === 'unknown'
+                    ? 'bg-amber-50 text-amber-700'
+                    : status?.targets[kind].running
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-slate-100 text-slate-600'
+                "
+              >
+                <span
+                  :class="[
+                    'size-1.5 rounded-full',
+                    status?.targets[kind].ownership === 'unknown'
+                      ? 'bg-amber-500'
+                      : status?.targets[kind].running
+                        ? 'bg-emerald-500'
+                        : 'bg-slate-400',
+                  ]"
+                  aria-hidden="true"
+                ></span>
+                {{
+                  status?.targets[kind].ownership === "unknown"
+                    ? "状态未知"
+                    : status?.targets[kind].running
+                      ? "运行中"
+                      : status?.targets[kind].exit_code != null
+                        ? `已退出 · ${status.targets[kind].exit_code}`
+                        : "未启动"
+                }}
+                <span v-if="status?.targets[kind].pid != null" class="font-normal opacity-70">
+                  PID {{ status.targets[kind].pid }}
+                </span>
+              </p>
+            </div>
+            <p
+              v-if="status?.targets[kind].ownership === 'unknown'"
+              role="status"
+              class="mt-2 text-sm text-amber-700"
+            >
+              {{ status.targets[kind].ownership_warning || "无法确认进程身份，已禁用控制" }}
+            </p>
+            <p
+              v-if="kind === 'server' && status?.targets.server.running"
+              class="mt-2 text-sm text-slate-500"
+            >
+              {{ serverListenLabel }}
+            </p>
+            <p v-if="status?.targets[kind].warning" class="mt-2 text-xs leading-5 text-amber-700">
+              {{ status.targets[kind].warning }}
             </p>
           </div>
-          <p v-if="status?.targets[kind].warning" class="mt-3 text-xs leading-5 text-amber-700">
-            {{ status.targets[kind].warning }}
-          </p>
-          <button
-            type="button"
-            class="primary-button mt-5"
-            :disabled="launchDisabled(kind)"
-            @click="launch(kind)"
+          <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+            <button
+              type="button"
+              class="primary-button w-full sm:min-w-36 sm:w-auto"
+              :disabled="actionDisabled(kind)"
+              @click="toggleGame(kind)"
+            >
+              <AppLoading
+                v-if="pending === kind"
+                compact
+                :label="`正在${actionLabel(kind)}…`"
+                class="text-current"
+              />
+              {{ actionLabel(kind) }}
+            </button>
+            <button
+              v-if="status?.targets[kind].running || status?.targets[kind].exit_code != null"
+              type="button"
+              class="text-button justify-center"
+              :disabled="!desktop"
+              @click="showLog(kind)"
+            >
+              {{ logKind === kind ? "刷新日志" : "查看日志" }}
+            </button>
+          </div>
+          <div
+            v-if="logKind === kind"
+            class="min-w-0 border-t border-slate-100 px-4 pb-4 pt-3 sm:col-span-2 sm:px-5"
           >
-            <AppLoading
-              v-if="pending === kind"
-              compact
-              :label="`正在启动${labels[kind]}…`"
-              class="text-current"
-            />
-            {{ status?.targets[kind].running ? `${labels[kind]}已启动` : `启动${labels[kind]}` }}
-          </button>
+            <div
+              class="max-h-56 overflow-auto whitespace-pre-wrap break-all rounded border border-slate-200 bg-slate-50 p-3 text-xs"
+            >
+              {{ logText || "暂无日志" }}
+            </div>
+            <button type="button" class="text-button mt-1" @click="logKind = null">关闭日志</button>
+          </div>
         </article>
       </div>
+      <p v-if="status?.process_state_error" role="alert" class="text-sm text-red-700">
+        {{ status.process_state_error }}
+      </p>
     </section>
 
     <DialogPortal>
@@ -223,6 +283,8 @@
   const desktop = ref(false);
   const busy = ref(false);
   const settingsOpen = ref(false);
+  const logKind = ref<GameKind | null>(null);
+  const logText = ref("");
   const pending = ref<GameKind | "refresh" | "paths" | null>(null);
   const draft = reactive<LaunchPaths>({ client_path: "", server_path: "", server_config_path: "" });
   const errors = ref<Partial<Record<keyof LaunchPaths, string>>>({});
@@ -232,6 +294,9 @@
       "填写包含 config/gameplay 的服务端目录，下次打开工作台生效。",
   );
   let generation = 0;
+  let pollTimer: number | undefined;
+  let polling = false;
+  let pollFailed = false;
   const dirty = computed(
     () =>
       status.value !== null &&
@@ -247,6 +312,23 @@
       props.workspaceRoot !== null &&
       normalized(props.workspaceRoot) !== normalized(status.value.targets.server.working_directory),
   );
+  const serverListenLabel = computed(() => {
+    const listening = status.value?.targets.server.listening;
+    if (listening === true) return "玩家端口 7000 已监听";
+    if (listening === false) return "玩家端口 7000 尚未监听";
+    return "玩家端口监听状态未知";
+  });
+
+  async function showLog(kind: GameKind): Promise<void> {
+    try {
+      const result = await getDesktopBridge().get_game_log(kind);
+      if (!result.success) throw new Error(result.message ?? "读取日志失败");
+      logKind.value = kind;
+      logText.value = result.data ?? "";
+    } catch (error) {
+      report(error);
+    }
+  }
 
   function accept(result: LaunchSettingsResult, reset: boolean): void {
     if (!result.success || !result.data) throw new Error(result.message ?? "读取启动设置失败");
@@ -333,33 +415,40 @@
     }
   }
 
-  async function launch(kind: GameKind): Promise<void> {
-    if (launchDisabled(kind)) return;
-    if (!status.value || status.value.settings_error || !status.value.targets[kind].exists) {
-      setSettingsOpen(true);
-      return;
+  async function toggleGame(kind: GameKind): Promise<void> {
+    if (actionDisabled(kind) || !status.value) return;
+    const target = status.value.targets[kind];
+    const stopping = target.running;
+    if (!stopping) {
+      if (status.value.settings_error || !target.exists) {
+        setSettingsOpen(true);
+        return;
+      }
+      if (props.gameplayDirty && !window.confirm("有未保存的玩法修改，仍要启动？")) return;
+      if (
+        kind === "server" &&
+        serverMismatch.value &&
+        !window.confirm("启动目录与当前配置目录不同，仍要启动？")
+      )
+        return;
     }
-    if (props.gameplayDirty && !window.confirm("有未保存的玩法修改，仍要启动？")) return;
-    if (
-      kind === "server" &&
-      serverMismatch.value &&
-      !window.confirm("启动目录与当前配置目录不同，仍要启动？")
-    )
-      return;
     const current = ++generation;
     busy.value = true;
     pending.value = kind;
     try {
-      const result = await getDesktopBridge().launch_game(kind, status.value.revision);
+      if (stopping && target.pid === null) throw new Error("进程状态无效，请重新读取状态");
+      const result = stopping
+        ? await getDesktopBridge().stop_game(kind, target.pid!)
+        : await getDesktopBridge().launch_game(kind, status.value.revision);
       if (current !== generation) return;
       toasts.show(
         result.success
-          ? `${labels[kind]}已启动${result.pid ? ` · PID ${result.pid}` : ""}`
-          : (result.message ?? "启动失败"),
+          ? `${labels[kind]}进程已${stopping ? "停止" : "启动"}${result.pid ? ` · PID ${result.pid}` : ""}`
+          : (result.message ?? `${stopping ? "停止" : "启动"}失败`),
         result.success ? "success" : "error",
       );
       const updated = await getDesktopBridge().get_game_launch_status();
-      if (current === generation) accept(updated, true);
+      if (current === generation) accept(updated, false);
     } catch (error) {
       if (current === generation) report(error);
     } finally {
@@ -369,14 +458,46 @@
       }
     }
   }
-  function launchDisabled(kind: GameKind): boolean {
+  function actionLabel(kind: GameKind): string {
+    if (status.value?.targets[kind].ownership === "unknown") return `${labels[kind]}状态未知`;
+    return `${status.value?.targets[kind].running ? "停止" : "启动"}${labels[kind]}`;
+  }
+  function actionDisabled(kind: GameKind): boolean {
+    const target = status.value?.targets[kind];
     return (
       !desktop.value ||
       !status.value ||
       busy.value ||
-      props.gameplayBusy ||
-      Boolean(status.value.targets[kind].running)
+      target?.ownership === "unknown" ||
+      (!target?.running && (props.gameplayBusy || Boolean(status.value.process_state_error)))
     );
+  }
+  async function pollStatus(): Promise<void> {
+    if (
+      busy.value ||
+      polling ||
+      !status.value ||
+      !Object.values(status.value.targets).some(
+        (target) => target.running || target.ownership === "unknown",
+      )
+    )
+      return;
+    const current = generation;
+    polling = true;
+    try {
+      const result = await getDesktopBridge().get_game_launch_status();
+      if (current === generation) {
+        accept(result, false);
+        pollFailed = false;
+      }
+    } catch (error) {
+      if (current === generation && !pollFailed) {
+        report(error);
+        pollFailed = true;
+      }
+    } finally {
+      polling = false;
+    }
   }
   function missingSavedFile(kind: GameKind): boolean {
     return Boolean(
@@ -395,9 +516,11 @@
   onMounted(() => {
     window.addEventListener("pywebviewready", bridgeReady);
     void refresh();
+    pollTimer = window.setInterval(() => void pollStatus(), 1000);
   });
   onBeforeUnmount(() => {
     generation++;
+    window.clearInterval(pollTimer);
     window.removeEventListener("pywebviewready", bridgeReady);
   });
 </script>

@@ -17,7 +17,7 @@ const workbenchPaths: Record<WorkbenchPage, string> = {
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
-    redirect: { name: "monsters" },
+    redirect: { name: "launcher" },
   },
   ...navigationGroups.flatMap((group) =>
     group.items.map((item) => ({

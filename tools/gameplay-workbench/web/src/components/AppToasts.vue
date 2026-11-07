@@ -48,7 +48,7 @@
     <ToastPortal>
       <ToastViewport
         label="通知（{hotkey}）"
-        class="pointer-events-auto fixed top-4 right-4 z-[100] m-0 flex max-h-[calc(100dvh-2rem)] w-96 max-w-[calc(100vw-2rem)] list-none flex-col gap-3 overflow-y-auto p-0 outline-none"
+        class="pointer-events-auto fixed right-4 bottom-4 z-[100] m-0 flex max-h-[calc(100dvh-2rem)] w-96 max-w-[calc(100vw-2rem)] list-none flex-col gap-3 overflow-y-auto p-0 outline-none"
       />
     </ToastPortal>
   </ToastProvider>

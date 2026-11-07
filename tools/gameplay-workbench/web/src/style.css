@@ -102,7 +102,7 @@
 @keyframes toast-appear {
   from {
     opacity: 0;
-    transform: translateY(-0.5rem);
+    transform: translateY(0.5rem);
   }
   to {
     opacity: 1;

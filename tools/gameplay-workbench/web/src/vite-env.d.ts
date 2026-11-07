@@ -16,6 +16,8 @@ interface PyWebViewAPI {
     serverConfigPath: string,
   ): Promise<LaunchSettingsResult>;
   launch_game(kind: string, revision: string): Promise<DesktopResult & { pid?: number }>;
+  get_game_log(kind: string): Promise<DesktopResult & { data?: string }>;
+  stop_game(kind: string, pid: number): Promise<DesktopResult & { pid?: number }>;
   select_gameplay_workspace(): Promise<DesktopResult>;
   say_hello(name: string): Promise<{ success: boolean; message: string; timestamp: string }>;
   get_system_info(): Promise<{

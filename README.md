@@ -64,7 +64,7 @@ SDL 全屏模式的输入法：
 <a id="building-from-source"></a>
 ### 从源码构建
 
-在 64 位原生 Linux 和 64 位 MSYS2 UCRT64/MinGW 上，mir2x 使用 vcpkg manifest 模式管理第三方依赖。构建脚本会在当前工作目录中克隆并初始化本地 vcpkg，配置 CMake，然后执行编译和安装。
+在 64 位原生 Linux 和 64 位 MSYS2 UCRT64/MinGW 上，mir2x 使用 vcpkg manifest 模式管理第三方依赖。以下命令在仓库根目录执行，工具由当前终端的 `PATH` 提供。构建结果默认放在 `build/`，安装结果放在 `install/`；工具安装位置、终端启动方式和代理由本机环境管理。
 
 
 <a id="linux-ubuntu-2604"></a>
@@ -91,8 +91,8 @@ sudo apt install -y \
 
 ```sh
 git clone https://github.com/etorth/mir2x.git
-mkdir b_mir2x && cd b_mir2x
-python3 build.py --c-compiler=gcc-16 --cxx-compiler=g++-16 --parallel=10
+cd mir2x
+python3 ./build.py --build-dir=. --c-compiler=gcc-16 --cxx-compiler=g++-16 --parallel=10
 ```
 
 <a id="windows-msys2-ucrt64"></a>
@@ -110,23 +110,44 @@ pacman -S --needed \
     mingw-w64-ucrt-x86_64-python
 ```
 
-随后在同一 UCRT64 终端克隆并构建；脚本默认选择 `x64-mingw-static` vcpkg triplet：
+随后在同一 UCRT64 终端克隆并构建；辅助脚本调用 `build.py`，设置 Ninja、GCC/G++ 和 `x64-mingw-static` vcpkg triplet，并完成编译和安装：
 
 ```sh
 git clone https://github.com/etorth/mir2x.git
-mkdir b_mir2x && cd b_mir2x
-python3 build.py --build-dir=/path/to/b_mir2x --parallel=10
+cd mir2x
+bash ./scripts/build-msys2.sh
 ```
+
+<a id="incremental-build"></a>
+#### 日常构建与安装
+
+完成首次完整构建后，在原构建环境的仓库根目录中执行：
+
+```sh
+cmake --build build --target client server --parallel 8
+cmake --install build --component runtime
+cmake --install build --component gameplay-config
+```
+
+`runtime` 更新程序和脚本；`gameplay-config` 首次安装默认玩法配置，已有配置则校验并保留。这组命令复用已安装的资源。只执行 `cmake --build` 不会更新 `install/` 中的原生程序。
+
+Windows 工作台还需要 Python 3.12+、uv、Node.js 22+、Corepack 和 WebView2。在同一仓库根目录执行：
+
+```sh
+cmake --build build --target workbench
+```
+
+工作台默认按 `profile=dev` 打包，并自动安装到 `install/workbench/`。在 `tools/gameplay-workbench` 中执行 `make binary` 使用相同的打包入口；`make binary profile=prod` 可覆盖 profile。详见[工作台说明](tools/gameplay-workbench/README.md)。
 
 <a id="helper-script-options"></a>
 #### 构建脚本选项
 
 默认执行增量构建：重复运行同一命令会保留 `<build-dir>/build`，包括 CMake 对象文件、`vcpkg_installed` 和默认资源克隆。只有确实需要全新构建时才使用 `--fresh`：它会删除整个 `<build-dir>/build`，包括 `vcpkg_installed` 和 `<build-dir>/build/assets/mir2x_assets`，之后依赖需要重新安装或编译，默认资源也需要重新克隆。
 
-安装阶段始终执行客户端和服务端资源打包。省略 `--assets-path` 时，CMake 会在构建阶段将 `https://github.com/etorth/mir2x_assets.git` 克隆到 `<build-dir>/build/assets/mir2x_assets`。要使用已有资源仓库，可指定：
+默认完整安装会执行客户端和服务端资源打包；日常按组件安装可以复用已有资源。省略 `--assets-path` 时，CMake 会在构建阶段将 `https://github.com/etorth/mir2x_assets.git` 克隆到 `<build-dir>/build/assets/mir2x_assets`。要使用相邻目录中已有的资源仓库，可指定：
 
 ```sh
-build.py [options] --assets-path=/path/to/mir2x_assets
+python3 ./build.py [options] --assets-path=../mir2x_assets
 ```
 
 其他常用选项：
@@ -137,17 +158,17 @@ build.py [options] --assets-path=/path/to/mir2x_assets
 
 <a id="first-time-run"></a>
 ### 首次运行
-单节点服务端可以部署在 Linux 机器上，项目作者曾使用 `Oracle Cloud Infrastructure` 的 `always-free` 方案。启动客户端之前，需要通过服务端菜单 `server/launch` 或启动参数启动服务：
+单节点服务端可以部署在 Linux 机器上，项目作者曾使用 `Oracle Cloud Infrastructure` 的 `always-free` 方案。以下命令分别在仓库根目录的两个终端执行。启动客户端之前，需要通过服务端菜单 `server/launch` 或启动参数启动服务：
 
 ```sh
-cd b_mir2x/install/server
+cd install/server
 ./server --auto-launch
 ```
 
 启动客户端；当前可以使用默认账号（账号 `test`，密码 `123456`）进行尝试：
 
 ```sh
-cd b_mir2x/install/client
+cd install/client
 ./client --server-ip=localhost --auto-login=test:123456
 ```
 

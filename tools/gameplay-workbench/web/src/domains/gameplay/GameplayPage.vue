@@ -1,11 +1,6 @@
 <template>
   <div class="workbench-layout">
-    <WorkbenchSidebar
-      :page="page"
-      :server-root="workspace?.server_root ?? null"
-      :busy="busy || managementBusy"
-      @choose="chooseWorkspace"
-    />
+    <WorkbenchSidebar :page="page" :busy="busy || managementBusy" @choose="chooseWorkspace" />
     <main class="relative flex min-h-0 min-w-0 flex-col gap-5 p-4 sm:p-6 lg:p-8" :aria-busy="busy">
       <AppLoading v-if="busy" :label="activity" overlay />
       <header class="shrink-0">
@@ -29,7 +24,10 @@
         </div>
         <p class="mt-2 text-sm leading-6 text-slate-500">{{ pageInfo.description }}</p>
       </header>
-      <div v-show="page === 'launcher'" class="min-h-0 overflow-auto">
+      <div
+        v-show="page === 'launcher'"
+        class="flex min-h-0 flex-1 items-center justify-center overflow-auto"
+      >
         <GameLaunchPanel
           ref="launchPanel"
           :gameplay-dirty="hasUnsavedDrafts"
