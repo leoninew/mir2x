@@ -58,15 +58,16 @@ def test_dev_profile_enables_reload(tmp_path: Path, monkeypatch: MonkeyPatch) ->
     assert settings.server.reload is True
 
 
-def test_prod_profile_uses_defaults_without_loading_other_dotenv_files(
+def test_default_profile_is_dev_without_loading_unqualified_dotenv(
     tmp_path: Path, monkeypatch: MonkeyPatch
 ) -> None:
     prepare_config(tmp_path)
-    for name in (".env", ".env.dev"):
-        (tmp_path / name).write_text("MIR2X_WORKBENCH_SERVER__RELOAD=true\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("MIR2X_WORKBENCH_SERVER__RELOAD=true\n", encoding="utf-8")
+    (tmp_path / ".env.dev").write_text("MIR2X_WORKBENCH_GREETING__PREFIX=Dev\n", encoding="utf-8")
     monkeypatch.delenv("MIR2X_WORKBENCH_PROFILE", raising=False)
 
     settings = load_settings(tmp_path)
 
-    assert settings.profile == "prod"
+    assert settings.profile == "dev"
+    assert settings.greeting.prefix == "Dev"
     assert settings.server.reload is False

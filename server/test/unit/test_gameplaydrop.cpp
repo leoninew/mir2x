@@ -88,19 +88,45 @@ TEST_CASE("gameplay production drops retain repeat, group order, gold fluctuatio
     };
     doc["items"] = Json::array({item(itemID, 0, 2, 3), item(DBCOM_ITEMID(u8"金币（小）"), 0, 1, 100),
                                 item(itemID, 1, 1, 7), item(itemID, 1, 1, 9)});
+    double goldMultiplier = 1.0;
+    double dropMultiplier = 1.0;
+    int expectedGold = 100;
+    SECTION("default multipliers retain baseline") {}
+    SECTION("fractional multipliers compose with peer rates before rounding")
+    {
+        peer.setConfig({.dropRate = 4.0, .goldRate = 3.0});
+        goldMultiplier = 0.5;
+        dropMultiplier = 0.5;
+        expectedGold = 150;
+        for(auto &entry: doc["items"]){
+            entry["prob_recip"] = 2;
+        }
+    }
+    SECTION("zero drop multiplier disables all drops") { dropMultiplier = 0.0; }
+    SECTION("zero gold multiplier disables gold only") { goldMultiplier = 0.0; }
+    {
+        std::ofstream out(root / "multipliers.json");
+        out << Json{{"schema_version", 1}, {"experience", 1}, {"gold", goldMultiplier}, {"drop", dropMultiplier}};
+    }
     { std::ofstream out(path); out << doc; }
     server.initializeGameplayConfig(root);
     CHECK_THROWS_AS(server.initializeGameplayConfig(root), std::logic_error);
     std::filesystem::remove(path);
     const auto drops = getMonsterDropItemList(monsterID);
-    REQUIRE(drops.size() == 4);
+    if(dropMultiplier == 0.0){
+        REQUIRE(drops.empty());
+        return;
+    }
+    REQUIRE(drops.size() == (goldMultiplier == 0.0 ? 3 : 4));
     CHECK(drops[0].itemID == itemID);
     CHECK(drops[0].count == 3);
     CHECK(drops[1].itemID == itemID);
     CHECK(drops[1].count == 3);
-    CHECK(DBCOM_ITEMRECORD(drops[2].itemID).isGold());
-    CHECK(drops[2].count >= 90);
-    CHECK(drops[2].count <= 110);
-    CHECK(drops[3].itemID == itemID);
-    CHECK(drops[3].count == 7);
+    if(goldMultiplier != 0.0){
+        CHECK(DBCOM_ITEMRECORD(drops[2].itemID).isGold());
+        CHECK(drops[2].count >= expectedGold * 0.9);
+        CHECK(drops[2].count <= expectedGold * 1.1);
+    }
+    CHECK(drops.back().itemID == itemID);
+    CHECK(drops.back().count == 7);
 }

@@ -2,6 +2,8 @@
 
 基于 Python/FastAPI、pywebview/WebView2、Vue 3/Vite 的桌面玩法配置管理应用。当前管理基础经验、金币/物品掉落和地图刷怪；保存后下次启动服务端生效。
 
+“全局倍率”是独立页签，单独保存 `server/config/gameplay/multipliers.json`，经验、金币、掉率默认均为 1，支持小数和 0。金币/掉率叠乘原服务端倍率，经验乘原击杀经验结果；0 分别关闭对应收益或全部掉落。不会改写基础配置或原服务端窗口设置。旧目录缺少新文件时按 1 读取，首次修改保存创建文件；整目录备份/还原同时包含此文件，旧备份仍兼容。
+
 Windows 需要 WebView2 Runtime；开发需要 Python 3.12+、uv、Node.js 22+、Corepack，Makefile 入口还需要 GNU Make/Bash。
 
 ## 使用
@@ -48,12 +50,15 @@ install/
 
 ```bash
 make deps
-make desktop dev=1 profile=dev
 make check
 make test
+make web
+make webapi
+make binary
+make binary profile=prod
 ```
 
-浏览器开发模式分别运行 `make webapi profile=dev` 与 `make web profile=dev`。用应用自身设置 `MIR2X_WORKBENCH_GAMEPLAY__ROOT` 指定测试 server 根；目录选择仅通过受信桌面桥接开放，不提供任意文件路径写入的 HTTP API。
+直接运行 `make` 打印帮助。业务目标只保留这六个，默认统一 `profile=dev`：`test` 运行前后端单元测试，`web` 启动前端（8081），`webapi` 启动后端（8000），`binary` 打包并安装到主构建树的安装目录。`make binary profile=prod` 覆盖前端构建模式，并让制品默认选择 `.env.prod`；profile 不写入 YAML，制品通过启动钩子提供默认选择，显式环境变量仍可覆盖。默认 YAML 原样打包，不打包 `.env`。前后端分别在两个终端运行。用应用自身设置 `MIR2X_WORKBENCH_GAMEPLAY__ROOT` 指定测试 server 根；目录选择仅通过受信桌面桥接开放，不提供任意文件路径写入的 HTTP API。
 
 Python distribution 为 `mir2x-gameplay-workbench`，模块为 `mir2x_workbench`，入口为 `mir2x-workbench`。`uv.lock` 与 `web/yarn.lock` 随依赖调整同步。
 
@@ -78,9 +83,7 @@ Windows 程序图标直接复用客户端资源 `client/src/winicon.png`；打�
 
 更新已有游戏运行目录时，可分别安装 `runtime`（原生程序/脚本）和 `gameplay-config`（完整默认目录首次安装、已有目录校验保留）组件，复用现有资源；`resources` 组件重新打包资源时要求源资源完整。
 
-工具目录的 `make binary` / `make package` 只是同一个 `build_desktop.py` 的便捷入口，不维护第二套打包参数。`binary` 构建后安装workbench组件，`package`仅构建。
-
-`make package` 仅生成中间包，位置为主构建树的 `workbench/Mir2xWorkbench/`（默认仓库 `build/workbench/Mir2xWorkbench/`）。主构建树不是默认 `build` 时传入 `NATIVE_BUILD_DIR`。Windows 安装目标为 `install/workbench/`，不覆盖已有 `game-launch.json`、`.env` 或日志。工作台安装不操作用户DB。
+工具目录的 `make binary` 使用同一个 `build_desktop.py`，不维护第二套打包参数；生成中间包后自动安装 workbench 组件。中间包位置为主构建树的 `workbench/Mir2xWorkbench/`。主构建树不是默认 `build` 时传入 `NATIVE_BUILD_DIR`。Windows 安装目标为 `install/workbench/`，不覆盖已有 `game-launch.json`、`.env` 或日志。工作台安装不操作用户DB。
 
 先构建前端再打 wheel；wheel 包含前端、默认 YAML 和日志资源。editable 安装可直接使用 Vite，不要求预先生成 dist。二进制包含前端、默认配置和 Python 运行环境，不内嵌 `.env`、所选游戏数据或用户备份。
 
@@ -90,6 +93,6 @@ Windows 程序图标直接复用客户端资源 `client/src/winicon.png`；打�
 
 ## 应用设置
 
-应用自身配置与玩法文件分离。优先级为默认 `config/config.yaml` → `.env.<profile>` → `MIR2X_WORKBENCH_*` 环境变量；嵌套字段用 `__`，默认 profile 为 prod。可在 EXE 旁放置 `config/config.yaml` 和 `.env.prod`。UTF-8轮转日志写入应用目录 `logs/`。
+应用自身配置与玩法文件分离。始终加载 `config/config.yaml`，再叠加 `.env.<profile>`，最后叠加 `MIR2X_WORKBENCH_*` 环境变量；嵌套字段用 `__`。profile 只选择覆盖文件，由 `MIR2X_WORKBENCH_PROFILE` 指定，开发默认 dev，二进制默认采用构建时所选值；不属于 YAML 配置。可在 EXE 旁放置 `config/config.yaml` 和对应的 `.env.<profile>`。UTF-8轮转日志写入应用目录 `logs/`。
 
 沿用模板通用开发桥接；玩法界面使用目录选择、固定配置 API 和固定游戏启动方法，不使用通用 Shell 执行。格式与运行语义见 [gameplay README](../../server/config/gameplay/README.md)。

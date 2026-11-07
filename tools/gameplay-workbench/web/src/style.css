@@ -90,3 +90,39 @@
     @apply cursor-not-allowed;
   }
 }
+
+@layer components {
+  .primary-button {
+    @apply rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50;
+  }
+  .secondary-button {
+    @apply rounded-md border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50;
+  }
+  .text-button {
+    @apply rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50;
+  }
+  .config-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .config-table th {
+    @apply sticky top-0 z-10 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium whitespace-nowrap text-slate-600;
+  }
+  .config-table td {
+    @apply border-b border-slate-100 px-4 py-3 align-top;
+  }
+  .experience-table {
+    min-width: 460px;
+  }
+  .experience-table th:first-child {
+    width: 100px;
+  }
+  .experience-table th:last-child {
+    width: 240px;
+  }
+  .editor-help {
+    @apply border-b border-slate-100 px-4 py-3 text-sm leading-6 text-slate-500;
+  }
+  .required {
+    @apply text-red-600;
+  }
+}

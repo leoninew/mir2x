@@ -11,6 +11,7 @@ import {
   type Catalog,
   type ConfigFile,
   type Domain,
+  type GameplayBackup,
 } from "@/services/gameplayApi";
 
 function file(domain: Domain = "monsters", id: number | null = null): ConfigFile {
@@ -32,7 +33,9 @@ function file(domain: Domain = "monsters", id: number | null = null): ConfigFile
                 { item_id: 2, item_name: "金币", group: 0, prob_recip: 1, repeat: 1, count: 2 },
               ],
             }
-          : { schema_version: 1, map_id: 3, map_name: "道馆", groups: [] },
+          : domain === "multipliers"
+            ? { schema_version: 1, experience: 1, gold: 1, drop: 1 }
+            : { schema_version: 1, map_id: 3, map_name: "道馆", groups: [] },
   };
 }
 
@@ -60,6 +63,7 @@ beforeEach(() => {
     file(domain, id),
   );
   vi.spyOn(gameplayApi, "validate").mockResolvedValue({ valid: true, issues: [] });
+  vi.spyOn(gameplayApi, "backups").mockResolvedValue([]);
   vi.spyOn(gameplayApi, "save").mockImplementation(async (payload) => ({
     ...payload,
     revision: "new-revision",
@@ -68,6 +72,120 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("gameplay editing", () => {
+  it("preserves drafts across running, backups and other editors", async () => {
+    const wrapper = mount(GameplayPage);
+    await flushPromises();
+    await wrapper.get('input[aria-label="鹿 基础经验"]').setValue("25");
+    for (const label of ["游戏运行", "配置备份", "全局倍率", "基础经验"]) {
+      await wrapper
+        .get('nav[aria-label="工作台导航"]')
+        .findAll("button")
+        .find((button) => button.text() === label)!
+        .trigger("click");
+      await flushPromises();
+    }
+    expect((wrapper.get('input[aria-label="鹿 基础经验"]').element as HTMLInputElement).value).toBe(
+      "25",
+    );
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "校验并保存当前文件")!
+      .trigger("click");
+    await flushPromises();
+    expect(gameplayApi.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domain: "monsters",
+        data: { schema_version: 1, monsters: [{ monster_id: 1, monster_name: "鹿", exp: 25 }] },
+      }),
+    );
+    wrapper.unmount();
+  });
+
+  it("shows a clear empty search result", async () => {
+    const wrapper = mount(GameplayPage);
+    await flushPromises();
+    await wrapper.get('input[placeholder="名称或 ID"]').setValue("不存在的怪物");
+    expect(wrapper.text()).toContain("没有匹配的怪物");
+    expect(wrapper.text()).toContain("0 / 1 个怪物");
+    wrapper.unmount();
+  });
+
+  it("keeps restore confirmation and reloads the editor after restoring", async () => {
+    const backup: GameplayBackup = {
+      backup_id: "backup",
+      name: "2026-11-07 08:00:00",
+      created_at: "2026-11-07T08:00:00+08:00",
+      description: "调整前",
+      available: true,
+      source_server_root: "server",
+      source_matches: true,
+    };
+    vi.mocked(gameplayApi.backups).mockResolvedValue([backup]);
+    const restore = vi
+      .spyOn(gameplayApi, "restoreBackup")
+      .mockResolvedValue({ safety_backup: { ...backup, name: "还原前备份" } });
+    const wrapper = mount(GameplayPage, { attachTo: document.body });
+    await flushPromises();
+    await wrapper.get('input[aria-label="鹿 基础经验"]').setValue("25");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "配置备份")!
+      .trigger("click");
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "还原")!
+      .trigger("click");
+    await flushPromises();
+    expect(document.body.textContent).toContain("未保存草稿将被丢弃");
+    expect(restore).not.toHaveBeenCalled();
+    (
+      Array.from(document.body.querySelectorAll("button")).find(
+        (button) => button.textContent?.trim() === "确认还原",
+      ) as HTMLButtonElement
+    ).click();
+    await flushPromises();
+    expect(restore).toHaveBeenCalledWith("workspace", "backup");
+    expect(wrapper.get("h1").text()).toBe("基础经验");
+    expect((wrapper.get('input[aria-label="鹿 基础经验"]').element as HTMLInputElement).value).toBe(
+      "10",
+    );
+    expect(wrapper.text()).toContain("还原前备份");
+    wrapper.unmount();
+  });
+
+  it("edits independent decimal multipliers including zero with local field errors", async () => {
+    const wrapper = mount(GameplayPage);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "全局倍率")!
+      .trigger("click");
+    await flushPromises();
+    expect(wrapper.find('input[placeholder="名称或 ID"]').exists()).toBe(false);
+    await wrapper.get("#experience").setValue("1.5");
+    await wrapper.get("#gold").setValue("0");
+    await wrapper.get("#drop").setValue("");
+    const save = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "校验并保存当前文件")!;
+    await save.trigger("click");
+    await flushPromises();
+    expect(wrapper.get("#drop").attributes("aria-invalid")).toBe("true");
+    expect(gameplayApi.save).not.toHaveBeenCalled();
+    await wrapper.get("#drop").setValue("0.25");
+    await save.trigger("click");
+    await flushPromises();
+    expect(gameplayApi.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domain: "multipliers",
+        object_id: null,
+        data: { schema_version: 1, experience: 1.5, gold: 0, drop: 0.25 },
+      }),
+    );
+    wrapper.unmount();
+  });
+
   it("keeps empty and out-of-range inputs as field errors without sending", async () => {
     const wrapper = mount(GameplayPage);
     await flushPromises();

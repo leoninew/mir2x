@@ -1,6 +1,6 @@
 import { apiClient } from "@/services/api";
 
-export type Domain = "monsters" | "drops" | "spawns";
+export type Domain = "monsters" | "drops" | "spawns" | "multipliers";
 export type IdentityRecord = { id: number; name: string };
 export type Monster = { monster_id: number; monster_name: string; exp: number };
 export type DropItem = {
@@ -34,7 +34,13 @@ export type Spawns = {
   map_name: string;
   groups: SpawnGroup[];
 };
-export type GameplayData = Monsters | Drops | Spawns;
+export type Multipliers = {
+  schema_version: number;
+  experience: number;
+  gold: number;
+  drop: number;
+};
+export type GameplayData = Monsters | Drops | Spawns | Multipliers;
 export type Workspace = { bound: boolean; workspace_id: string | null; server_root: string | null };
 export type GameplayBackup = {
   backup_id: string;
@@ -139,7 +145,13 @@ export function validateNumbers(data: GameplayData): Record<string, string> {
       errors[path] = `请输入 ${minimum} 到 2147483647 的整数`;
     }
   }
-  if ("monsters" in data) {
+  if ("experience" in data) {
+    for (const field of ["experience", "gold", "drop"] as const) {
+      if (!Number.isFinite(data[field]) || data[field] < 0) {
+        errors[field] = "请输入大于或等于 0 的有限数值";
+      }
+    }
+  } else if ("monsters" in data) {
     data.monsters.forEach((row, index) => number(row.exp, `monsters.${index}.exp`, 0));
   } else if ("items" in data) {
     data.items.forEach((row, index) => {

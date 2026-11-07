@@ -140,6 +140,20 @@ namespace
 GameplayConfig GameplayConfig::load(const std::filesystem::path &root)
 {
     GameplayConfig result;
+    if(std::filesystem::exists(root / "multipliers.json")){
+        const auto doc = read(root / "multipliers.json");
+        object(doc, "multipliers.json", {"schema_version", "experience", "gold", "drop"});
+        version(doc, "multipliers.json");
+        const auto multiplier = [&doc](const char *key)
+        {
+            const auto &value = doc.at(key);
+            if(!value.is_number() || !std::isfinite(value.get<double>()) || value.get<double>() < 0.0){
+                invalid(std::string("multipliers.json.") + key, "expected finite nonnegative number");
+            }
+            return value.get<double>();
+        };
+        result.m_multipliers = {multiplier("experience"), multiplier("gold"), multiplier("drop")};
+    }
     const auto catalog = read(root / "catalog.json");
     object(catalog, "catalog", {"schema_version", "monsters", "items", "maps"});
     version(catalog, "catalog");

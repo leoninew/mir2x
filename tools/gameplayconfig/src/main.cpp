@@ -74,6 +74,8 @@ int main(int argc, char *argv[])
             const auto monsterID = identity(argv[3]);
             const auto mapID = identity(argv[4]);
             Json result{{"exp", config.monsterExp(monsterID)}, {"drops", Json::array()}, {"spawns", Json::array()}};
+            const auto &multipliers = config.multipliers();
+            result["multipliers"] = {{"experience", multipliers.experience}, {"gold", multipliers.gold}, {"drop", multipliers.drop}};
             for(const auto &[group, items]: config.monsterDropTable(monsterID)){
                 for(const auto &item: items){
                     result["drops"].push_back({{"group", group}, {"item_id", item.itemID}, {"prob_recip", item.probRecip}, {"count", item.count}});

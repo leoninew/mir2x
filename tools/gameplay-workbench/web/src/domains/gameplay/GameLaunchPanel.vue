@@ -1,49 +1,62 @@
 <template>
   <DialogRoot :open="settingsOpen" @update:open="setSettingsOpen">
-    <section aria-label="游戏启动" class="rounded-lg border border-slate-200 bg-white px-4 py-3">
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="mr-1 text-sm text-slate-500">游戏</span>
+    <section aria-label="游戏启动" class="grid gap-5">
+      <div class="flex items-center gap-2">
         <button
+          type="button"
+          class="secondary-button"
+          :disabled="busy || !desktop"
+          @click="refresh"
+        >
+          刷新启动状态
+        </button>
+        <DialogTrigger as-child>
+          <button type="button" class="text-button" :disabled="busy || !status">路径设置</button>
+        </DialogTrigger>
+      </div>
+      <div class="grid gap-5 lg:grid-cols-2">
+        <article
           v-for="kind in kinds"
           :key="kind"
-          type="button"
-          class="secondary-button inline-flex items-center gap-2"
-          :disabled="launchDisabled(kind)"
-          @click="launch(kind)"
+          class="flex flex-col rounded-lg border border-slate-200 bg-white p-6"
         >
-          <span
-            v-if="status?.targets[kind].running"
-            aria-hidden="true"
-            class="size-2 rounded-full bg-emerald-500"
-          ></span>
-          <svg v-else aria-hidden="true" viewBox="0 0 16 16" class="size-3.5 fill-current">
-            <path d="M4 2.5v11L13 8z" />
-          </svg>
-          {{ status?.targets[kind].running ? `${labels[kind]}已启动` : `启动${labels[kind]}` }}
-        </button>
-        <div class="ml-auto flex items-center gap-1">
+          <h2 class="text-lg font-medium text-slate-900">{{ labels[kind] }}</h2>
+          <p class="mt-3 flex items-center gap-2 text-sm text-slate-500">
+            <span
+              :class="[
+                'size-2 rounded-full',
+                status?.targets[kind].running ? 'bg-emerald-500' : 'bg-slate-300',
+              ]"
+              aria-hidden="true"
+            ></span>
+            {{
+              status?.targets[kind].running
+                ? "已启动"
+                : status?.targets[kind].exit_code != null
+                  ? `已退出 · 退出码 ${status.targets[kind].exit_code}`
+                  : "未启动"
+            }}
+            <span v-if="status?.targets[kind].running">· PID {{ status.targets[kind].pid }}</span>
+          </p>
+          <p class="mt-4 flex-1 break-all font-mono text-xs leading-6 text-slate-500">
+            {{ status?.targets[kind].executable ?? "请在桌面版中配置程序路径" }}
+          </p>
+          <p v-if="status?.targets[kind].warning" class="mt-3 text-xs leading-5 text-amber-700">
+            {{ status.targets[kind].warning }}
+          </p>
           <button
             type="button"
-            aria-label="刷新启动状态"
-            title="刷新状态"
-            class="rounded-md p-2 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
-            :disabled="busy || !desktop"
-            @click="refresh"
+            class="primary-button mt-5"
+            :disabled="launchDisabled(kind)"
+            @click="launch(kind)"
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              class="size-4 fill-none stroke-current"
-              stroke-width="1.5"
-            >
-              <path d="M16 7a6.5 6.5 0 1 0 .4 5M16 2.5V7h-4.5" />
-            </svg>
+            {{ status?.targets[kind].running ? `${labels[kind]}已启动` : `启动${labels[kind]}` }}
           </button>
-          <DialogTrigger as-child>
-            <button type="button" class="text-button" :disabled="busy || !status">路径设置</button>
-          </DialogTrigger>
-        </div>
+        </article>
       </div>
+      <p class="rounded-lg bg-indigo-50 px-5 py-4 text-sm leading-6 text-indigo-700">
+        启动前，请保存玩法修改。游戏使用磁盘上已保存的配置，服务端需要重新启动才能读取新值。
+      </p>
       <p v-if="!desktop" class="mt-2 text-sm text-slate-500">启动功能仅在桌面版可用</p>
       <p
         v-if="message"

@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include "dropitemconfigtype.hpp"
+#include "gameplaymultipliers.hpp"
 
 struct SpawnRegion
 {
@@ -28,11 +29,13 @@ struct SpawnGroup
 class GameplayConfig final
 {
     private:
+        GameplayMultipliers m_multipliers;
         std::unordered_map<uint32_t, int> m_exp;
         std::unordered_map<uint32_t, std::map<int, std::vector<DropItemConfig>>> m_drops;
         std::unordered_map<uint32_t, std::vector<SpawnGroup>> m_spawns;
 
     public:
+        const GameplayMultipliers &multipliers() const { return m_multipliers; }
         static GameplayConfig load(const std::filesystem::path &);
         int monsterExp(uint32_t) const;
         const std::map<int, std::vector<DropItemConfig>> &monsterDropTable(uint32_t) const;

@@ -85,7 +85,6 @@ def load_settings(
     default_config: Path | None = None,
 ) -> Settings:
     root = (project_root or Path.cwd()).resolve()
-    profile = os.environ.get("MIR2X_WORKBENCH_PROFILE", "prod")
     config_file = root / "config" / "config.yaml"
     if not config_file.is_file() and default_config is not None:
         config_file = default_config.resolve()
@@ -100,6 +99,7 @@ def load_settings(
         merge_enabled=True,
         encoding="utf-8",
     )
+    profile = os.environ.get("MIR2X_WORKBENCH_PROFILE", "dev")
     overrides = {
         **dotenv_values(root / f".env.{profile}", encoding="utf-8", interpolate=False),
         **os.environ,
@@ -110,7 +110,7 @@ def load_settings(
             and name != "MIR2X_WORKBENCH_PROFILE"
             and value is not None
         ):
-            config.set(name.removeprefix("MIR2X_WORKBENCH_"), value, tomlfy=True)
+            config.set(name.removeprefix("MIR2X_WORKBENCH_").lower(), value, tomlfy=True)
 
     values = {
         name.lower(): value for name, value in config.as_dict().items() if name != "LOAD_DOTENV"

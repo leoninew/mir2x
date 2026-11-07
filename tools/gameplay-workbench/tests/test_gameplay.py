@@ -82,7 +82,45 @@ def test_real_api_save_validate_read_and_backup(client: TestClient, server_root:
     assert len(backups) == 1 and backups[0].read_bytes() == original
 
 
-def test_gameplay_backup_create_list_and_restore(server_root: Path, tmp_path: Path) -> None:
+def test_multipliers_create_missing_file_and_preserve_base_data(
+    client: TestClient, server_root: Path
+) -> None:
+    root = server_root / "config/gameplay"
+    path = root / "multipliers.json"
+    path.unlink()
+    before = {file: file.read_bytes() for file in root.rglob("*.json")}
+    payload = request_data(client, "multipliers")
+    assert payload["revision"] == "missing"
+    assert payload["data"] == {"schema_version": 1, "experience": 1, "gold": 1, "drop": 1}
+    payload["data"].update(experience=1.5, gold=0, drop=0.25)
+    saved = client.put("/api/gameplay/config", json=payload)
+    assert saved.status_code == 200, saved.text
+    assert json.loads(path.read_bytes()) == payload["data"]
+    assert all(file.read_bytes() == raw for file, raw in before.items())
+    assert not (root / ".backups/multipliers").exists()
+    assert client.put("/api/gameplay/config", json=payload).status_code == 409
+    updated = saved.json()
+    updated["data"]["experience"] = 0
+    assert client.put("/api/gameplay/config", json=updated).status_code == 200
+    backup = next((root / ".backups/multipliers").glob("*.json"))
+    assert json.loads(backup.read_bytes()) == payload["data"]
+
+
+@pytest.mark.parametrize("value", [-1, True, "2", None])
+def test_multipliers_reject_invalid_values(client: TestClient, value: Any) -> None:
+    payload = request_data(client, "multipliers")
+    payload["data"]["gold"] = value
+    assert client.put("/api/gameplay/config", json=payload).status_code == 422
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_gameplay_backup_create_list_and_restore(
+    server_root: Path, tmp_path: Path, legacy: bool
+) -> None:
+    multipliers_path = server_root / "config/gameplay/multipliers.json"
+    if legacy:
+        multipliers_path.unlink()
+    original_multipliers = multipliers_path.read_bytes() if multipliers_path.exists() else None
     backup_root = tmp_path / "workbench" / "backups" / "gameplay"
     app = create_app(
         logging.getLogger("tests.gameplay.backups"),
@@ -113,6 +151,9 @@ def test_gameplay_backup_create_list_and_restore(server_root: Path, tmp_path: Pa
         (server_root / "config/gameplay/monsters.json").write_text(
             json.dumps(changed), encoding="utf-8"
         )
+        multipliers_path.write_text(
+            '{"schema_version":1,"experience":2,"gold":0,"drop":0.5}', encoding="utf-8"
+        )
         restored = test_client.post(
             f"/api/gameplay/backups/{record['backup_id']}/restore",
             json={"workspace_id": workspace["workspace_id"]},
@@ -121,6 +162,11 @@ def test_gameplay_backup_create_list_and_restore(server_root: Path, tmp_path: Pa
         result = restored.json()
         assert result["workspace"]["workspace_id"] != workspace["workspace_id"]
         assert (server_root / "config/gameplay/monsters.json").read_bytes() == original
+        if original_multipliers is None:
+            assert not multipliers_path.exists()
+        else:
+            assert multipliers_path.read_bytes() == original_multipliers
+        assert request_data(test_client, "multipliers")["data"]["gold"] == 1
         assert result["safety_backup"]["description"] == "还原前自动备份"
         assert len(list(backup_root.iterdir())) == 2
 
@@ -317,10 +363,14 @@ def test_api_saves_all_domains_then_native_reads_unicode_directory(
         spawns = request_data(client, "spawns", map_id)
         spawns["data"]["groups"][0]["loc"][0]["count"] += 2
         assert client.put("/api/gameplay/config", json=spawns).status_code == 200
+        multipliers = request_data(client, "multipliers")
+        multipliers["data"].update(experience=1.5, gold=0, drop=0.25)
+        assert client.put("/api/gameplay/config", json=multipliers).status_code == 200
     inspected = native(native_tool, "inspect", str(root), str(monster_id), str(map_id))
     assert inspected.returncode == 0, inspected.stderr
     result = json.loads(inspected.stdout)
     assert result["exp"] == expected_exp
+    assert result["multipliers"] == {"experience": 1.5, "gold": 0, "drop": 0.25}
     expected_drops = [
         {key: row[key] for key in ("group", "item_id", "prob_recip", "count")}
         for row in sorted(drops["data"]["items"], key=lambda row: row["group"])

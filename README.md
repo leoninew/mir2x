@@ -92,7 +92,7 @@ sudo apt install -y \
 ```sh
 git clone https://github.com/etorth/mir2x.git
 mkdir b_mir2x && cd b_mir2x
-python3 /path/to/mir2x/build.py --c-compiler=gcc-16 --cxx-compiler=g++-16 --parallel=10
+python3 build.py --c-compiler=gcc-16 --cxx-compiler=g++-16 --parallel=10
 ```
 
 <a id="windows-msys2-ucrt64"></a>
@@ -115,7 +115,7 @@ pacman -S --needed \
 ```sh
 git clone https://github.com/etorth/mir2x.git
 mkdir b_mir2x && cd b_mir2x
-python3 /path/to/mir2x/build.py --build-dir=/path/to/b_mir2x --parallel=10
+python3 build.py --build-dir=/path/to/b_mir2x --parallel=10
 ```
 
 <a id="helper-script-options"></a>
@@ -126,7 +126,7 @@ python3 /path/to/mir2x/build.py --build-dir=/path/to/b_mir2x --parallel=10
 安装阶段始终执行客户端和服务端资源打包。省略 `--assets-path` 时，CMake 会在构建阶段将 `https://github.com/etorth/mir2x_assets.git` 克隆到 `<build-dir>/build/assets/mir2x_assets`。要使用已有资源仓库，可指定：
 
 ```sh
-/path/to/mir2x/build.py [options] --assets-path=/path/to/mir2x_assets
+build.py [options] --assets-path=/path/to/mir2x_assets
 ```
 
 其他常用选项：

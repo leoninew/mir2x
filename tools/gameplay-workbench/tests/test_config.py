@@ -42,3 +42,52 @@ def test_load_settings_caches_one_settings_instance(monkeypatch: MonkeyPatch) ->
 
     assert load_settings() is initial_settings
     assert initial_settings.greeting.prefix == "Hi"
+
+
+def test_dev_dotenv_can_add_a_nested_gameplay_branch(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    copyfile(CONFIG_FILE, config_dir / "config.yaml")
+    (tmp_path / ".env.dev").write_text(
+        "MIR2X_WORKBENCH_GAMEPLAY__ROOT=../../server\n", encoding="utf-8"
+    )
+    monkeypatch.delenv("MIR2X_WORKBENCH_PROFILE", raising=False)
+    monkeypatch.delenv("MIR2X_WORKBENCH_GAMEPLAY__ROOT", raising=False)
+    assert load_settings(tmp_path).gameplay.root == (tmp_path / "../../server").resolve()
+
+
+def test_environment_overrides_new_nested_gameplay_branch(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    copyfile(CONFIG_FILE, config_dir / "config.yaml")
+    (tmp_path / ".env.dev").write_text(
+        "MIR2X_WORKBENCH_GAMEPLAY__ROOT=../../server\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("MIR2X_WORKBENCH_PROFILE", "dev")
+    monkeypatch.setenv("MIR2X_WORKBENCH_GAMEPLAY__ROOT", "./custom-server")
+    assert load_settings(tmp_path).gameplay.root == (tmp_path / "custom-server").resolve()
+
+
+def test_bundled_defaults_load_before_selected_profile_overrides(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    bundled_config = tmp_path / "bundled-config.yaml"
+    copyfile(CONFIG_FILE, bundled_config)
+    (tmp_path / ".env.prod").write_text(
+        "MIR2X_WORKBENCH_GREETING__PREFIX=Production\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("MIR2X_WORKBENCH_PROFILE", "prod")
+    monkeypatch.delenv("MIR2X_WORKBENCH_GREETING__PREFIX", raising=False)
+    settings = load_settings(tmp_path, default_config=bundled_config)
+    assert settings.profile == "prod"
+    assert settings.greeting.prefix == "Production"
+    assert settings.server.port == 8000
+    load_settings.cache_clear()
+    monkeypatch.setenv("MIR2X_WORKBENCH_PROFILE", "dev")
+    settings = load_settings(tmp_path, default_config=bundled_config)
+    assert settings.profile == "dev"
+    assert settings.greeting.prefix == "Hello"

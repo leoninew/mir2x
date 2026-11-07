@@ -47,14 +47,21 @@ std::vector<SDItem> getMonsterDropItemList(uint32_t monsterID)
     fflassert(dropRate >= 0.0);
     fflassert(goldRate >= 0.0);
 
+    const auto &multipliers = g_server->gameplayConfig().multipliers();
+    if(dropRate == 0.0 || multipliers.drop == 0.0){
+        return itemList;
+    }
+    const auto effectiveDropRate = dropRate * multipliers.drop;
+    const auto effectiveGoldRate = goldRate == 0.0 || multipliers.gold == 0.0 ? 0.0 : goldRate * multipliers.gold;
+
     for(const auto &[group, dropItemList]: getMonsterDropItemConfigList(monsterID)){
         for(const auto &dropItem: dropItemList){
-            const auto adjProbRecip = [&dropItem, dropRate]() -> int
+            const auto adjProbRecip = [&dropItem, effectiveDropRate]() -> int
             {
                 if(dropItem.probRecip <= 0){
                     return 0;
                 }
-                return std::max<int>(1, std::lround(dropItem.probRecip / dropRate));
+                return GameplayMultipliers::rounded(dropItem.probRecip / effectiveDropRate, 1);
             }();
 
             if((dropItem.probRecip > 0) && ((mathf::rand() % adjProbRecip) == 0)){
@@ -62,8 +69,8 @@ std::vector<SDItem> getMonsterDropItemList(uint32_t monsterID)
                 fflassert(ir);
 
                 if(ir.isGold()){
-                    const auto adjGold = std::max<size_t>(1, std::lround(dropItem.count * goldRate));
-                    for(const auto &goldItem: SDItem::buildGoldItem(adjGold)){
+                    const auto adjGold = GameplayMultipliers::rounded(dropItem.count * effectiveGoldRate, 1);
+                    for(const auto &goldItem: multipliers.gold == 0.0 ? std::vector<SDItem>{} : SDItem::buildGoldItem(adjGold)){
                         itemList.push_back(SDItem
                         {
                             .itemID = goldItem.itemID,

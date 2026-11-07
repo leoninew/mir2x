@@ -18,6 +18,7 @@ from mir2x_workbench.gameplay_models import (
     MigrationNotes,
     SaveRequest,
     Spawns,
+    default_multipliers,
     identity_map,
     issues_for,
     load_json,
@@ -143,22 +144,32 @@ class GameplayConfigService:
 
     @staticmethod
     def _relative(domain: Domain, object_id: int | None, manifest: Manifest) -> str:
-        if domain == "monsters":
+        if domain in ("monsters", "multipliers"):
             if object_id is not None:
-                raise GameplayError(422, "monsters does not use object_id")
-            return "monsters.json"
+                raise GameplayError(422, f"{domain} does not use object_id")
+            return f"{domain}.json"
         ids = manifest.drop_monsters if domain == "drops" else manifest.spawn_maps
         if object_id is None or object_id not in ids:
             raise GameplayError(404, "Object is not present in the configuration manifest")
         return f"{domain}/{object_id}.json"
 
+    def _document_raw(self, relative: str) -> bytes | None:
+        try:
+            return self._path(relative).read_bytes()
+        except FileNotFoundError:
+            if relative == "multipliers.json":
+                return None
+            raise GameplayError(422, f"Unable to read {relative}: file missing") from None
+        except OSError as error:
+            raise GameplayError(422, f"Unable to read {relative}: {error}") from error
+
     def get(self, workspace_id: str, domain: Domain, object_id: int | None) -> dict[str, JsonValue]:
         with self._lock:
             catalog, manifest, catalog_revision = self._context(workspace_id)
             relative = self._relative(domain, object_id, manifest)
-            raw = self._read(relative)
+            raw = self._document_raw(relative)
             try:
-                data = load_json(raw)
+                data = load_json(raw) if raw is not None else default_multipliers()
                 validate_document(domain, data, catalog, object_id)
             except ValueError as error:
                 raise GameplayError(422, f"Invalid {relative}: {error}") from error
@@ -167,22 +178,24 @@ class GameplayConfigService:
                 "domain": domain,
                 "object_id": object_id,
                 "catalog_revision": catalog_revision,
-                "revision": digest(raw),
+                "revision": digest(raw) if raw is not None else "missing",
                 "data": data,
             }
 
     def _validate(
         self, payload: ConfigRequest, expected_revision: str | None = None
-    ) -> tuple[str, bytes]:
+    ) -> tuple[str, bytes | None]:
         catalog, manifest, revision = self._context(payload.workspace_id)
         if payload.catalog_revision != revision:
             raise GameplayError(409, "Catalog changed; keep your draft and reload")
         relative = self._relative(payload.domain, payload.object_id, manifest)
-        old_raw = self._read(relative)
-        if expected_revision is not None and digest(old_raw) != expected_revision:
+        old_raw = self._document_raw(relative)
+        current_revision = digest(old_raw) if old_raw is not None else "missing"
+        if expected_revision is not None and current_revision != expected_revision:
             raise GameplayError(409, "File changed outside the application; keep your draft")
         validate_document(payload.domain, payload.data, catalog, payload.object_id)
         if payload.domain == "spawns":
+            assert old_raw is not None
             old = validate_document("spawns", load_json(old_raw), catalog, payload.object_id)
             new = validate_document("spawns", payload.data, catalog, payload.object_id)
             assert isinstance(old, Spawns) and isinstance(new, Spawns)
@@ -214,11 +227,12 @@ class GameplayConfigService:
             backup = self._path(f".backups/{relative.removesuffix('.json')}/{uuid4().hex}.json")
             temporary: str | None = None
             try:
-                backup.parent.mkdir(parents=True, exist_ok=True)
-                with backup.open("xb") as stream:
-                    stream.write(old_raw)
-                    stream.flush()
-                    os.fsync(stream.fileno())
+                if old_raw is not None:
+                    backup.parent.mkdir(parents=True, exist_ok=True)
+                    with backup.open("xb") as stream:
+                        stream.write(old_raw)
+                        stream.flush()
+                        os.fsync(stream.fileno())
                 descriptor, temporary = tempfile.mkstemp(
                     prefix=".gameplay-", suffix=".tmp", dir=path.parent
                 )

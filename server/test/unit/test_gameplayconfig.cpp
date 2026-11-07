@@ -89,3 +89,32 @@ TEST_CASE("gameplay snapshot is stable after editing disk and a new load uses ne
     CHECK_THROWS(GameplayConfig::load(fixture.root));
     CHECK(first.monsterExp(id) == previous);
 }
+
+TEST_CASE("independent multipliers support old bundles decimals zero and immutable snapshots")
+{
+    Fixture fixture;
+    std::filesystem::remove(fixture.root / "multipliers.json");
+    const auto original = GameplayConfig::load(fixture.root);
+    CHECK(original.multipliers().experience == 1.0);
+    CHECK(original.multipliers().gold == 1.0);
+    CHECK(original.multipliers().drop == 1.0);
+    {
+        std::ofstream out(fixture.root / "multipliers.json");
+        out << R"({"schema_version":1,"experience":1.5,"gold":0,"drop":0.25})";
+    }
+    const auto changed = GameplayConfig::load(fixture.root);
+    CHECK(original.multipliers().experience == 1.0);
+    CHECK(changed.multipliers().scaleExperience(3) == 5);
+    CHECK(changed.multipliers().gold == 0.0);
+    CHECK(changed.multipliers().drop == 0.25);
+    CHECK(GameplayMultipliers{.experience = 0.0}.scaleExperience(100) == 0);
+    CHECK(GameplayMultipliers{.experience = 0.1}.scaleExperience(1) == 0);
+    CHECK(GameplayMultipliers{.experience = 1e308}.scaleExperience(100) == std::numeric_limits<int>::max());
+    for(const auto &value: {Json(-1), Json(true), Json("2"), Json(nullptr)}){
+        {
+            std::ofstream out(fixture.root / "multipliers.json");
+            out << Json{{"schema_version", 1}, {"experience", value}, {"gold", 1}, {"drop", 1}};
+        }
+        CHECK_THROWS(GameplayConfig::load(fixture.root));
+    }
+}

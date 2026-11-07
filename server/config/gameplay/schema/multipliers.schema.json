@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Independent global gameplay multipliers",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "experience", "gold", "drop"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "experience": { "type": "number", "minimum": 0 },
+    "gold": { "type": "number", "minimum": 0 },
+    "drop": { "type": "number", "minimum": 0 }
+  }
+}

@@ -21,7 +21,8 @@ type Nonnegative = Annotated[StrictInt, Field(ge=0, le=2**31 - 1)]
 type Positive = Annotated[StrictInt, Field(ge=1, le=2**31 - 1)]
 type Identity = Annotated[StrictInt, Field(ge=1, le=2**32 - 1)]
 type Name = Annotated[str, Field(min_length=1)]
-type Domain = Literal["monsters", "drops", "spawns"]
+type Domain = Literal["monsters", "drops", "spawns", "multipliers"]
+type Multiplier = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 type BackupId = Annotated[str, Field(pattern=r"^[a-f0-9]{32}$")]
 type Sha256 = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 
@@ -32,6 +33,16 @@ class Model(BaseModel):
 
 class Document(Model):
     schema_version: Annotated[StrictInt, Field(ge=1, le=1)]
+
+
+class Multipliers(Document):
+    experience: Multiplier
+    gold: Multiplier
+    drop: Multiplier
+
+
+def default_multipliers() -> dict[str, JsonValue]:
+    return {"schema_version": 1, "experience": 1, "gold": 1, "drop": 1}
 
 
 class IdentityRecord(Model):
@@ -184,7 +195,11 @@ def check_reference(values: dict[int, str], identity: int, name: str, path: str)
 
 def validate_document(
     domain: Domain, data: dict[str, JsonValue], catalog: Catalog, object_id: int | None = None
-) -> Monsters | Drops | Spawns:
+) -> Monsters | Drops | Spawns | Multipliers:
+    if domain == "multipliers":
+        if object_id is not None:
+            raise ValueError("multipliers: object_id must be omitted")
+        return Multipliers.model_validate(data)
     monsters = identity_map(catalog, "monsters")
     if domain == "monsters":
         if object_id is not None:
@@ -235,6 +250,10 @@ def validate_bundle(root: Path) -> tuple[Catalog, Manifest]:
         if len(set(ids)) != len(ids):
             raise ValueError("manifest: duplicate identity")
     validate_document("monsters", load_json((root / "monsters.json").read_bytes()), catalog)
+    if (root / "multipliers.json").exists():
+        validate_document(
+            "multipliers", load_json((root / "multipliers.json").read_bytes()), catalog
+        )
     indexed: tuple[tuple[Domain, list[int]], ...] = (
         ("drops", manifest.drop_monsters),
         ("spawns", manifest.spawn_maps),
