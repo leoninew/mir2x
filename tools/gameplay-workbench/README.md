@@ -4,6 +4,8 @@
 
 “全局倍率”是独立页签，单独保存 `server/config/gameplay/multipliers.json`，经验、金币、掉率默认均为 1，支持小数和 0。金币/掉率叠乘原服务端倍率，经验乘原击杀经验结果；0 分别关闭对应收益或全部掉落。不会改写基础配置或原服务端窗口设置。旧目录缺少新文件时按 1 读取，首次修改保存创建文件；整目录备份/还原同时包含此文件，旧备份仍兼容。
 
+“GM 命令”页面提供聊天 `@`、客户端 Lua、服务端 LOCAL/ASYNC 的源码索引，支持搜索、分类和复制示例；它只展示代码，不会替用户执行游戏命令。给在线角色增加金币余额和设置怪物死亡掉金币的方式、所需 UID/DBID 示例与限制见该页面及 [GM 命令参考](../../readme/gameplay/gm-commands.md)。
+
 Windows 需要 WebView2 Runtime；开发需要 Python 3.12+、uv、Node.js 22+、Corepack，Makefile 入口还需要 GNU Make/Bash。
 
 ## 使用

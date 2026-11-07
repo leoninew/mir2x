@@ -35,8 +35,11 @@
           :workspace-root="workspace?.server_root ?? null"
         />
       </div>
+      <div v-if="page === 'gm'" class="flex min-h-0 min-w-0 flex-1">
+        <GMCommandsPage />
+      </div>
       <div
-        v-if="!busy && !workspace?.bound && page !== 'launcher'"
+        v-if="!busy && !workspace?.bound && page !== 'launcher' && page !== 'gm'"
         class="grid min-h-0 flex-1 place-items-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-6 text-center"
       >
         <div>
@@ -178,6 +181,7 @@
   import AppLoading from "@/components/AppLoading.vue";
   import { useToastsStore } from "@/stores/toasts";
   import GameLaunchPanel from "./GameLaunchPanel.vue";
+  import GMCommandsPage from "@/domains/gm/GMCommandsPage.vue";
   import GameplayBackupPanel from "./GameplayBackupPanel.vue";
   import GameplayActions from "./GameplayActions.vue";
   import GlobalMultipliersEditor from "./GlobalMultipliersEditor.vue";

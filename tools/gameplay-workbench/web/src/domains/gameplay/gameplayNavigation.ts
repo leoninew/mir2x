@@ -1,6 +1,6 @@
 import type { Domain } from "@/services/gameplayApi";
 
-export type WorkbenchPage = Domain | "launcher" | "backups" | "migration";
+export type WorkbenchPage = Domain | "launcher" | "gm" | "backups" | "migration";
 export const navigationGroups: {
   label: string;
   items: { page: WorkbenchPage; label: string; description: string }[];
@@ -12,6 +12,16 @@ export const navigationGroups: {
         page: "launcher",
         label: "游戏运行",
         description: "启动游戏，查看本次工作台启动的进程状态。",
+      },
+    ],
+  },
+  {
+    label: "调试",
+    items: [
+      {
+        page: "gm",
+        label: "GM 命令",
+        description: "搜索 GM 命令，按入口查看语法、参数和可复制示例。",
       },
     ],
   },
