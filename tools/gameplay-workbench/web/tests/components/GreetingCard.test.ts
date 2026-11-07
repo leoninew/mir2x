@@ -9,7 +9,7 @@ describe("GreetingCard", () => {
       props: { message: null, loading: true, error: null },
     });
 
-    expect(screen.getByRole("status").textContent).toContain("Loading greeting");
+    expect(screen.getByRole("progressbar", { name: "Loading greeting..." })).toBeTruthy();
   });
 
   it("shows a greeting message", () => {

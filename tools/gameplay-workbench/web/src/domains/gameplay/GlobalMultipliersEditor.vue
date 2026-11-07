@@ -1,26 +1,28 @@
 <template>
-  <section class="p-5 sm:p-6">
-    <p class="max-w-3xl text-sm leading-6 text-slate-600">
-      独立保存，默认均为 1，支持小数。金币与掉率会乘以服务端已有倍率；经验乘在原击杀经验结果上。0
-      分别关闭击杀经验、金币掉落或全部掉落。
-    </p>
-    <div class="mt-6 grid gap-5 lg:grid-cols-3">
-      <div
-        v-for="field in multiplierFields"
-        :key="field.key"
-        class="rounded-lg border border-slate-200 bg-slate-50 p-5"
-      >
-        <MultiplierField
-          v-model="model[field.key]"
-          :path="field.key"
-          :label="field.label"
-          :error="errors[field.key]"
-          @edit="$emit('edit', $event)"
-        />
-        <p class="mt-3 text-xs leading-5 text-slate-500">{{ field.help }}</p>
-      </div>
+  <div class="flex min-h-0 flex-1 flex-col gap-3">
+    <div class="table-toolbar">
+      <span class="text-sm text-slate-600">独立倍率配置</span>
+      <div class="ml-auto"><slot name="actions"></slot></div>
     </div>
-  </section>
+    <section class="min-h-0 overflow-auto rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
+      <div class="grid gap-5 lg:grid-cols-3">
+        <div
+          v-for="field in multiplierFields"
+          :key="field.key"
+          class="rounded-lg border border-slate-200 bg-slate-50 p-5"
+        >
+          <MultiplierField
+            v-model="model[field.key]"
+            :path="field.key"
+            :label="field.label"
+            :error="errors[field.key]"
+            @edit="$emit('edit', $event)"
+          />
+          <p class="mt-3 text-xs leading-5 text-slate-500">{{ field.help }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
 </template>
 
 <script setup lang="ts">

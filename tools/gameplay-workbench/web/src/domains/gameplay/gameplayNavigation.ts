@@ -31,20 +31,24 @@ export const navigationGroups: {
       {
         page: "spawns",
         label: "地图刷怪",
-        description: "按地图设置怪物区域、目标数量与刷新周期。",
+        description: "按地图设置刷怪范围、目标数量与刷新周期（秒）。",
       },
       {
         page: "multipliers",
         label: "全局倍率",
-        description: "独立设置经验、金币与掉率的整体倍率。",
+        description: "独立设置经验、金币与掉率的整体倍率，默认均为 1，支持小数和 0。",
       },
     ],
   },
   {
     label: "管理",
     items: [
-      { page: "backups", label: "配置备份", description: "备份已保存的配置，或还原到已有备份。" },
-      { page: "migration", label: "迁移记录", description: "查看从历史数据保留的未生效声明。" },
+      {
+        page: "backups",
+        label: "配置备份",
+        description: "备份已保存的配置；还原前自动备份当前配置。",
+      },
+      { page: "migration", label: "迁移记录", description: "只读查看从历史数据保留的未生效声明。" },
     ],
   },
 ];

@@ -4,13 +4,22 @@
       :page="page"
       :server-root="workspace?.server_root ?? null"
       :busy="busy || managementBusy"
-      @navigate="navigate"
       @choose="chooseWorkspace"
     />
-    <main class="flex min-h-0 min-w-0 flex-col gap-5 p-4 sm:p-6 lg:p-8">
+    <main class="relative flex min-h-0 min-w-0 flex-col gap-5 p-4 sm:p-6 lg:p-8" :aria-busy="busy">
+      <AppLoading v-if="busy" :label="activity" overlay />
       <header class="shrink-0">
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl font-semibold tracking-tight text-slate-950">{{ pageInfo.label }}</h1>
+          <button
+            v-if="page === 'launcher'"
+            type="button"
+            class="text-button"
+            :disabled="!launchPanel?.canConfigure"
+            @click="launchPanel?.openSettings()"
+          >
+            路径设置
+          </button>
           <span
             v-if="isConfigPage(page)"
             class="rounded bg-indigo-50 px-2 py-1 text-xs text-indigo-600"
@@ -20,27 +29,16 @@
         </div>
         <p class="mt-2 text-sm leading-6 text-slate-500">{{ pageInfo.description }}</p>
       </header>
-      <p
-        v-if="message"
-        role="status"
-        :class="[
-          'shrink-0 rounded-lg border px-4 py-3 text-sm',
-          conflict
-            ? 'border-amber-300 bg-amber-50 text-amber-950'
-            : 'border-slate-200 bg-white text-slate-700',
-        ]"
-      >
-        {{ message }}
-      </p>
       <div v-show="page === 'launcher'" class="min-h-0 overflow-auto">
         <GameLaunchPanel
+          ref="launchPanel"
           :gameplay-dirty="hasUnsavedDrafts"
           :gameplay-busy="busy"
           :workspace-root="workspace?.server_root ?? null"
         />
       </div>
       <div
-        v-if="!workspace?.bound && page !== 'launcher'"
+        v-if="!busy && !workspace?.bound && page !== 'launcher'"
         class="grid min-h-0 flex-1 place-items-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-6 text-center"
       >
         <div>
@@ -58,84 +56,86 @@
       </div>
       <template v-if="workspace?.bound && catalog && isConfigPage(page)">
         <section
-          class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white"
+          class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           aria-label="配置编辑区"
         >
-          <div
-            v-if="domain !== 'multipliers'"
-            class="flex shrink-0 flex-wrap items-end gap-4 border-b border-slate-200 p-4"
+          <fieldset
+            v-if="domain === page"
+            :disabled="busy"
+            class="flex min-h-0 min-w-0 flex-1 flex-col"
           >
-            <label class="grid gap-1.5 text-sm text-slate-700">
-              搜索{{ domain === "spawns" ? "地图" : "怪物" }}
-              <input
-                v-model="search"
-                class="rounded-md border border-slate-300 bg-white px-3 py-2"
-                placeholder="名称或 ID"
-              />
-            </label>
-            <label
-              v-if="domain === 'drops' || domain === 'spawns'"
-              class="grid min-w-56 gap-1.5 text-sm text-slate-700"
+            <MonsterExperienceEditor
+              v-if="draft && 'monsters' in draft"
+              v-model="draft"
+              :errors="errors"
+              @edit="clearError"
             >
-              {{ domain === "spawns" ? "地图" : "怪物" }} <span class="sr-only">必填</span>
-              <select
-                :value="objectId ?? ''"
-                :disabled="busy"
-                class="rounded-md border border-slate-300 bg-white px-3 py-2"
-                @change="selectObject"
-              >
-                <option v-if="!options.length" value="" disabled>无匹配配置</option>
-                <option v-for="option in options" :key="option.id" :value="option.id">
-                  {{ option.name }} · {{ option.id }}
-                </option>
-              </select>
-            </label>
-            <span
-              v-if="domain === 'monsters' && draft && 'monsters' in draft"
-              class="pb-2 text-xs text-slate-500"
+              <template #actions>
+                <GameplayActions
+                  :busy="busy"
+                  :ready="Boolean(base)"
+                  :dirty="dirty"
+                  @refresh="reload"
+                  @save="save"
+                />
+              </template>
+            </MonsterExperienceEditor>
+            <MonsterDropEditor
+              v-else-if="domain === 'drops'"
+              :model-value="dropDrafts"
+              :errors="errors"
+              @edit="clearError"
             >
-              {{ monsterCount }} / {{ draft.monsters.length }} 个怪物
-            </span>
-          </div>
-          <div class="min-h-0 flex-1 overflow-auto" aria-label="配置列表" tabindex="0">
-            <fieldset v-if="draft" :disabled="busy" class="min-w-0">
-              <MonsterExperienceEditor
-                v-if="'monsters' in draft"
-                v-model="draft"
-                :search="search"
-                :errors="errors"
-                @edit="clearError"
-              />
-              <MonsterDropEditor
-                v-else-if="'items' in draft"
-                v-model="draft"
-                :errors="errors"
-                :fields="catalog.fields"
-                @edit="clearError"
-              />
-              <GlobalMultipliersEditor
-                v-else-if="'experience' in draft"
-                v-model="draft"
-                :errors="errors"
-                @edit="clearError"
-              />
-              <MapSpawnEditor v-else v-model="draft" :errors="errors" @edit="clearError" />
-            </fieldset>
-          </div>
-          <div
-            v-if="base"
-            class="shrink-0 border-t border-slate-100 px-4 py-2 text-xs text-slate-400"
-          >
-            文件版本 {{ base.revision.slice(0, 12) }} ·
-            {{ domain === "multipliers" ? "独立倍率文件" : "按 ID 区分同名配置" }}
-          </div>
+              <template #actions>
+                <GameplayActions
+                  :busy="busy"
+                  :ready="Boolean(base)"
+                  :dirty="dirty"
+                  @refresh="reload"
+                  @save="save"
+                />
+              </template>
+            </MonsterDropEditor>
+            <GlobalMultipliersEditor
+              v-else-if="draft && 'experience' in draft"
+              v-model="draft"
+              :errors="errors"
+              @edit="clearError"
+            >
+              <template #actions>
+                <GameplayActions
+                  :busy="busy"
+                  :ready="Boolean(base)"
+                  :dirty="dirty"
+                  @refresh="reload"
+                  @save="save"
+                />
+              </template>
+            </GlobalMultipliersEditor>
+            <MapSpawnEditor
+              v-else-if="domain === 'spawns'"
+              :model-value="spawnDrafts"
+              :errors="errors"
+              @edit="clearError"
+            >
+              <template #actions>
+                <GameplayActions
+                  :busy="busy"
+                  :ready="Boolean(base)"
+                  :dirty="dirty"
+                  @refresh="reload"
+                  @save="save"
+                />
+              </template>
+            </MapSpawnEditor>
+          </fieldset>
         </section>
         <details v-if="dirty" class="shrink-0 rounded-lg border border-slate-200 bg-white p-4">
           <summary class="text-sm font-medium text-slate-700">
             变更预览 · {{ changes.length }} 处
           </summary>
           <div class="mt-3 max-h-40 overflow-auto">
-            <table class="config-table">
+            <table class="data-table">
               <thead>
                 <tr>
                   <th>字段路径</th>
@@ -153,21 +153,11 @@
             </table>
           </div>
           <p v-if="changes.length > 100" class="mt-2 text-xs text-slate-500">
-            显示前 100 处；保存作用于当前完整文件。
+            显示前 100 处；保存作用于当前页面的完整修改。
           </p>
         </details>
-        <GameplaySaveBar
-          :busy="busy"
-          :ready="Boolean(draft && base)"
-          :dirty="dirty"
-          :has-unsaved-drafts="hasUnsavedDrafts"
-          :change-count="changes.length"
-          @download="downloadDraft"
-          @reload="reload"
-          @save="save"
-        />
       </template>
-      <div v-if="workspace?.bound && page === 'backups'" class="min-h-0 flex-1 overflow-auto">
+      <div v-if="workspace?.bound && page === 'backups'" class="flex min-h-0 flex-1 flex-col">
         <GameplayBackupPanel
           :workspace-id="workspace.workspace_id"
           :disabled="busy"
@@ -176,151 +166,106 @@
           @busy-change="managementBusy = $event"
         />
       </div>
-      <section
+      <MigrationRecordsTable
         v-if="workspace?.bound && catalog && page === 'migration'"
-        class="min-h-0 flex-1 overflow-auto rounded-lg border border-slate-200 bg-white p-5"
-      >
-        <h2 class="text-sm font-medium">
-          {{ catalog.migration_notes.records.length }} 项未生效数据
-        </h2>
-        <p class="mt-2 text-sm text-slate-500">这些是旧代码已过滤的原始记录，只读保留。</p>
-        <details
-          v-for="(record, index) in catalog.migration_notes.records"
-          :key="index"
-          class="mt-4 border-t border-slate-100 pt-4 text-sm"
-        >
-          <summary>{{ record.source_path }} : {{ record.source_position }}</summary>
-          <p class="my-2 text-slate-600">{{ record.reason }}</p>
-          <pre class="overflow-auto rounded bg-slate-50 p-3 text-xs">{{
-            JSON.stringify(record.raw, null, 2)
-          }}</pre>
-        </details>
-      </section>
+        :records="catalog.migration_notes.records"
+      />
     </main>
   </div>
 </template>
 <script setup lang="ts">
   import { computed, onMounted, ref } from "vue";
+  import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
   import { useGameplay } from "@/composables/useGameplay";
+  import AppLoading from "@/components/AppLoading.vue";
+  import { useToastsStore } from "@/stores/toasts";
   import GameLaunchPanel from "./GameLaunchPanel.vue";
   import GameplayBackupPanel from "./GameplayBackupPanel.vue";
-  import GameplaySaveBar from "./GameplaySaveBar.vue";
+  import GameplayActions from "./GameplayActions.vue";
   import GlobalMultipliersEditor from "./GlobalMultipliersEditor.vue";
   import MapSpawnEditor from "./MapSpawnEditor.vue";
+  import MigrationRecordsTable from "./MigrationRecordsTable.vue";
   import MonsterDropEditor from "./MonsterDropEditor.vue";
   import MonsterExperienceEditor from "./MonsterExperienceEditor.vue";
   import WorkbenchSidebar from "./WorkbenchSidebar.vue";
   import { isConfigPage, navigationGroups, type WorkbenchPage } from "./gameplayNavigation";
   import { getDesktopBridge, isDesktopApp } from "@/services/desktopBridge";
-  import { gameplayApi } from "@/services/gameplayApi";
+  const toasts = useToastsStore();
 
   const {
     workspace,
     catalog,
     base,
     draft,
+    dropDrafts,
+    spawnDrafts,
     domain,
-    objectId,
     busy,
-    message,
-    conflict,
+    activity,
     errors,
     changes,
     dirty,
     hasUnsavedDrafts,
     load,
     refreshWorkspace,
+    reload: reloadCurrent,
     save,
     clearError,
   } = useGameplay();
-  const page = ref<WorkbenchPage>("monsters");
-  const search = ref("");
+  const route = useRoute();
+  const router = useRouter();
+  const page = computed(() => (route.meta.workbenchPage as WorkbenchPage) ?? "monsters");
   const managementBusy = ref(false);
+  const launchPanel = ref<InstanceType<typeof GameLaunchPanel> | null>(null);
   const pageInfo = computed(() =>
     navigationGroups.flatMap((group) => group.items).find((item) => item.page === page.value)!,
   );
-  const matches = (name: string, id: number) => `${name} ${id}`.includes(search.value.trim());
-  const options = computed(() => {
-    if (!catalog.value) return [];
-    const identities =
-      domain.value === "spawns" ? catalog.value.catalog.maps : catalog.value.catalog.monsters;
-    const ids =
-      domain.value === "spawns"
-        ? catalog.value.manifest.spawn_maps
-        : catalog.value.manifest.drop_monsters;
-    return identities.filter((row) => ids.includes(row.id) && matches(row.name, row.id));
-  });
-  const monsterCount = computed(() =>
-    draft.value && "monsters" in draft.value
-      ? draft.value.monsters.filter((row) => matches(row.monster_name, row.monster_id)).length
-      : 0,
-  );
-  async function navigate(next: WorkbenchPage): Promise<void> {
-    if (busy.value || managementBusy.value) return;
-    if (!isConfigPage(next)) {
-      page.value = next;
-      return;
-    }
-    if (!workspace.value?.bound) {
-      page.value = next;
-      return;
-    }
-    search.value = "";
-    const id =
-      next === "monsters" || next === "multipliers"
-        ? null
-        : next === "drops"
-          ? catalog.value?.manifest.drop_monsters[0]
-          : catalog.value?.manifest.spawn_maps[0];
-    if (id === undefined) return;
-    await load(next, id);
-    page.value = domain.value;
-  }
-  async function selectObject(event: Event): Promise<void> {
-    await load(domain.value, Number((event.target as HTMLSelectElement).value));
+  async function preparePage(next: WorkbenchPage): Promise<boolean> {
+    if (!isConfigPage(next) || !workspace.value?.bound) return true;
+    if (domain.value === next) return true;
+    await load(next);
+    return domain.value === next;
   }
   async function chooseWorkspace(): Promise<void> {
     if (!isDesktopApp()) {
-      message.value = "请在桌面版中选择目录";
+      toasts.show("请在桌面版中选择目录", "info");
       return;
     }
+    busy.value = true;
+    activity.value = "正在选择配置目录…";
     try {
       const result = await getDesktopBridge().select_gameplay_workspace();
       if (result.success) {
-        if (await refreshWorkspace()) page.value = "monsters";
-      } else if (result.message && result.message !== "未选择目录") message.value = result.message;
+        if (await refreshWorkspace()) await router.replace({ name: "monsters" });
+      } else if (result.message && result.message !== "未选择目录")
+        toasts.show(result.message, "error");
     } catch (error) {
-      message.value = error instanceof Error ? error.message : "选择目录失败";
+      toasts.show(error instanceof Error ? error.message : "选择目录失败", "error");
+    } finally {
+      busy.value = false;
     }
   }
-  async function onBackupRestored(safetyBackupName: string): Promise<void> {
+  async function onBackupRestored(): Promise<void> {
     if (await refreshWorkspace(true)) {
-      page.value = "monsters";
-      message.value = `已还原；当前配置已自动备份：${safetyBackupName}`;
+      await router.replace({ name: "monsters" });
     }
   }
   async function reload(): Promise<void> {
-    if (dirty.value && !window.confirm("重新读取会替换当前草稿，建议先下载草稿。继续？")) return;
-    try {
-      if (workspace.value?.workspace_id)
-        catalog.value = await gameplayApi.catalog(workspace.value.workspace_id);
-      await load(domain.value, objectId.value, true);
-    } catch (error) {
-      message.value = error instanceof Error ? error.message : "读取失败，草稿已保留";
-    }
+    if (dirty.value && !window.confirm("刷新会丢弃当前页面未保存的修改。继续？")) return;
+    await reloadCurrent();
   }
-  function downloadDraft(): void {
-    if (!draft.value) return;
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(draft.value, null, 2)], { type: "application/json" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `draft-${domain.value}-${objectId.value ?? "all"}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-  onMounted(refreshWorkspace);
+  onBeforeRouteUpdate(async (to) => {
+    if (busy.value || managementBusy.value) return false;
+    return preparePage(to.meta.workbenchPage as WorkbenchPage);
+  });
+  onBeforeRouteLeave(async (to) => {
+    if (busy.value || managementBusy.value) return false;
+    if (to.meta.workbenchPage) return preparePage(to.meta.workbenchPage as WorkbenchPage);
+    return !hasUnsavedDrafts.value || window.confirm("离开工作台会丢弃未保存草稿。继续？");
+  });
+  onMounted(async () => {
+    if (await refreshWorkspace()) await preparePage(page.value);
+  });
 </script>
 <style scoped>
   .workbench-layout {

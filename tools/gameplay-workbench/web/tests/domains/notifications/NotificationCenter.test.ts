@@ -1,37 +1,53 @@
-import { fireEvent, render, screen, within } from "@testing-library/vue";
+import { fireEvent, render, screen } from "@testing-library/vue";
 import { createPinia } from "pinia";
-import { describe, expect, it } from "vitest";
-import { nextTick } from "vue";
+import { defineComponent, h } from "vue";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import NotificationCenter from "@/domains/notifications/NotificationCenter.vue";
 
+beforeEach(() => window.localStorage.clear());
+afterEach(() => window.localStorage.clear());
+
 describe("NotificationCenter", () => {
-  it("filters the list with the Reka tabs", async () => {
-    render(NotificationCenter, {
+  it("combines search and status filtering and marks a matching notification read", async () => {
+    const { unmount } = render(NotificationCenter, {
       global: {
         plugins: [createPinia()],
+        stubs: {
+          FilterCombobox: defineComponent({
+            props: {
+              modelValue: { type: [String, Number], default: null },
+              label: { type: String, required: true },
+              options: { type: Array, default: () => [] },
+            },
+            emits: ["update:modelValue"],
+            setup(props, { emit }) {
+              return () =>
+                h(
+                  "button",
+                  { "aria-label": props.label, onClick: () => emit("update:modelValue", "unread") },
+                  "Unread",
+                );
+            },
+          }),
+        },
       },
     });
 
     expect(screen.getByText("Deploy finished")).toBeTruthy();
     expect(screen.getByText("Review requested")).toBeTruthy();
 
-    const unreadTab = screen.getByRole("tab", { name: "Unread" });
-    await fireEvent.mouseDown(unreadTab, { button: 0 });
-    await nextTick();
-
-    expect(unreadTab.getAttribute("data-state")).toBe("active");
-
-    const activePanel = document.querySelector<HTMLElement>(
-      '[role="tabpanel"][data-state="active"]',
-    );
-    expect(activePanel).toBeTruthy();
-
-    if (!activePanel) {
-      throw new Error("Expected an active notification tab panel.");
-    }
-
-    expect(within(activePanel).getByText("Deploy finished")).toBeTruthy();
-    expect(within(activePanel).queryByText("Review requested")).toBeNull();
+    const search = screen.getByRole("searchbox", { name: "Search notifications" });
+    await fireEvent.update(search, "review");
+    expect(screen.queryByText("Deploy finished")).toBeNull();
+    expect(screen.getByText("Review requested")).toBeTruthy();
+    await fireEvent.click(screen.getByRole("button", { name: "Notification filter" }));
+    expect(screen.getByText("No matching notifications.")).toBeTruthy();
+    await fireEvent.update(search, "");
+    expect(screen.getByText("Deploy finished")).toBeTruthy();
+    expect(screen.queryByText("Review requested")).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Mark read" }));
+    expect(screen.getByText("No unread notifications.")).toBeTruthy();
+    unmount();
   });
 });

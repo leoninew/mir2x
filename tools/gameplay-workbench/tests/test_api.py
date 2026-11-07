@@ -132,9 +132,8 @@ def test_greet_logs_request_lifecycle_without_query_string(caplog: Any) -> None:
     assert isinstance(log_value(completed_record, "duration_ms"), int)
     assert "method=GET path=/api/greet status=200" in completed_record.getMessage()
 
-    response_record = only_record_with_message(caplog.records, "Response body")
-    assert "request_id=req_log" in response_record.getMessage()
-    assert '"text":"Hello, Ada!"' in response_record.getMessage()
+    assert "name=Ada" not in started_record.getMessage()
+    assert "name=Ada" not in completed_record.getMessage()
 
 
 def test_greet_maps_blank_name_to_validation_error() -> None:

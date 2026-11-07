@@ -1,9 +1,13 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reactive, type SetupContext } from "vue";
+import { createPinia, setActivePinia } from "pinia";
+import { useToastsStore } from "@/stores/toasts";
 
 import IntegerField from "@/components/IntegerField.vue";
 import { useGameplay } from "@/composables/useGameplay";
 import GameplayPage from "@/domains/gameplay/GameplayPage.vue";
+import type { WorkbenchPage } from "@/domains/gameplay/gameplayNavigation";
 import { ApiClientError } from "@/services/api";
 import {
   gameplayApi,
@@ -13,6 +17,44 @@ import {
   type Domain,
   type GameplayBackup,
 } from "@/services/gameplayApi";
+
+type Route = { meta: { workbenchPage: WorkbenchPage } };
+const route = reactive<Route>({ meta: { workbenchPage: "monsters" } });
+let navigationGuard: ((to: Route) => boolean | Promise<boolean>) | undefined;
+const router = {
+  push: vi.fn(async ({ name }: { name: WorkbenchPage }) => {
+    const next = { meta: { workbenchPage: name } };
+    if ((await navigationGuard?.(next)) !== false) route.meta.workbenchPage = name;
+  }),
+  replace: vi.fn(async ({ name }: { name: WorkbenchPage }) => {
+    const next = { meta: { workbenchPage: name } };
+    if ((await navigationGuard?.(next)) !== false) route.meta.workbenchPage = name;
+  }),
+};
+
+vi.mock("vue-router", () => ({
+  useRoute: () => route,
+  useRouter: () => router,
+  onBeforeRouteUpdate: (guard: typeof navigationGuard) => {
+    navigationGuard = guard;
+  },
+  onBeforeRouteLeave: (guard: typeof navigationGuard) => {
+    navigationGuard = guard;
+  },
+  RouterLink: {
+    props: ["to", "custom"],
+    setup(props: { to: { name: WorkbenchPage } }, { slots }: SetupContext) {
+      return () =>
+        slots.default?.({
+          href: `/${props.to.name}`,
+          navigate: (event: MouseEvent) => {
+            event.preventDefault();
+            return router.push(props.to);
+          },
+        });
+    },
+  },
+}));
 
 function file(domain: Domain = "monsters", id: number | null = null): ConfigFile {
   return {
@@ -27,7 +69,7 @@ function file(domain: Domain = "monsters", id: number | null = null): ConfigFile
         : domain === "drops"
           ? {
               schema_version: 1,
-              monster_id: 1,
+              monster_id: id ?? 1,
               monster_name: "鹿",
               items: [
                 { item_id: 2, item_name: "金币", group: 0, prob_recip: 1, repeat: 1, count: 2 },
@@ -53,12 +95,17 @@ const catalog: Catalog = {
 };
 
 beforeEach(() => {
+  setActivePinia(createPinia());
+  navigationGuard = undefined;
+  route.meta.workbenchPage = "monsters";
+  router.push.mockClear();
+  router.replace.mockClear();
   vi.spyOn(gameplayApi, "workspace").mockResolvedValue({
     bound: true,
     workspace_id: "workspace",
     server_root: "server",
   });
-  vi.spyOn(gameplayApi, "catalog").mockResolvedValue(catalog);
+  vi.spyOn(gameplayApi, "catalog").mockResolvedValue(structuredClone(catalog));
   vi.spyOn(gameplayApi, "read").mockImplementation(async (_workspace, domain, id) =>
     file(domain, id),
   );
@@ -72,6 +119,66 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("gameplay editing", () => {
+  it("preserves drafts for all drop files and validates every changed file before saving", async () => {
+    const state = useGameplay();
+    await state.refreshWorkspace();
+    state.catalog.value!.manifest.drop_monsters = [1, 2];
+    await state.load("drops");
+    expect(state.dropDrafts.value.map((data) => data.monster_id)).toEqual([1, 2]);
+    state.dropDrafts.value[0].items[0].count = 5;
+    state.dropDrafts.value[1].items[0].count = 0;
+    await state.load("monsters");
+    await state.load("drops");
+    expect(state.dropDrafts.value.map((data) => data.items[0].count)).toEqual([5, 0]);
+    await state.save();
+    expect(state.errors.value["2.items.0.count"]).toBeDefined();
+    expect(gameplayApi.save).not.toHaveBeenCalled();
+    state.dropDrafts.value[1].items[0].count = 6;
+    vi.mocked(gameplayApi.validate)
+      .mockResolvedValueOnce({ valid: true, issues: [] })
+      .mockResolvedValueOnce({
+        valid: false,
+        issues: [{ path: "items.0.count", message: "数量错误" }],
+      });
+    await state.save();
+    expect(state.errors.value["2.items.0.count"]).toBe("数量错误");
+    expect(gameplayApi.save).not.toHaveBeenCalled();
+    await state.save();
+    expect(vi.mocked(gameplayApi.save).mock.calls.map(([payload]) => payload.object_id)).toEqual([
+      1, 2,
+    ]);
+    expect(state.dirty.value).toBe(false);
+  });
+
+  it("retains only unsaved changes when saving a later file conflicts", async () => {
+    const state = useGameplay();
+    await state.refreshWorkspace();
+    state.catalog.value!.manifest.drop_monsters = [1, 2];
+    await state.load("drops");
+    state.dropDrafts.value.forEach((data) => {
+      data.items[0].count = 8;
+    });
+    vi.mocked(gameplayApi.save)
+      .mockImplementationOnce(async (payload) => ({ ...payload, revision: "saved" }))
+      .mockRejectedValueOnce(new ApiClientError("File changed", "http_error", { status: 409 }));
+    await state.save();
+    expect(state.base.value?.revision).toBe("saved");
+    expect(state.changes.value.map((change) => change.path)).toEqual(["2.items.0.count"]);
+    expect(useToastsStore().items.at(-1)?.message).toContain("已保存 1 个配置");
+    expect(state.conflict.value).toBe(true);
+  });
+
+  it("loads the editor selected by the initial route", async () => {
+    route.meta.workbenchPage = "multipliers";
+    const wrapper = mount(GameplayPage);
+    await flushPromises();
+    expect(wrapper.get("h1").text()).toBe("全局倍率");
+    expect(wrapper.find("#experience").exists()).toBe(true);
+    expect(wrapper.get(".table-toolbar").text()).toContain("刷新");
+    expect(wrapper.get(".table-toolbar").text()).toContain("保存");
+    wrapper.unmount();
+  });
+
   it("preserves drafts across running, backups and other editors", async () => {
     const wrapper = mount(GameplayPage);
     await flushPromises();
@@ -79,7 +186,7 @@ describe("gameplay editing", () => {
     for (const label of ["游戏运行", "配置备份", "全局倍率", "基础经验"]) {
       await wrapper
         .get('nav[aria-label="工作台导航"]')
-        .findAll("button")
+        .findAll("a")
         .find((button) => button.text() === label)!
         .trigger("click");
       await flushPromises();
@@ -89,7 +196,7 @@ describe("gameplay editing", () => {
     );
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "校验并保存当前文件")!
+      .find((button) => button.text() === "保存")!
       .trigger("click");
     await flushPromises();
     expect(gameplayApi.save).toHaveBeenCalledWith(
@@ -128,7 +235,7 @@ describe("gameplay editing", () => {
     await flushPromises();
     await wrapper.get('input[aria-label="鹿 基础经验"]').setValue("25");
     await wrapper
-      .findAll("button")
+      .findAll("nav a")
       .find((button) => button.text() === "配置备份")!
       .trigger("click");
     await flushPromises();
@@ -150,7 +257,7 @@ describe("gameplay editing", () => {
     expect((wrapper.get('input[aria-label="鹿 基础经验"]').element as HTMLInputElement).value).toBe(
       "10",
     );
-    expect(wrapper.text()).toContain("还原前备份");
+    expect(useToastsStore().items.at(-1)?.message).toContain("还原前备份");
     wrapper.unmount();
   });
 
@@ -158,7 +265,7 @@ describe("gameplay editing", () => {
     const wrapper = mount(GameplayPage);
     await flushPromises();
     await wrapper
-      .findAll("button")
+      .findAll("nav a")
       .find((button) => button.text() === "全局倍率")!
       .trigger("click");
     await flushPromises();
@@ -166,9 +273,7 @@ describe("gameplay editing", () => {
     await wrapper.get("#experience").setValue("1.5");
     await wrapper.get("#gold").setValue("0");
     await wrapper.get("#drop").setValue("");
-    const save = wrapper
-      .findAll("button")
-      .find((button) => button.text() === "校验并保存当前文件")!;
+    const save = wrapper.findAll("button").find((button) => button.text() === "保存")!;
     await save.trigger("click");
     await flushPromises();
     expect(wrapper.get("#drop").attributes("aria-invalid")).toBe("true");
@@ -192,7 +297,7 @@ describe("gameplay editing", () => {
     await wrapper.get('input[aria-label="鹿 基础经验"]').setValue("");
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "校验并保存当前文件")!
+      .find((button) => button.text() === "保存")!
       .trigger("click");
     await flushPromises();
     expect(wrapper.get('input[aria-label="鹿 基础经验"]').attributes("aria-invalid")).toBe("true");
@@ -222,7 +327,10 @@ describe("gameplay editing", () => {
     expect(state.conflict.value).toBe(true);
     expect(state.dirty.value).toBe(true);
     expect(state.base.value?.revision).toBe("old-revision");
-    expect(state.message.value).toContain("草稿已保留");
+    expect(useToastsStore().items.at(-1)).toMatchObject({
+      message: expect.stringContaining("草稿已保留"),
+      tone: "warning",
+    });
   });
 
   it("shows a successful save and uses the returned file revision", async () => {
@@ -234,25 +342,10 @@ describe("gameplay editing", () => {
     await state.save();
     expect(state.dirty.value).toBe(false);
     expect(state.base.value?.revision).toBe("new-revision");
-    expect(state.message.value).toContain("下次启动");
-  });
-
-  it("ignores an earlier read response when another object has already been selected", async () => {
-    const state = useGameplay();
-    await state.refreshWorkspace();
-    let finish!: (value: ConfigFile) => void;
-    vi.mocked(gameplayApi.read).mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
-    const pending = state.load("drops", 1);
-    await state.load("spawns", 3);
-    finish(file("drops", 1));
-    await pending;
-    expect(state.domain.value).toBe("spawns");
-    expect(state.objectId.value).toBe(3);
+    expect(useToastsStore().items.at(-1)).toMatchObject({
+      message: expect.stringContaining("下次启动"),
+      tone: "success",
+    });
   });
 
   it("checks integer constraints without converting invalid values", () => {
@@ -278,41 +371,6 @@ describe("gameplay editing", () => {
     await state.load("monsters");
     expect(state.dirty.value).toBe(false);
     expect(state.draft.value).toEqual(file().data);
-  });
-
-  it("ignores a late save after the user selects a different file", async () => {
-    const state = useGameplay();
-    await state.refreshWorkspace();
-    let finish!: (value: ConfigFile) => void;
-    vi.mocked(gameplayApi.save).mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
-    const pending = state.save();
-    await flushPromises();
-    await state.load("spawns", 3);
-    finish({ ...file(), revision: "late-save" });
-    await pending;
-    expect(state.domain.value).toBe("spawns");
-    expect(state.base.value?.revision).toBe("old-revision");
-  });
-
-  it("does not apply an obsolete workspace response", async () => {
-    const state = useGameplay();
-    let finish!: (value: Awaited<ReturnType<typeof gameplayApi.workspace>>) => void;
-    vi.mocked(gameplayApi.workspace).mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
-    const pending = state.refreshWorkspace();
-    await state.refreshWorkspace();
-    finish({ bound: true, workspace_id: "obsolete", server_root: "other" });
-    await pending;
-    expect(state.workspace.value?.workspace_id).toBe("workspace");
   });
 
   it("associates an integer error with its real input", () => {

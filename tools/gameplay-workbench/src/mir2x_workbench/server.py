@@ -20,10 +20,10 @@ def main() -> None:
     parser.add_argument("--reload", action="store_true", default=None)
     args = parser.parse_args()
     configure_logging(include_files=False)
-    settings = load_settings().server
+    settings = load_settings()
     server = ServerSettings.model_validate(
         {
-            **settings.model_dump(),
+            **settings.server.model_dump(),
             **{name: value for name, value in vars(args).items() if value is not None},
         }
     )
@@ -32,6 +32,13 @@ def main() -> None:
         host=server.host,
         port=server.port,
         reload=server.reload,
+        reload_includes=[
+            "config/config.yaml",
+            f".env.{settings.profile}",
+            "logging.yaml",
+        ]
+        if server.reload
+        else None,
         factory=True,
         access_log=False,
         log_config=None,

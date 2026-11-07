@@ -1,53 +1,114 @@
 <template>
-  <div>
-    <p class="editor-help">
-      周期单位为秒；目标数为 0 时仍沿原逻辑至少生成 1 个。cratio 当前未消费，只读保留。
-    </p>
-    <section
-      v-for="(group, groupIndex) in model.groups"
-      :key="groupIndex"
-      class="border-b border-slate-200"
-    >
-      <h2 class="bg-slate-100/70 px-4 py-3 text-sm font-medium">
-        {{ groupIndex + 1 }} · {{ group.monster_name }}
-        <span class="font-normal text-slate-500">ID {{ group.monster_id }}</span>
-      </h2>
-      <table class="config-table">
-        <thead>
-          <tr>
-            <th v-for="field in spawnFields" :key="field.key">
-              {{ field.label }} <span class="required">*</span>
-            </th>
-            <th>cratio · 未使用</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(region, regionIndex) in group.loc" :key="regionIndex">
-            <td v-for="field in spawnFields" :key="field.key">
-              <IntegerField
-                v-model="region[field.key]"
-                :path="`groups.${groupIndex}.loc.${regionIndex}.${field.key}`"
-                :label="`${group.monster_name} 区域 ${regionIndex + 1} ${field.label}`"
-                :minimum="field.minimum"
-                :error="errors[`groups.${groupIndex}.loc.${regionIndex}.${field.key}`]"
-                @edit="$emit('edit', $event)"
-              />
-            </td>
-            <td class="text-slate-500">{{ region.cratio ?? "—" }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-    <p v-if="!model.groups.length" class="p-5 text-sm text-slate-500">此地图没有有效刷怪组。</p>
-  </div>
+  <WorkbenchTable
+    v-model:search="search"
+    label="刷怪区域"
+    search-label="搜索刷怪怪物"
+    search-placeholder="怪物名称或 ID"
+    count-label="个区域"
+    :columns="columns"
+    :rows="rows"
+    :total="regions.length"
+    :row-key="(entry) => `${entry.document.map_id}-${entry.groupIndex}-${entry.regionIndex}`"
+    :empty-text="regions.length ? '没有匹配的刷怪区域。' : '没有有效刷怪区域。'"
+    table-class="min-w-[1200px]"
+  >
+    <template #actions><slot name="actions"></slot></template>
+    <template #filters>
+      <FilterCombobox v-model="mapId" label="地图" :options="mapOptions" class="w-48" />
+      <FilterCombobox v-model="monsterId" label="怪物" :options="monsterOptions" />
+      <FilterCombobox v-model="groupIndex" label="组" :options="groupOptions" class="w-28" />
+      <FilterCombobox v-model="regionIndex" label="区域" :options="regionOptions" class="w-28" />
+    </template>
+    <template #cell-id="{ row: entry }">{{ entry.group.monster_id }}</template>
+    <template #cell-map="{ row: entry }">{{ entry.document.map_name }}</template>
+    <template #cell-group="{ row: entry }">{{ entry.groupIndex + 1 }}</template>
+    <template #cell-region="{ row: entry }">{{ entry.regionIndex + 1 }}</template>
+    <template #cell-monster="{ row: entry }">
+      {{ entry.group.monster_name }}
+    </template>
+    <template v-for="field in spawnFields" :key="field.key" #[`cell-${field.key}`]="{ row: entry }">
+      <IntegerField
+        v-model="entry.region[field.key]"
+        :path="`${entry.document.map_id}.groups.${entry.groupIndex}.loc.${entry.regionIndex}.${field.key}`"
+        :label="`${entry.group.monster_name} 区域 ${entry.regionIndex + 1} ${field.label}`"
+        :minimum="field.minimum"
+        :error="
+          errors[
+            `${entry.document.map_id}.groups.${entry.groupIndex}.loc.${entry.regionIndex}.${field.key}`
+          ]
+        "
+        @edit="$emit('edit', $event)"
+      />
+    </template>
+    <template #cell-cratio="{ row: entry }">{{ entry.region.cratio ?? "—" }}</template>
+  </WorkbenchTable>
 </template>
 
 <script setup lang="ts">
+  import { computed, ref, watch } from "vue";
+  import FilterCombobox from "@/components/FilterCombobox.vue";
   import IntegerField from "@/components/IntegerField.vue";
+  import WorkbenchTable from "@/components/WorkbenchTable.vue";
+  import { matchesSearch, type TableColumn } from "@/components/workbenchTable";
   import type { Spawns } from "@/services/gameplayApi";
-  const model = defineModel<Spawns>({ required: true });
+
+  const model = defineModel<Spawns[]>({ required: true });
   defineProps<{ errors: Record<string, string> }>();
   defineEmits<{ edit: [path: string] }>();
+  const search = ref("");
+  const mapId = ref<string | number | null>(null);
+  const monsterId = ref<string | number | null>(null);
+  const groupIndex = ref<string | number | null>(null);
+  const regionIndex = ref<string | number | null>(null);
+  const mapOptions = computed(() =>
+    model.value.map((document) => ({
+      value: document.map_id,
+      label: `${document.map_name}（ID：${document.map_id}）`,
+    })),
+  );
+  const mapRegions = computed(() =>
+    regions.value.filter((entry) => mapId.value === null || entry.document.map_id === mapId.value),
+  );
+  const monsterOptions = computed(() => [
+    ...new Map(
+      mapRegions.value.map(({ group }) => [
+        group.monster_id,
+        { value: group.monster_id, label: `${group.monster_name}（ID：${group.monster_id}）` },
+      ]),
+    ).values(),
+  ]);
+  const monsterRegions = computed(() =>
+    mapRegions.value.filter(
+      (entry) => monsterId.value === null || entry.group.monster_id === monsterId.value,
+    ),
+  );
+  const groupOptions = computed(() =>
+    [...new Set(monsterRegions.value.map((entry) => entry.groupIndex))]
+      .sort((left, right) => left - right)
+      .map((value) => ({ value, label: `第 ${value + 1} 组` })),
+  );
+  const groupRegions = computed(() =>
+    monsterRegions.value.filter(
+      (entry) => groupIndex.value === null || entry.groupIndex === groupIndex.value,
+    ),
+  );
+  const regionOptions = computed(() =>
+    [...new Set(groupRegions.value.map((entry) => entry.regionIndex))]
+      .sort((left, right) => left - right)
+      .map((value) => ({ value, label: `区域 ${value + 1}` })),
+  );
+  watch(mapId, () => {
+    monsterId.value = null;
+    groupIndex.value = null;
+    regionIndex.value = null;
+  });
+  watch(monsterId, () => {
+    groupIndex.value = null;
+    regionIndex.value = null;
+  });
+  watch(groupIndex, () => {
+    regionIndex.value = null;
+  });
   const spawnFields = [
     { key: "x", label: "X", minimum: -2147483648 },
     { key: "y", label: "Y", minimum: -2147483648 },
@@ -56,4 +117,33 @@
     { key: "count", label: "目标数", minimum: 0 },
     { key: "time", label: "周期（秒）", minimum: 1 },
   ] as const;
+  const columns: TableColumn[] = [
+    { key: "id", label: "ID", class: "w-20 text-slate-500" },
+    { key: "monster", label: "怪物", class: "min-w-36" },
+    { key: "map", label: "地图", class: "min-w-36" },
+    { key: "group", label: "组", class: "w-20 text-slate-500" },
+    { key: "region", label: "区域", class: "w-20 text-slate-500" },
+    ...spawnFields.map((field) => ({ ...field, class: "w-28", required: true })),
+    { key: "cratio", label: "cratio · 未使用", class: "text-slate-500" },
+  ];
+  const regions = computed(() =>
+    model.value.flatMap((document) =>
+      document.groups.flatMap((group, groupIndex) =>
+        group.loc.map((region, regionIndex) => ({
+          document,
+          group,
+          groupIndex,
+          region,
+          regionIndex,
+        })),
+      ),
+    ),
+  );
+  const rows = computed(() =>
+    groupRegions.value.filter(
+      (entry) =>
+        (regionIndex.value === null || entry.regionIndex === regionIndex.value) &&
+        matchesSearch(search.value, entry.group.monster_name, entry.group.monster_id),
+    ),
+  );
 </script>

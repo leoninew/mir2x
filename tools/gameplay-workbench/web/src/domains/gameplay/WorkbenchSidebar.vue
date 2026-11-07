@@ -12,22 +12,29 @@
     >
       <div v-for="group in navigationGroups" :key="group.label" class="flex shrink-0 gap-1 md:grid">
         <p class="mb-1 hidden px-3 text-xs text-slate-400 md:block">{{ group.label }}</p>
-        <button
+        <RouterLink
           v-for="item in group.items"
           :key="item.page"
-          type="button"
-          :disabled="busy"
-          :aria-current="page === item.page ? 'page' : undefined"
-          :class="[
-            'rounded-md px-3 py-2.5 text-left text-sm whitespace-nowrap transition-colors disabled:opacity-50',
-            page === item.page
-              ? 'bg-indigo-50 font-medium text-indigo-700'
-              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950',
-          ]"
-          @click="$emit('navigate', item.page)"
+          v-slot="{ href, navigate }"
+          :to="{ name: item.page }"
+          custom
         >
-          {{ item.label }}
-        </button>
+          <a
+            :href="href"
+            :aria-disabled="busy || undefined"
+            :tabindex="busy ? -1 : undefined"
+            :aria-current="page === item.page ? 'page' : undefined"
+            :class="[
+              'rounded-md px-3 py-2.5 text-left text-sm whitespace-nowrap transition-colors aria-disabled:opacity-50',
+              page === item.page
+                ? 'bg-indigo-50 font-medium text-indigo-700'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950',
+            ]"
+            @click="busy ? $event.preventDefault() : navigate($event)"
+          >
+            {{ item.label }}
+          </a>
+        </RouterLink>
       </div>
     </nav>
     <div class="m-4 hidden rounded-lg border border-slate-200 bg-slate-50 p-3 md:block">
@@ -51,8 +58,9 @@
 </template>
 
 <script setup lang="ts">
+  import { RouterLink } from "vue-router";
   import { navigationGroups, type WorkbenchPage } from "./gameplayNavigation";
 
   defineProps<{ page: WorkbenchPage; serverRoot: string | null; busy: boolean }>();
-  defineEmits<{ navigate: [page: WorkbenchPage]; choose: [] }>();
+  defineEmits<{ choose: [] }>();
 </script>

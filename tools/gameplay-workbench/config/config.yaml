@@ -20,7 +20,7 @@ static:
 
 logging:
   body:
-    limit: 4096
+    limit: 0
   request:
     begin: "Request begin request_id=%s method=%s path=%s"
     body: "Request body request_id=%s body=%s"
