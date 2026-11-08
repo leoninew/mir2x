@@ -4,17 +4,11 @@
       <slot name="filters"></slot>
       <div class="relative block w-56 shrink-0">
         <span class="sr-only">{{ searchLabel }}</span>
-        <svg
+        <Search
           class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
+          :stroke-width="1.75"
           aria-hidden="true"
-        >
-          <circle cx="10.5" cy="10.5" r="6.5" />
-          <path d="m16 16 4 4" />
-        </svg>
+        />
         <input
           ref="searchInput"
           v-model="search"
@@ -32,7 +26,7 @@
           class="filter-control absolute top-1/2 right-1 -translate-y-1/2"
           @click="clearSearch"
         >
-          ×
+          <X class="size-4" aria-hidden="true" />
         </button>
       </div>
       <span class="shrink-0 text-xs text-slate-500" aria-live="polite">
@@ -91,6 +85,7 @@
 </template>
 
 <script setup lang="ts" generic="Row extends object">
+  import { Search, X } from "@lucide/vue";
   import { ref } from "vue";
   import AppLoading from "./AppLoading.vue";
   import type { TableColumn } from "./workbenchTable";

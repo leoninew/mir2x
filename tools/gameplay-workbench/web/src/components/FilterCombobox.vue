@@ -25,18 +25,10 @@
         class="filter-control"
         tabindex="0"
       >
-        <span aria-hidden="true">×</span>
+        <X class="size-4" aria-hidden="true" />
       </ComboboxCancel>
       <ComboboxTrigger :aria-label="`展开${label}`" :disabled="disabled" class="filter-control">
-        <svg
-          viewBox="0 0 16 16"
-          class="size-4"
-          fill="none"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path d="m4 6 4 4 4-4" />
-        </svg>
+        <ChevronDown class="size-4" aria-hidden="true" />
       </ComboboxTrigger>
     </ComboboxAnchor>
     <ComboboxPortal>
@@ -63,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+  import { ChevronDown, X } from "@lucide/vue";
   import { ref } from "vue";
   import {
     ComboboxRoot,

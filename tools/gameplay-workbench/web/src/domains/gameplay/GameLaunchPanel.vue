@@ -83,6 +83,12 @@
                 :label="`正在${actionLabel(kind)}…`"
                 class="text-current"
               />
+              <component
+                :is="status?.targets[kind].running ? Square : Play"
+                v-else
+                class="size-4 shrink-0"
+                aria-hidden="true"
+              />
               {{ actionLabel(kind) }}
             </button>
             <button
@@ -92,6 +98,11 @@
               :disabled="!desktop"
               @click="showLog(kind)"
             >
+              <component
+                :is="logKind === kind ? RefreshCw : FileText"
+                class="size-4 shrink-0"
+                aria-hidden="true"
+              />
               {{ logKind === kind ? "刷新日志" : "查看日志" }}
             </button>
           </div>
@@ -220,6 +231,7 @@
           </p>
           <div class="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
             <button type="button" class="text-button" :disabled="busy" @click="refresh">
+              <RefreshCw class="size-4 shrink-0" aria-hidden="true" />
               重新读取
             </button>
             <div class="flex gap-2">
@@ -238,6 +250,7 @@
                   label="正在保存路径…"
                   class="text-current"
                 />
+                <Save v-else class="size-4 shrink-0" aria-hidden="true" />
                 保存
               </button>
             </div>
@@ -249,6 +262,7 @@
 </template>
 
 <script setup lang="ts">
+  import { FileText, Play, RefreshCw, Save, Square } from "@lucide/vue";
   import {
     DialogContent,
     DialogDescription,

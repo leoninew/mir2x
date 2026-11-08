@@ -12,6 +12,8 @@
 
 Windows 需要 WebView2 Runtime；开发需要 Python 3.12+、uv、Node.js 22+、Corepack，Makefile 入口还需要 GNU Make/Bash。
 
+界面图标使用官方 Vue 3 包 `@lucide/vue`，按组件具名导入，仅打包实际使用的图标。桌面窗口明确启用 pywebview 的 `text_select=True`，正文、表格、命令示例及日志支持选择文本后按 `Ctrl+C` 复制；命令旁的复制按钮也可直接复制完整内容。修改桌面窗口参数后需要重启桌面应用，前端开发服务器热更新不负责重建窗口。
+
 ## 使用
 
 正式入口：仓库主安装目录中的 `install/workbench/Mir2xWorkbench.exe`。工作台与同级 `client/`、`server/` 一起交付；工作台自身的 `_internal/` 目录需要保留。

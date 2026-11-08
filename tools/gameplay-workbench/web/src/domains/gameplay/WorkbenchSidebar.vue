@@ -25,14 +25,20 @@
             :tabindex="busy ? -1 : undefined"
             :aria-current="page === item.page ? 'page' : undefined"
             :class="[
-              'rounded-md px-3 py-2.5 text-left text-sm whitespace-nowrap transition-colors aria-disabled:opacity-50',
+              'flex items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm whitespace-nowrap transition-colors aria-disabled:opacity-50',
               page === item.page
                 ? 'bg-indigo-50 font-medium text-indigo-700'
                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950',
             ]"
             @click="busy ? $event.preventDefault() : navigate($event)"
           >
-            {{ item.label }}
+            <component
+              :is="pageIcons[item.page]"
+              class="size-4 shrink-0"
+              :stroke-width="1.75"
+              aria-hidden="true"
+            />
+            <span>{{ item.label }}</span>
           </a>
         </RouterLink>
       </div>
@@ -41,8 +47,32 @@
 </template>
 
 <script setup lang="ts">
+  import {
+    ArchiveRestore,
+    Coins,
+    History,
+    Map,
+    Play,
+    Skull,
+    SlidersHorizontal,
+    Swords,
+    Terminal,
+  } from "@lucide/vue";
+  import type { Component } from "vue";
   import { RouterLink } from "vue-router";
   import { navigationGroups, type WorkbenchPage } from "./gameplayNavigation";
+
+  const pageIcons = {
+    launcher: Play,
+    "map-guide": Map,
+    gm: Terminal,
+    monsters: Swords,
+    drops: Coins,
+    spawns: Skull,
+    multipliers: SlidersHorizontal,
+    backups: ArchiveRestore,
+    migration: History,
+  } satisfies Record<WorkbenchPage, Component>;
 
   defineProps<{ page: WorkbenchPage; busy: boolean }>();
   defineEmits<{ choose: [] }>();

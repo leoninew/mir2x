@@ -158,6 +158,7 @@
                 :aria-label="`复制：${example.label}`"
                 @click="copyExample(example.code)"
               >
+                <Copy class="size-3.5 shrink-0" aria-hidden="true" />
                 复制
               </button>
             </div>
@@ -195,6 +196,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Copy } from "@lucide/vue";
   import { computed, ref } from "vue";
   import { useToastsStore } from "@/stores/toasts";
   import {

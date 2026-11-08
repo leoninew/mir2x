@@ -13,6 +13,7 @@
             :disabled="!launchPanel?.canConfigure"
             @click="launchPanel?.openSettings()"
           >
+            <Settings2 class="size-4 shrink-0" aria-hidden="true" />
             路径设置
           </button>
           <span
@@ -180,6 +181,7 @@
   </div>
 </template>
 <script setup lang="ts">
+  import { Settings2 } from "@lucide/vue";
   import { computed, onMounted, ref } from "vue";
   import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
   import { useGameplay } from "@/composables/useGameplay";

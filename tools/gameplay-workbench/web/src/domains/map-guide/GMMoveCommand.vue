@@ -11,12 +11,14 @@
       :aria-label="`复制 GM 指令：${command}`"
       @click="copyCommand"
     >
+      <Copy class="size-3.5 shrink-0" aria-hidden="true" />
       复制
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
+  import { Copy } from "@lucide/vue";
   import { computed } from "vue";
   import { useToastsStore } from "@/stores/toasts";
 

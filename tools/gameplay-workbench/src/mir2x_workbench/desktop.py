@@ -460,6 +460,7 @@ def create_window(settings: DesktopSettings, url: str, api: DesktopApi) -> webvi
         height=settings.height,
         min_size=(settings.min_width, settings.min_height),
         resizable=True,
+        text_select=True,
         js_api=api,
     )
     if window is None:

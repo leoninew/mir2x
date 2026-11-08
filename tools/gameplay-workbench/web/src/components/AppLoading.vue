@@ -9,16 +9,18 @@
       overlay ? 'absolute inset-0 z-30 flex rounded-[inherit] bg-white/80' : 'inline-flex',
     ]"
   >
-    <ProgressIndicator
-      as="span"
-      class="size-5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
-      aria-hidden="true"
-    />
+    <ProgressIndicator as-child>
+      <LoaderCircle
+        class="size-5 shrink-0 animate-spin motion-reduce:animate-none"
+        aria-hidden="true"
+      />
+    </ProgressIndicator>
     <span :class="compact ? 'sr-only' : ''">{{ label }}</span>
   </ProgressRoot>
 </template>
 
 <script setup lang="ts">
+  import { LoaderCircle } from "@lucide/vue";
   import { ProgressRoot, ProgressIndicator } from "reka-ui";
 
   withDefaults(defineProps<{ label?: string; overlay?: boolean; compact?: boolean }>(), {

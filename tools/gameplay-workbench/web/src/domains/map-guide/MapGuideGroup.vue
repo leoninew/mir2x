@@ -6,17 +6,11 @@
       :aria-expanded="expanded.has(group.key)"
       @click="emit('toggle', group.key)"
     >
-      <svg
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
+      <ChevronRight
         class="size-3 shrink-0 text-slate-400 transition-transform"
         :class="{ 'rotate-90': expanded.has(group.key) }"
         aria-hidden="true"
-      >
-        <path d="m6 3 5 5-5 5" />
-      </svg>
+      />
       <span class="min-w-0 flex-1 truncate font-medium">{{ group.label }}</span>
       <span class="text-xs tabular-nums text-slate-400">{{ group.count }}</span>
     </button>
@@ -52,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+  import { ChevronRight } from "@lucide/vue";
   import type { MapGroup } from "./mapGuide";
 
   defineProps<{ group: MapGroup; expanded: Set<string>; selectedId: number | null }>();
