@@ -71,7 +71,7 @@ end
 -- Use the real NPC event dispatcher, mocking only its game-world dependencies.
 dofile('server/src/npchar.lua')
 local register = setEventHandler
-local state, handler, captured
+local state, handler, captured, bookGoods
 function addLog(level, fmt, ...)
     assert(level == LOGTYPE_WARNING)
     table.insert(state.warnings, string.format(fmt, ...))
@@ -251,9 +251,15 @@ for _, contract in ipairs(contracts) do
     modules[contract.name] = {contract = contract, module = module}
 end
 
+local withSkillManuals = modules.bookseller.module.withSkillManuals
+modules.bookseller.module.withSkillManuals = function(goods)
+    bookGoods = goods
+    return withSkillManuals(goods)
+end
+
 local function reset()
     deleteEventHandler()
-    handler, captured = nil, nil
+    handler, captured, bookGoods = nil, nil, nil
     state = {gold = 10000, red = false, charges = 0, repairs = 0, purchases = 0, unbound = 0, removed = 0, inventory = {}, warnings = {}, remoteCalls = 0}
 end
 local function build(name, spec)
@@ -612,10 +618,26 @@ local questEntryCases =
 
 local npcCount = 0
 local questNPCCount = 0
+local bookstoreCount = 0
 for _, path in ipairs(arg) do
     if read(path):find("require%('npc%.include%.merchant%.%w+'%)") then
         reset()
         assert(loadfile(path))()
+        if bookGoods then
+            -- The Taoist bookstore keeps its own dialogue instead of using setBookseller.
+            captured = captured or {goods = bookGoods}
+            assert(#state.goods == #bookGoods + 32, path)
+            local stock = {}
+            for _, name in ipairs(state.goods) do
+                assert(not stock[name], 'duplicate stock: ' .. name)
+                stock[name] = true
+            end
+            for _, name in ipairs(bookGoods) do assert(stock[name], path) end
+            for _, name in ipairs(modules.bookseller.module.LOW_LEVEL_SKILL_MANUALS) do
+                assert(stock[name], path .. ': missing ' .. name)
+            end
+            bookstoreCount = bookstoreCount + 1
+        end
         assert(captured and handler, path)
         for tag, callback in pairs(handler) do
             if type(callback) == 'function' and tag ~= SYS_LABEL and tag ~= SYS_HIDE and tag ~= SYS_CHECKACTIVE then
@@ -722,7 +744,9 @@ for _, path in ipairs(arg) do
         npcCount = npcCount + 1
     end
 end
+assert(bookstoreCount == 5, 'expected five regular skill bookstores')
 print(string.format('Passed %d merchant contracts and %d NPC scripts', #contracts, npcCount))
+print(string.format('Passed %d bookstore stock lists with 32 manuals each', bookstoreCount))
 print(string.format('Passed %d quest-aware merchant entry paths', questNPCCount))
 
 return

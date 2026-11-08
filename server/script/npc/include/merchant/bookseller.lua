@@ -38,6 +38,57 @@ end
 
 local bookseller = {}
 
+-- Low-level skills are sold as study-ready manuals by every regular skill bookstore.
+bookseller.LOW_LEVEL_SKILL_MANUALS =
+{
+    '基本剑术（秘籍）',
+    '攻杀剑术（秘籍）',
+    '刺杀剑术（秘籍）',
+    '半月弯刀（秘籍）',
+
+    '火球术（秘籍）',
+    '霹雳掌（秘籍）',
+    '冰月神掌（秘籍）',
+    '风掌（秘籍）',
+    '抗拒火环（秘籍）',
+    '诱惑之光（秘籍）',
+    '瞬息移动（秘籍）',
+    '大火球（秘籍）',
+    '雷电术（秘籍）',
+    '冰月震天（秘籍）',
+    '击风（秘籍）',
+    '地狱火（秘籍）',
+    '疾光电影（秘籍）',
+    '冰沙掌（秘籍）',
+    '风震天（秘籍）',
+    '火墙（秘籍）',
+    '圣言术（秘籍）',
+
+    '治愈术（秘籍）',
+    '精神力战法（秘籍）',
+    '施毒术（秘籍）',
+    '灵魂火符（秘籍）',
+    '月魂断玉（秘籍）',
+    '召唤骷髅（秘籍）',
+    '隐身术（秘籍）',
+    '幽灵盾（秘籍）',
+    '集体隐身术（秘籍）',
+    '月魂灵波（秘籍）',
+    '神圣战甲术（秘籍）',
+}
+
+function bookseller.withSkillManuals(goods)
+    assertType(goods, 'table')
+    local combined = {}
+    for _, name in ipairs(goods) do
+        table.insert(combined, name)
+    end
+    for _, name in ipairs(bookseller.LOW_LEVEL_SKILL_MANUALS) do
+        table.insert(combined, name)
+    end
+    return combined
+end
+
 -- @NPC_Help_11 .. @NPC_Help_33. legacy writes the level thresholds into the prose, so they are
 -- transcribed as prose rather than recomputed — the book records carry no such requirement yet
 --
@@ -82,7 +133,7 @@ function bookseller.setBookseller(spec)
     local handler = {}
 
     if spec.goods then
-        setNPCSell(spec.goods)
+        setNPCSell(bookseller.withSkillManuals(spec.goods))
         table.insert(menu, dialog.link('npc_buy', spec.buyLabel or '购买', {suffix = spec.buySuffix or label}))
         handler.npc_buy = function(uid, value)
             dialog.post(uid, spec.buyText or {'请挑选你想要的书。'}, back)

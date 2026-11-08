@@ -1,7 +1,8 @@
 local dialog = require('include.dialog')
-setNPCSell({
+local bookseller = require('npc.include.merchant.bookseller')
+setNPCSell(bookseller.withSkillManuals({
     '治愈术',
-})
+}))
 
 local invop = require('npc.include.invop')
 
