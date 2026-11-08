@@ -149,6 +149,10 @@ void ProcessRun::on_SM_ACTION(const uint8_t *bufPtr, size_t)
     SMAction smA;
     std::memcpy(&smA, bufPtr, sizeof(smA));
 
+    if(smA.UID == getFocusUID(FOCUS_ATTACK) && (smA.mapUID != mapUID() || smA.action.type == ACTION_DIE || smA.action.type == ACTION_SPACEMOVE)){
+        setFocusUID(FOCUS_ATTACK, 0);
+    }
+
     if(smA.mapUID != mapUID()){
         if(smA.UID != getMyHero()->UID()){
             m_coList.erase(smA.UID);
@@ -355,6 +359,10 @@ void ProcessRun::on_SM_NOTIFYDEAD(const uint8_t *bufPtr, size_t)
 {
     SMNotifyDead stSMND;
     std::memcpy(&stSMND, bufPtr, sizeof(stSMND));
+
+    if(getFocusUID(FOCUS_ATTACK) == stSMND.UID){
+        setFocusUID(FOCUS_ATTACK, 0);
+    }
 
     if(auto p = findUID(stSMND.UID)){
         p->parseAction(ActionDie
@@ -600,6 +608,9 @@ void ProcessRun::on_SM_CODISAPPEAR(const uint8_t *bufPtr, size_t)
         fflassert(smCOD.UID != m_myHeroUID);
 
         m_actionBlocker.erase(smCOD.UID);
+        if(getFocusUID(FOCUS_ATTACK) == smCOD.UID){
+            setFocusUID(FOCUS_ATTACK, 0);
+        }
         m_coList.erase(smCOD.UID);
     }
 }
@@ -613,6 +624,9 @@ void ProcessRun::on_SM_OFFLINE(const uint8_t *bufPtr, size_t)
 {
     const auto smO = ServerMsg::conv<SMOffline>(bufPtr);
     if(smO.mapUID == mapUID()){
+        if(getFocusUID(FOCUS_ATTACK) == smO.UID){
+            setFocusUID(FOCUS_ATTACK, 0);
+        }
         m_coList.erase(smO.UID);
         // if(auto coPtr = findUID(smO.UID)){
         //     coPtr->addAttachMagic(std::unique_ptr<AttachMagic>(new AttachMagic(u8"瞬息移动", u8"启动")));

@@ -41,6 +41,17 @@ mir2x_add_unit_test(
 target_include_directories(test_netio PRIVATE ../../src)
 
 mir2x_add_unit_test(
+    NAME continuousattack
+    SOURCES test_continuousattack.cpp
+    LIBS client_objs
+    DEPENDS zsdbmaker mir2x_resources
+    WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/client"
+    ENVIRONMENT "SDL_VIDEODRIVER=dummy" "SDL_RENDER_DRIVER=software"
+)
+target_compile_definitions(test_continuousattack PRIVATE
+    MIR2X_TEST_DEFAULT_RES_DIR="${CMAKE_INSTALL_PREFIX}/client/res")
+
+mir2x_add_unit_test(
     NAME widget
     SOURCES test_widget.cpp ../../src/widget.cpp
     LIBS common mir2x::sdl3_ext

@@ -156,7 +156,7 @@ constexpr int _RSVD_rtcfg_add_type_counter_begin = __COUNTER__;
     /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_允许拜师        , (), bool, true)
     /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_允许好友上线提示, (), bool, true)
     /**/
-    /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_强制攻击    , (), bool, true)
+    /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_持续攻击    , (), bool, true)
     /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_显示体力变化, (), bool, true)
     /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_满血隐藏血条, (), bool, true)
     /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_显示血条    , (), bool, true)

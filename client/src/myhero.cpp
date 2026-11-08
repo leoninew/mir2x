@@ -28,6 +28,18 @@ bool MyHero::moveNextMotion()
     }
 
     if(m_motionQueue.empty()){
+        if(m_actionQueue.empty()
+                && (m_currMotion->type == MOTION_HITTED || m_currMotion->type == MOTION_ONHORSEHITTED)
+                && m_currMotion->frame + 1 >= getFrameCountEx(m_currMotion.get())){
+            const auto targetUID = m_processRun->getFocusUID(FOCUS_ATTACK);
+            if(m_processRun->getRuntimeConfig<RTCFG_持续攻击>() && uidf::isMonster(targetUID)){
+                m_processRun->trackAttack(false, targetUID);
+            }
+            else{
+                m_processRun->setFocusUID(FOCUS_ATTACK, 0);
+            }
+        }
+
         if(m_actionQueue.empty()){
             m_currMotion = makeIdleMotion();
             return true;
@@ -60,6 +72,24 @@ bool MyHero::moveNextMotion()
         });
     }
     throw fflpanic("Current motion is not valid");
+}
+
+bool MyHero::parseAction(const ActionNode &action)
+{
+    switch(action.type){
+        case ACTION_ATTACK:
+        case ACTION_MOVE:
+        case ACTION_HITTED:
+            {
+                break;
+            }
+        default:
+            {
+                m_processRun->setFocusUID(FOCUS_ATTACK, 0);
+                break;
+            }
+    }
+    return Hero::parseAction(action);
 }
 
 bool MyHero::decompMove(bool bCheckGround, int nCheckCreature, bool bCheckMove, int nX0, int nY0, int nX1, int nY1, int *pXm, int *pYm)
@@ -780,6 +810,8 @@ void MyHero::brakeMove()
 
 bool MyHero::emplaceAction(const ActionNode &action)
 {
+    m_processRun->setFocusUID(FOCUS_ATTACK, action.type == ACTION_ATTACK ? action.aimUID : 0);
+
     // always clear motionQueue if new action provided
     // for urgent motion must play, push them into forcedMotionQueue
 
@@ -808,6 +840,7 @@ void MyHero::pullGold()
 
 void MyHero::flushForcedMotion()
 {
+    m_processRun->setFocusUID(FOCUS_ATTACK, 0);
     Hero::flushForcedMotion();
     m_actionQueue.clear();
 }

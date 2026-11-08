@@ -648,7 +648,7 @@ RuntimeConfigBoard::RuntimeConfigBoard(int argX, int argY, int argW, int argH, P
 
                               .childList
                               {
-                                  {new CheckLabel{{.label{.text=u8"强制攻击"    }, .getter=[this]{ return SDRuntimeConfig_getConfig<RTCFG_强制攻击    >(m_sdRuntimeConfig); }, .setter=[this](bool value){ SDRuntimeConfig_setConfig<RTCFG_强制攻击    >(m_sdRuntimeConfig, value); }, .onChange=[this](bool){ reportRuntimeConfig<RTCFG_强制攻击    >(); }}}, true},
+                                  {new CheckLabel{{.label{.text=u8"持续攻击"    }, .getter=[this]{ return SDRuntimeConfig_getConfig<RTCFG_持续攻击    >(m_sdRuntimeConfig); }, .setter=[this](bool value){ setContinuousAttack(value); }}}, true},
                                   {new CheckLabel{{.label{.text=u8"显示体力变化"}, .getter=[this]{ return SDRuntimeConfig_getConfig<RTCFG_显示体力变化>(m_sdRuntimeConfig); }, .setter=[this](bool value){ SDRuntimeConfig_setConfig<RTCFG_显示体力变化>(m_sdRuntimeConfig, value); }, .onChange=[this](bool){ reportRuntimeConfig<RTCFG_显示体力变化>(); }}}, true},
                                   {new CheckLabel{{.label{.text=u8"满血隐藏血条"}, .getter=[this]{ return SDRuntimeConfig_getConfig<RTCFG_满血隐藏血条>(m_sdRuntimeConfig); }, .setter=[this](bool value){ SDRuntimeConfig_setConfig<RTCFG_满血隐藏血条>(m_sdRuntimeConfig, value); }, .onChange=[this](bool){ reportRuntimeConfig<RTCFG_满血隐藏血条>(); }}}, true},
                                   {new CheckLabel{{.label{.text=u8"显示血条"    }, .getter=[this]{ return SDRuntimeConfig_getConfig<RTCFG_显示血条    >(m_sdRuntimeConfig); }, .setter=[this](bool value){ SDRuntimeConfig_setConfig<RTCFG_显示血条    >(m_sdRuntimeConfig, value); }, .onChange=[this](bool){ reportRuntimeConfig<RTCFG_显示血条    >(); }}}, true},
@@ -970,6 +970,14 @@ int RuntimeConfigBoard::cycleAttackMode()
     SDRuntimeConfig_setConfig<RTCFG_ATTACKMODE>(m_sdRuntimeConfig, nextMode);
     reportRuntimeConfig<RTCFG_ATTACKMODE>();
     return nextMode;
+}
+
+void RuntimeConfigBoard::setContinuousAttack(bool enabled)
+{
+    if(SDRuntimeConfig_setConfig<RTCFG_持续攻击>(m_sdRuntimeConfig, enabled)){
+        reportRuntimeConfig<RTCFG_持续攻击>();
+        m_processRun->addCBLog(CBLOG_SYS, u8"持续攻击：%s", enabled ? u8"开启" : u8"关闭");
+    }
 }
 
 uint32_t RuntimeConfigBoard::dropItemRule(uint32_t itemID) const

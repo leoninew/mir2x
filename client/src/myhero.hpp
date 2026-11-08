@@ -89,6 +89,9 @@ class MyHero: public Hero
     public:
         bool moveNextMotion() override;
 
+    public:
+        bool parseAction(const ActionNode &) override;
+
     protected:
         bool decompActionMove();
         bool decompActionMine();

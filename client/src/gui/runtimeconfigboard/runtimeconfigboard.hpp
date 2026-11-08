@@ -97,6 +97,8 @@ class RuntimeConfigBoard: public Widget
         //全体 -> 和平
         int cycleAttackMode();
 
+    public:
+        void setContinuousAttack(bool);
 
     private:
         void fixConfig(bool);

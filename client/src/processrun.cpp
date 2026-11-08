@@ -155,6 +155,12 @@ void ProcessRun::update(double fUpdateTime)
         }
     }
 
+    if(const auto targetUID = getFocusUID(FOCUS_ATTACK)){
+        if(const auto target = findUID(targetUID); !target || !target->alive() || target->dead().value_or(false) || !getMyHero()->inViewRange(target)){
+            setFocusUID(FOCUS_ATTACK, 0);
+        }
+    }
+
     getMyHero()->update(fUpdateTime);
 
     for(auto p = m_coList.begin(); p != m_coList.end();){
@@ -269,8 +275,15 @@ void ProcessRun::setFocusUID(int focusType, uint64_t uid)
     switch(focusType){
         case FOCUS_MAGIC:
         case FOCUS_FOLLOW:
+            {
+                m_focusUIDTable[focusType] = uid;
+                return;
+            }
         case FOCUS_ATTACK:
             {
+                if(m_focusUIDTable[focusType] && m_focusUIDTable[focusType] != uid){
+                    getMyHero()->clearActionQueue();
+                }
                 m_focusUIDTable[focusType] = uid;
                 return;
             }
@@ -636,6 +649,7 @@ void ProcessRun::processEvent(const SDL_Event &event)
                                                 case UID_NPC:
                                                     {
                                                         if(!forceAttack){
+                                                            setFocusUID(FOCUS_ATTACK, 0);
                                                             sendNPCEvent(uid, {}, SYS_ENTER);
                                                         }
                                                         break;
@@ -768,7 +782,14 @@ void ProcessRun::processEvent(const SDL_Event &event)
                         }
                     case SDLK_TAB:
                         {
-                            requestPickUp();
+                            if((event.key.mod & SDL_KMOD_SHIFT) && !(event.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_GUI))){
+                                if(!event.key.repeat){
+                                    dynamic_cast<RuntimeConfigBoard *>(getWidget("RuntimeConfigBoard"))->setContinuousAttack(!getRuntimeConfig<RTCFG_持续攻击>());
+                                }
+                            }
+                            else{
+                                requestPickUp();
+                            }
                             break;
                         }
                     default:
@@ -924,6 +945,8 @@ void ProcessRun::loadMap(uint64_t newMapUID, int centerGX, int centerGY)
 
 void ProcessRun::relocateMyHero(uint64_t newMapUID, int x, int y, int direction)
 {
+    setFocusUID(FOCUS_ATTACK, 0);
+
     // directly assign a stand motion to myhero and skip all location validation
     // caller should flush or drop myhero's pending motions before calling
 
@@ -1659,7 +1682,16 @@ ClientCreature *ProcessRun::findUID(uint64_t uid, bool checkVisible) const
 
 bool ProcessRun::trackAttack(bool bForce, uint64_t nUID)
 {
-    if(findUID(nUID)){
+    if(!bForce && getFocusUID(FOCUS_ATTACK) != nUID){
+        return false;
+    }
+
+    if(!getMyHero()->alive() || getMyHero()->dead().value_or(false)){
+        setFocusUID(FOCUS_ATTACK, 0);
+        return false;
+    }
+
+    if(const auto target = findUID(nUID); target && target->alive() && !target->dead().value_or(false)){
         if(bForce || getMyHero()->stayIdle()){
             return getMyHero()->emplaceAction(ActionAttack
             {
