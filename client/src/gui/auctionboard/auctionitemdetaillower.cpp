@@ -173,7 +173,7 @@ void AuctionItemDetailLower::setItem(const SDAuctionItem *item)
         summaryXML += "</layout>";
         m_summary.loadXML(summaryXML.c_str());
 
-        const auto descriptionXML = str_printf("<layout>%s</layout>", xmlf::toParString("%s", str_haschar(ir.description) ? to_cstr(ir.description) : to_cstr(u8"游戏处于开发阶段，暂无物品描述。")).c_str());
+        const auto descriptionXML = str_printf("<layout>%s</layout>", to_cstr(item->item.getXMLDescription()));
         m_description.loadXML(descriptionXML.c_str());
 
         const auto attributeXML = item->item.getXMLLayout({}, SDItem::XMLLAYOUT_ATTRIBUTE);

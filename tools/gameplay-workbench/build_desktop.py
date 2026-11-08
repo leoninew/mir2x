@@ -58,7 +58,7 @@ def main() -> None:
         "--name",
         "Mir2xWorkbench",
         "--icon",
-        str(PROJECT.parents[1] / "client/src/winicon.png"),
+        str(PROJECT / "web/public/favicon.ico"),
         "--paths",
         "src",
         "--collect-all",

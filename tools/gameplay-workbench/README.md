@@ -85,8 +85,6 @@ cmake --build build --target workbench
 
 该目标构建完成后自动安装到 `install/workbench/`，无需再手动执行安装命令。开发模式 `.env.dev` 预设源码服务端相对路径 `../../server`。
 
-Windows 程序图标直接复用客户端资源 `client/src/winicon.png`；打包时由 Pillow 转换，无需维护副本。
-
 正式 `build.py` 同样支持 `--target workbench`（沿用主构建的其他参数）；安装目标使用该树的 `CMAKE_INSTALL_PREFIX`，默认仓库 `install/`。未构建工作台时完整安装明确跳过它，显式安装 `--component workbench` 缺包会报错。
 
 更新已有游戏运行目录时，可分别安装 `runtime`（原生程序/脚本）和 `gameplay-config`（完整默认目录首次安装、已有目录校验保留）组件，复用现有资源；`resources` 组件重新打包资源时要求源资源完整。

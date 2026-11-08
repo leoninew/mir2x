@@ -52,7 +52,8 @@ path = "build_hooks.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/src", "/config/config.yaml", "/config/game-launch.json", "/web/src", "/web/tests", "/web/index.html",
+  "/src", "/config/config.yaml", "/config/game-launch.json", "/assets/workbench-icon.png",
+  "/web/src", "/web/tests", "/web/index.html", "/web/public/favicon.ico",
   "/web/*.json", "/web/*.ts", "/web/yarn.lock", "/web/.yarnrc.yml", "/tests",
   "/pyproject.toml", "/uv.lock", "/build_hooks.py", "/build_desktop.py",
   "/CMakeLists.txt", "/README.md", "/Makefile",

@@ -3,6 +3,50 @@
 #include "serdesmsg.hpp"
 #include "mathf.hpp"
 
+std::u8string SDItem::getXMLDescription() const
+{
+    fflassert(*this);
+    const auto &ir = DBCOM_ITEMRECORD(itemID);
+    if(ir.isBook()){
+        if(const auto &mr = DBCOM_MAGICRECORD(ir.isMagicBook() ? ir.book.magic : ir.name); mr && str_haschar(mr.req.job)){
+            std::u8string xmlStr;
+            if(str_haschar(ir.description)){
+                xmlStr += str_printf(u8"<par>%s</par>\n", ir.description);
+            }
+            xmlStr += str_printf(u8"<par>【技能】%s</par>\n", mr.name);
+            if(str_haschar(mr.description)){
+                xmlStr += str_printf(u8"<par>【技能作用】%s</par>\n", mr.description);
+            }
+            xmlStr += str_printf(u8"<par>【适用职业】%s</par>\n", mr.req.job);
+            xmlStr += str_printf(u8"<par>【技能等级要求】%d级</par>\n", mr.req.level[0]);
+            xmlStr += str_printf(u8"<par>【前置技能】%s</par>\n", str_haschar(mr.req.prior) ? mr.req.prior : u8"无");
+
+            // Some Taoist skills depend on skills with a higher learning level.
+            int priorLevel = mr.req.level[0];
+            const auto *prior = &mr;
+            for(uint32_t i = 0; i < DBCOM_MAGICENDID() && str_haschar(prior->req.prior); ++i){
+                prior = &DBCOM_MAGICRECORD(prior->req.prior);
+                if(!*prior){
+                    break;
+                }
+                priorLevel = std::max(priorLevel, prior->req.level[0]);
+            }
+            if(priorLevel > mr.req.level[0]){
+                xmlStr += str_printf(u8"<par>【前置链等级要求】%d级</par>\n", priorLevel);
+            }
+
+            if(ir.isMagicBook()){
+                xmlStr += str_printf(u8"<par>【使用方式】在背包中使用，学习「%s」。</par>\n", mr.name);
+            }
+            else{
+                xmlStr += u8"<par>【使用方式】普通技能书，交给武功教头誊抄为秘籍后学习。</par>\n";
+            }
+            return xmlStr;
+        }
+    }
+    return str_printf(u8"<par>%s</par>\n", str_haschar(ir.description) ? ir.description : u8"游戏处于开发阶段，暂无物品描述。");
+}
+
 std::u8string SDItem::getXMLLayout(const std::unordered_map<int, std::string> & params, SDItem::SDItemXMLLayoutType layoutType) const
 {
     fflassert(*this);
@@ -45,7 +89,7 @@ std::u8string SDItem::getXMLLayout(const std::unordered_map<int, std::string> & 
         }
 
         xmlStr += str_printf(u8R"###( <par></par> )###""\n");
-        xmlStr += str_printf(u8R"###( <par>%s</par> )###""\n", str_haschar(ir.description) ? ir.description : u8"游戏处于开发阶段，暂无物品描述。");
+        xmlStr += getXMLDescription();
         xmlStr += str_printf(u8R"###( <par></par> )###""\n");
     }
 

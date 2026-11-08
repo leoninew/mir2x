@@ -188,6 +188,7 @@ struct SDItem
         return (to_u64(itemID) << 32) | seqID;
     }
 
+    std::u8string getXMLDescription() const;
     std::u8string getXMLLayout(const std::unordered_map<int, std::string> & = {}, SDItemXMLLayoutType = XMLLAYOUT_FULL) const;
 
     bool isGold() const

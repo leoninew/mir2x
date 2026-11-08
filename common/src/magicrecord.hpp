@@ -310,6 +310,7 @@ struct MagicRecord
     // MagicGfxEntry can assign value to absSeffID to give seperate sound effect for specific entry
     const std::optional<int> seffBase {};
     const std::initializer_list<MagicGfxEntry> gfxList {};
+    const char8_t *description = nullptr;
 
     constexpr operator bool () const
     {
