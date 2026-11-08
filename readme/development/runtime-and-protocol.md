@@ -76,7 +76,7 @@ sequenceDiagram
 | --- | --- | --- |
 | 发登录 | `ProcessLogin::sendLogin()` | 发送账号密码 |
 | 校验账号 | `ServiceCore::net_CM_LOGIN()` | 查 `tbl_account`，拒绝重复登录，登记 `channID -> {dbid, online=false}` |
-| 登录回调 | `ProcessLogin::on_SM_LOGINOK()` | 只请求切换 SELECTCHAR |
+| 登录回调 | `ProcessLogin::on_SM_LOGINOK()` | 按本次勾选保存已提交的账号密码，再请求切换 SELECTCHAR |
 | 选角页初始化 | `ProcessSelectChar` 构造函数 | 发送 `CM_QUERYCHAR` |
 | 查角色 | `ServiceCore::net_CM_QUERYCHAR()` | 无角色响应 `QUERYCHARERR_NOCHAR`，这是正常业务分支 |
 | 创建角色 | `ServiceCore::net_CM_CREATECHAR()` | 校验登录和角色信息，调用创建逻辑；不是注册接口的一部分 |
@@ -88,6 +88,14 @@ sequenceDiagram
 源码：[servicecorenet.cpp](../../server/src/servicecorenet.cpp)、[processloginnet.cpp](../../client/src/processloginnet.cpp)、[processselectchar.cpp](../../client/src/processselectchar.cpp)、[processselectcharnet.cpp](../../client/src/processselectcharnet.cpp)、[playerop.cpp](../../server/src/playerop.cpp)、[player.cpp](../../server/src/player.cpp)。
 
 `--auto-login` 发送登录请求；查询到已有角色后，选角页还会自动尝试 `onStart()`。没有角色时不会凭空创建角色。
+
+### 记住账号
+
+登录页勾选“记住账号”后，收到登录成功响应才保存本次提交的账号和密码。相同账号更新密码并排到最前；未勾选或登录失败不新增、更新记录，也不删除已有记录。等待响应期间再次点击登录不会重复提交。
+
+记录保存在 `client.exe` 同目录的 `accounts.json`，属于普通 JSON 本地数据，与服务端地址、端口无关，也不受启动工作目录影响。再次打开登录页时预填最近成功保存的账号；有多个记录时，账号框右侧的上下按钮循环切换，并填入对应密码。切换不发送登录请求。需要清空全部记录时，退出客户端后删除该文件即可。
+
+`--auto-login` 的命令行账号密码不通过该功能自动保存。安装不会生成或覆盖 `accounts.json`；读取或保存失败不阻止普通登录。
 
 ## 连接路由为什么会上下线切换
 

@@ -34,6 +34,17 @@ target_compile_definitions(test_textinput PRIVATE
     MIR2X_TEST_DEFAULT_RES_DIR="${CMAKE_INSTALL_PREFIX}/client/res")
 
 mir2x_add_unit_test(
+    NAME createaccount
+    SOURCES test_createaccount.cpp
+    LIBS client_objs
+    DEPENDS zsdbmaker mir2x_resources
+    WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/client"
+    ENVIRONMENT "SDL_VIDEODRIVER=dummy" "SDL_RENDER_DRIVER=software"
+)
+target_compile_definitions(test_createaccount PRIVATE
+    MIR2X_TEST_DEFAULT_RES_DIR="${CMAKE_INSTALL_PREFIX}/client/res")
+
+mir2x_add_unit_test(
     NAME netio
     SOURCES test_netio.cpp ../../src/netio.cpp
     LIBS common
@@ -57,3 +68,10 @@ mir2x_add_unit_test(
     LIBS common mir2x::sdl3_ext
 )
 target_include_directories(test_widget PRIVATE ../../src)
+
+mir2x_add_unit_test(
+    NAME loginaccountstore
+    SOURCES test_loginaccountstore.cpp ../../src/loginaccountstore.cpp
+    LIBS common nlohmann_json::nlohmann_json
+)
+target_include_directories(test_loginaccountstore PRIVATE ../../src)

@@ -12,6 +12,7 @@ target_link_libraries(client_objs PUBLIC
     common
     mir2x::sdl3_ext
     mir2x::libpinyin)
+target_link_libraries(client_objs PRIVATE nlohmann_json::nlohmann_json)
 
 add_executable(client ${CLIENT_MAIN_SRC})
 target_link_libraries(client PRIVATE client_objs)

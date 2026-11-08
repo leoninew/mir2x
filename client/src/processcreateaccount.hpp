@@ -1,11 +1,12 @@
 #pragma once
+#include <array>
 #include <cstdint>
-#include <optional>
 #include "process.hpp"
-#include "raiitimer.hpp"
 #include "labelboard.hpp"
 #include "inputline.hpp"
 #include "tritexbutton.hpp"
+#include "trigfxbutton.hpp"
+#include "gfxshapeboard.hpp"
 
 class ProcessCreateAccount: public Process
 {
@@ -14,6 +15,7 @@ class ProcessCreateAccount: public Process
         constexpr static int m_y = 145;
 
     private:
+        LabelBoard m_title;
         LabelBoard m_LBID;
         LabelBoard m_LBPwd;
         LabelBoard m_LBPwdConfirm;
@@ -29,13 +31,19 @@ class ProcessCreateAccount: public Process
         LabelBoard m_LBCheckPwdConfirm;
 
     private:
-        TritexButton m_submit;
+        LabelBoard m_submitLabel;
+        GfxShapeBoard m_submitArt;
+        TrigfxButton m_submit;
         TritexButton m_quit;
 
     private:
         LabelBoard m_infoStr;
-        uint32_t   m_infoStrSec;
-        hres_timer m_infoStrTimer;
+        std::array<bool, 3> m_invalidFields {};
+        bool m_validationRequested = false;
+        bool m_submitting = false;
+        bool m_registered = false;
+        int m_serverError = 0;
+        double m_stateTime = 0.0;
 
     public:
         ProcessCreateAccount();
@@ -57,15 +65,12 @@ class ProcessCreateAccount: public Process
         void doExit();
 
     private:
-        void localCheck();
+        bool localCheck();
+        void focusInput(InputLine &);
+        void onInputChange(size_t);
 
     private:
-        void clearInput();
-
-    private:
-        bool hasInfo() const;
         void setInfoStr(const char8_t *);
-        void setInfoStr(const char8_t *, uint32_t);
 
     public:
         void on_SM_CREATEACCOUNTOK   (const uint8_t *, size_t);

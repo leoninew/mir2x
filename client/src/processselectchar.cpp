@@ -70,7 +70,7 @@ ProcessSelectChar::ProcessSelectChar()
       }
 {
     m_start .setShow([this]{ return hasChar(); });
-    m_create.setShow([this]{ return hasChar(); });
+    m_create.setShow([this]{ return m_smChar.has_value() && !hasChar(); });
     m_delete.setShow([this]{ return hasChar(); });
 
     m_notifyBoard.addMessage(u8"正在下载游戏角色");
