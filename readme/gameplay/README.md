@@ -4,8 +4,10 @@
 
 - [练级参考索引](leveling.md)
 - [地图与怪物](leveling-maps.md)
+- [地图连接与路线](map-routes.md)
 - [装备与正常获取](leveling-equipment.md)
 - [技能与经验曲线](leveling-skills.md)
+- [技能与技能书](skills-and-books.md)
 - [GM 聊天命令](gm-commands.md)
 - [Lua 调试脚本](lua-debugging.md)
 

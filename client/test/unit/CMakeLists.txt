@@ -24,6 +24,16 @@ target_compile_definitions(test_xmltypeset PRIVATE
     MIR2X_TEST_DEFAULT_RES_DIR="${CMAKE_INSTALL_PREFIX}/client/res")
 
 mir2x_add_unit_test(
+    NAME textinput
+    SOURCES test_textinput.cpp
+    LIBS client_objs
+    DEPENDS zsdbmaker mir2x_resources
+    ENVIRONMENT "SDL_VIDEODRIVER=dummy" "SDL_RENDER_DRIVER=software"
+)
+target_compile_definitions(test_textinput PRIVATE
+    MIR2X_TEST_DEFAULT_RES_DIR="${CMAKE_INSTALL_PREFIX}/client/res")
+
+mir2x_add_unit_test(
     NAME netio
     SOURCES test_netio.cpp ../../src/netio.cpp
     LIBS common

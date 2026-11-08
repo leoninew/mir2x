@@ -571,6 +571,43 @@ void LayoutBoard::setLineWidth(int argLineWidth, const std::array<int, 2> &argLi
     }
 }
 
+void LayoutBoard::insertText(const std::string &text)
+{
+    if(text.empty()){
+        return;
+    }
+
+    const int firstPar = m_cursorLoc.par;
+    size_t lineStart = 0;
+    while(true){
+        const auto lineEnd = text.find('\n', lineStart);
+        const auto line = text.substr(lineStart, lineEnd == std::string::npos ? std::string::npos : lineEnd - lineStart);
+        if(!line.empty()){
+            const auto addedCount = ithParIterator(m_cursorLoc.par)->tpset->insertUTF8String(m_cursorLoc.x, m_cursorLoc.y, line.c_str());
+            std::tie(m_cursorLoc.x, m_cursorLoc.y) = ithParIterator(m_cursorLoc.par)->tpset->nextCursorLoc(m_cursorLoc.x, m_cursorLoc.y, to_d(addedCount), false);
+        }
+
+        if(lineEnd == std::string::npos){
+            break;
+        }
+
+        auto currPar = ithParIterator(m_cursorLoc.par);
+        auto newPar = currPar->tpset->split(m_cursorLoc.x, m_cursorLoc.y);
+        m_parNodeList.insert(currPar, {-1, currPar->margin, std::unique_ptr<XMLTypeset>(newPar)});
+
+        m_cursorLoc.par++;
+        m_cursorLoc.x = 0;
+        m_cursorLoc.y = 0;
+        lineStart = lineEnd + 1;
+    }
+
+    setupStartY(firstPar);
+    if(m_onCursorMove){
+        m_onCursorMove();
+    }
+    m_cursorBlink = 0.0;
+}
+
 bool LayoutBoard::processEventDefault(const SDL_Event &event, bool valid, Widget::ROIMap m)
 {
     if(!m.calibrate(this)){
@@ -593,14 +630,7 @@ bool LayoutBoard::processEventDefault(const SDL_Event &event, bool valid, Widget
                 }
 
                 if(str_haschar(event.text.text)){
-                    const auto addedCount = ithParIterator(m_cursorLoc.par)->tpset->insertUTF8String(m_cursorLoc.x, m_cursorLoc.y, event.text.text);
-                    std::tie(m_cursorLoc.x, m_cursorLoc.y) = ithParIterator(m_cursorLoc.par)->tpset->nextCursorLoc(m_cursorLoc.x, m_cursorLoc.y, to_d(addedCount), false);
-
-                    setupStartY(m_cursorLoc.par);
-
-                    if(m_onCursorMove){
-                        m_onCursorMove();
-                    }
+                    insertText(event.text.text);
                 }
 
                 m_cursorBlink = 0.0;
@@ -620,6 +650,11 @@ bool LayoutBoard::processEventDefault(const SDL_Event &event, bool valid, Widget
                     return false;
                 }
 
+                if(const auto text = SDLDeviceHelper::getPasteText(event, true)){
+                    insertText(text.value());
+                    return true;
+                }
+
                 switch(event.key.key){
                     case SDLK_TAB:
                         {
@@ -634,19 +669,7 @@ bool LayoutBoard::processEventDefault(const SDL_Event &event, bool valid, Widget
                             const bool cbTriggered = m_onCR && m_onCR(shiftHold);
 
                             if(!cbTriggered){
-                                auto currPar = ithParIterator(m_cursorLoc.par);
-                                auto  newPar = currPar->tpset->split(m_cursorLoc.x, m_cursorLoc.y);
-
-                                m_parNodeList.insert(currPar, {-1, currPar->margin, std::unique_ptr<XMLTypeset>(newPar)});
-                                setupStartY(m_cursorLoc.par);
-
-                                m_cursorLoc.par++;
-                                m_cursorLoc.x = 0;
-                                m_cursorLoc.y = 0;
-
-                                if(m_onCursorMove){
-                                    m_onCursorMove();
-                                }
+                                insertText("\n");
                             }
 
                             m_cursorBlink = 0.0;
@@ -749,14 +772,7 @@ bool LayoutBoard::processEventDefault(const SDL_Event &event, bool valid, Widget
                             const char keyChar = SDLDeviceHelper::getKeyChar(event, true);
                             const auto fnInsertString = [this](std::string s)
                             {
-                                const auto addedCount = ithParIterator(m_cursorLoc.par)->tpset->insertUTF8String(m_cursorLoc.x, m_cursorLoc.y, s.c_str());
-                                std::tie(m_cursorLoc.x, m_cursorLoc.y) = ithParIterator(m_cursorLoc.par)->tpset->nextCursorLoc(m_cursorLoc.x, m_cursorLoc.y, to_d(addedCount), false);
-
-                                setupStartY(m_cursorLoc.par);
-
-                                if(m_onCursorMove){
-                                    m_onCursorMove();
-                                }
+                                insertText(s);
                             };
 
                             if(ime == IME_SYSTEM){

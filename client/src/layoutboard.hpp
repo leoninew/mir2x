@@ -231,6 +231,7 @@ class LayoutBoard: public Widget
 
     private:
         void setupStartY(int);
+        void insertText(const std::string &);
 
     public:
         int getLineWidth() const

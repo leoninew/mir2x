@@ -89,6 +89,14 @@ bool InputLine::processEventDefault(const SDL_Event &event, bool valid, Widget::
                     return false;
                 }
 
+                if(const auto text = SDLDeviceHelper::getPasteText(event, false)){
+                    if(insertInput(text.value())){
+                        notifyInputChange();
+                    }
+                    m_cursorBlink = 0.0;
+                    return true;
+                }
+
                 switch(event.key.key){
                     case SDLK_TAB:
                         {

@@ -13,6 +13,7 @@
 #include "mathf.hpp"
 #include "totype.hpp"
 #include "rawbuf.hpp"
+#include "utf8f.hpp"
 #include "colorf.hpp"
 #include "sysconst.hpp"
 #include "fflerror.hpp"
@@ -249,6 +250,48 @@ char SDLDeviceHelper::getKeyChar(const SDL_Event &event, bool checkShiftKey)
         return p->second[checkShiftKey && ((event.key.mod & SDL_KMOD_LSHIFT) || (event.key.mod & SDL_KMOD_RSHIFT)) ? 1 : 0];
     }
     return '\0';
+}
+
+std::optional<std::string> SDLDeviceHelper::getPasteText(const SDL_Event &event, bool multiline)
+{
+    if(event.type != SDL_EVENT_KEY_DOWN || event.key.key != SDLK_V || !(event.key.mod & SDL_KMOD_CTRL) || (event.key.mod & (SDL_KMOD_ALT | SDL_KMOD_GUI))){
+        return std::nullopt;
+    }
+
+    if(event.key.repeat){
+        return std::string{};
+    }
+
+    const std::unique_ptr<char, decltype(&SDL_free)> clipboardText(SDL_GetClipboardText(), SDL_free);
+    if(!clipboardText){
+        g_mir2xLog->addLog(LOGTYPE_WARNING, "SDL_GetClipboardText() failed: %s", SDL_GetError());
+        return std::string{};
+    }
+
+    const std::string text(clipboardText.get());
+    if(!utf8f::valid(text)){
+        g_mir2xLog->addLog(LOGTYPE_WARNING, "Clipboard text is not valid UTF-8");
+        return std::string{};
+    }
+
+    std::string result;
+    result.reserve(text.size());
+    for(size_t index = 0; index < text.size(); ++index){
+        const auto character = static_cast<unsigned char>(text[index]);
+        if(character == '\r' || character == '\n'){
+            if(character == '\r' && index + 1 < text.size() && text[index + 1] == '\n'){
+                ++index;
+            }
+            result.push_back(multiline ? '\n' : ' ');
+        }
+        else if(character == '\t'){
+            result.push_back(' ');
+        }
+        else if(character >= 0x20 && character != 0x7F){
+            result.push_back(text[index]);
+        }
+    }
+    return result;
 }
 
 std::optional<std::tuple<int, int>> SDLDeviceHelper::getEventPLoc(const SDL_Event &event)

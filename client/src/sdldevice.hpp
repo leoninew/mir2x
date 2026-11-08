@@ -117,6 +117,7 @@ namespace SDLDeviceHelper
     };
 
     char getKeyChar(const SDL_Event &, bool);
+    std::optional<std::string> getPasteText(const SDL_Event &, bool);
     std::optional<std::tuple<int, int>> getEventPLoc(const SDL_Event &);
 
     std::tuple<int, int> getTextureSize  (const SDL_Texture *);

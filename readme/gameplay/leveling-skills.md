@@ -2,6 +2,8 @@
 
 本页根据当前仓库源码整理正常技能成长路线。源码中的学习条件、NPC 位置和物品定义用于选择下一步；角色是否已学、能否施放及是否升级，仍以当次游戏观察为准。客户端通过 [SM_LEARNEDMAGICLIST](../../client/src/processrunnet.cpp#L124)更新已学技能。
 
+全部职业技能的等级、前置、普通书/秘籍区别和通用教头誊抄流程见[技能与技能书](skills-and-books.md)。
+
 ## 当前阶段怎样选
 
 1–6 级先以普通攻击练级，不把学习技能设为升级前置任务。三职业的第一门基础技能均要求 7 级，见 [基本剑术](../../common/src/magicrecord.inc#L438)、[火球术](../../common/src/magicrecord.inc#L321)、[治愈术](../../common/src/magicrecord.inc#L406)。服务端正常学习路径会校验职业和最低等级，见 [学习检查](../../server/src/player.cpp#L2774)。

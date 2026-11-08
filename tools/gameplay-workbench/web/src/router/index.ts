@@ -7,6 +7,7 @@ import NotificationCenter from "@/domains/notifications/NotificationCenter.vue";
 const workbenchPaths: Record<WorkbenchPage, string> = {
   launcher: "launcher",
   gm: "gm",
+  "map-guide": "map-guide",
   monsters: "gameplay/monsters",
   drops: "gameplay/drops",
   spawns: "gameplay/spawns",

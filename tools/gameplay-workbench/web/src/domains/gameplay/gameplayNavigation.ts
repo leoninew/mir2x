@@ -1,6 +1,6 @@
 import type { Domain } from "@/services/gameplayApi";
 
-export type WorkbenchPage = Domain | "launcher" | "gm" | "backups" | "migration";
+export type WorkbenchPage = Domain | "launcher" | "gm" | "map-guide" | "backups" | "migration";
 export const navigationGroups: {
   label: string;
   items: { page: WorkbenchPage; label: string; description: string }[];
@@ -12,6 +12,16 @@ export const navigationGroups: {
         page: "launcher",
         label: "游戏运行",
         description: "启动游戏，查看本次工作台启动的进程状态。",
+      },
+    ],
+  },
+  {
+    label: "游戏资料",
+    items: [
+      {
+        page: "map-guide",
+        label: "地图指南",
+        description: "查看地图出口和神石传送目的地。",
       },
     ],
   },
