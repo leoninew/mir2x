@@ -2,10 +2,9 @@
 
 本目录统一维护玩法与调试参考，可直接离线阅读；练级资料从 `develop` 的知识文档迁入。
 
-- [练级参考索引](leveling.md)
-- [地图与怪物](leveling-maps.md)
+- [练级、打怪与装备指南](leveling.md)
+- [首领打宝与前往路线](leveling.md#首领打宝指南)
 - [地图连接与路线](map-routes.md)
-- [装备与正常获取](leveling-equipment.md)
 - [技能与经验曲线](leveling-skills.md)
 - [技能与技能书](skills-and-books.md)
 - [GM 聊天命令](gm-commands.md)

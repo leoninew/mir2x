@@ -427,8 +427,9 @@ class ProcessRun: public Process
 
     private:
         void drawTile(int, int, int, int) const;
-        void drawGroundItem(int, int, int, int) const;
-        void drawRotateStar(int, int, int, int) const;
+        void drawGroundItem(int, int, int, int, bool) const;
+        void drawGroundItemNames(int, int, int, int, bool) const;
+        void drawRotateStar(int, int, int, int, bool) const;
 
     private:
         void drawObject(int, int, int, bool) const;

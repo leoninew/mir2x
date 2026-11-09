@@ -297,6 +297,8 @@ void ProcessRun::setFocusUID(int focusType, uint64_t uid)
 void ProcessRun::draw() const
 {
     SDLDeviceHelper::RenderNewFrame newFrame;
+    const auto keyState = SDL_GetKeyboardState(nullptr);
+    const bool highlightGroundItems = g_sdlDevice->hasKeyboardFocus() && (keyState[SDL_SCANCODE_LALT] || keyState[SDL_SCANCODE_RALT]);
     const int x0 = mathf::bound<int>(-SYS_OBJMAXW + (m_viewX - 2 * SYS_MAPGRIDXP) / SYS_MAPGRIDXP,                                    0, m_mir2xMapData.w());
     const int y0 = mathf::bound<int>(-SYS_OBJMAXH + (m_viewY - 2 * SYS_MAPGRIDYP) / SYS_MAPGRIDYP,                                    0, m_mir2xMapData.h());
     const int x1 = mathf::bound<int>(+SYS_OBJMAXW + (m_viewX + 2 * SYS_MAPGRIDXP + g_sdlDevice->getWindowLogicalWidth() ) / SYS_MAPGRIDXP, 0, m_mir2xMapData.w());
@@ -351,7 +353,7 @@ void ProcessRun::draw() const
         p.second->draw(m_viewX, m_viewY, 0);
     }
 
-    drawGroundItem(x0, y0, x1, y1);
+    drawGroundItem(x0, y0, x1, y1, highlightGroundItems);
 
     const auto coLocList = [this]()
     {
@@ -453,7 +455,7 @@ void ProcessRun::draw() const
 
     // draw all rotating stars
     // notify players that there is somethig to check
-    drawRotateStar(x0, y0, x1, y1);
+    drawRotateStar(x0, y0, x1, y1, highlightGroundItems);
 
     // draw magics
     for(auto &p: m_fixedLocMagicList){
@@ -530,6 +532,7 @@ void ProcessRun::draw() const
         g_sdlDevice->fillRectangle(colorf::RGBA(128, 0, 0, 64), 0, 0, winW, winH);
     }
 
+    drawGroundItemNames(x0, y0, x1, y1, highlightGroundItems);
     m_guiManager.drawRoot({});
     if(const auto selectedItemID = getMyHero()->getInvPack().getGrabbedItem().itemID){
         if(const auto &ir = DBCOM_ITEMRECORD(selectedItemID)){
@@ -2235,7 +2238,7 @@ void ProcessRun::sendNPCEvent(uint64_t uid, std::string path, std::string event,
     g_client->send({CM_NPCEVENT, cmNPCE});
 }
 
-void ProcessRun::drawGroundItem(int x0, int y0, int x1, int y1) const
+void ProcessRun::drawGroundItem(int x0, int y0, int x1, int y1, bool highlightAll) const
 {
     for(const auto &p: m_groundItemIDList){
         const auto [x, y] = p.first;
@@ -2273,7 +2276,7 @@ void ProcessRun::drawGroundItem(int x0, int y0, int x1, int y1) const
             const int mouseGridY = (mouseY + m_viewY) / SYS_MAPGRIDYP;
 
             const bool mouseOver = (mouseGridX == x && mouseGridY == y);
-            const bool highlighted = rule & DIRF_HIGHLIGHT;
+            const bool highlighted = highlightAll || (rule & DIRF_HIGHLIGHT);
             const SDLDeviceHelper::EnableTextureBlendMode blendMode(texPtr, (mouseOver || highlighted) ? SDL_BLENDMODE_ADD : SDL_BLENDMODE_BLEND);
 
             // draw item shadow
@@ -2287,13 +2290,68 @@ void ProcessRun::drawGroundItem(int x0, int y0, int x1, int y1) const
                 const SDLDeviceHelper::EnableTextureModColor modColor(texPtr, highlighted ? (colorf::YELLOW | colorf::A_SHF(255)) : (colorf::WHITE | colorf::A_SHF(255)));
                 g_sdlDevice->drawTexture(texPtr, drawPX, drawPY);
             }
+        }
+    }
+}
 
-            if(mouseOver){
-                LabelBoard itemName{{.label = ir.name, .font{.color = colorf::RGBA(0XFF, 0XFF, 0X00, 0XFF)}}};
-                const int drawNameX = x * SYS_MAPGRIDXP - m_viewX + SYS_MAPGRIDXP / 2 - itemName.w() / 2;
-                const int drawNameY = y * SYS_MAPGRIDYP - m_viewY + SYS_MAPGRIDYP / 2 - itemName.h() / 2 - 20;
-                itemName.draw({.x=drawNameX, .y=drawNameY});
+void ProcessRun::drawGroundItemNames(int x0, int y0, int x1, int y1, bool showAll) const
+{
+    const auto [mouseGridX, mouseGridY] = getMouseGLoc();
+    const auto [winW, winH] = g_sdlDevice->getWindowLogicalSize();
+    constexpr int padding = 4;
+    constexpr int spacing = 2;
+
+    for(const auto &[location, itemIDs]: m_groundItemIDList){
+        const auto [x, y] = location;
+        if(!(x >= x0 && x < x1 && y >= y0 && y < y1)){
+            continue;
+        }
+        if(!showAll && !(x == mouseGridX && y == mouseGridY)){
+            continue;
+        }
+
+        const int centerX = x * SYS_MAPGRIDXP - m_viewX + SYS_MAPGRIDXP / 2;
+        const int centerY = y * SYS_MAPGRIDYP - m_viewY + SYS_MAPGRIDYP / 2;
+        if(!(centerX >= 0 && centerX < winW && centerY >= 0 && centerY < winH)){
+            continue;
+        }
+
+        std::vector<std::unique_ptr<LabelBoard>> names;
+        int textW = 0;
+        int textH = 0;
+        for(const auto itemID: itemIDs){
+            if(getRuntimeConfig<RTCFG_DROPITEMRULE>(itemID) & DIRF_FILTER){
+                continue;
             }
+
+            const auto &ir = DBCOM_ITEMRECORD(itemID);
+            if(!ir){
+                throw fflpanic("invalid itemID: {}", itemID);
+            }
+            if(ir.pkgGfxID < 0){
+                continue;
+            }
+
+            auto name = std::unique_ptr<LabelBoard>(new LabelBoard{{.label = ir.name, .font{.color = colorf::YELLOW | colorf::A_SHF(255)}}});
+            textW = std::max<int>(textW, name->w());
+            textH += name->h() + spacing;
+            names.push_back(std::move(name));
+        }
+
+        if(names.empty()){
+            continue;
+        }
+
+        const int boxW = textW + padding * 2;
+        const int boxH = textH - spacing + padding * 2;
+        const int boxX = mathf::bound<int>(centerX - boxW / 2, 0, std::max<int>(0, winW - boxW));
+        const int boxY = mathf::bound<int>(centerY - 20 - boxH, 0, std::max<int>(0, winH - boxH));
+
+        g_sdlDevice->fillRectangle(colorf::RGBA(0, 0, 0, 190), boxX, boxY, boxW, boxH);
+        int nameY = boxY + padding;
+        for(const auto &name: names){
+            name->draw({.x = boxX + (boxW - name->w()) / 2, .y = nameY});
+            nameY += name->h() + spacing;
         }
     }
 }
@@ -2362,7 +2420,7 @@ void ProcessRun::drawObject(int x, int y, int objd, bool alpha) const
     }
 }
 
-void ProcessRun::drawRotateStar(int x0, int y0, int x1, int y1) const
+void ProcessRun::drawRotateStar(int x0, int y0, int x1, int y1, bool highlightAll) const
 {
     if(m_starRatio > 1.0){
         return;
@@ -2396,7 +2454,7 @@ void ProcessRun::drawRotateStar(int x0, int y0, int x1, int y1) const
             }
 
             hasVisibleItem = true;
-            if(rule & DIRF_HIGHLIGHT){
+            if(highlightAll || (rule & DIRF_HIGHLIGHT)){
                 hasHighlightedItem = true;
             }
         }

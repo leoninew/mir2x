@@ -235,6 +235,7 @@ class SDLDevice final
        void setWindowIcon();
 
     public:
+       bool hasKeyboardFocus() const;
        bool getWindowMaximized();
        bool getWindowFullscreen();
        void flipWindowMaximized(std::optional<bool> = std::nullopt);

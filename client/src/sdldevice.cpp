@@ -582,6 +582,12 @@ void SDLDevice::setWindowIcon()
     }
 }
 
+bool SDLDevice::hasKeyboardFocus() const
+{
+    fflassert(m_window);
+    return SDL_GetKeyboardFocus() == m_window.get();
+}
+
 bool SDLDevice::getWindowMaximized()
 {
     fflassert(m_window);
