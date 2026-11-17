@@ -60,6 +60,11 @@
             >
               {{ status.targets[kind].ownership_warning || "无法确认进程身份，已禁用控制" }}
             </p>
+            <p v-if="kind === 'client' && status" class="mt-2 text-sm text-slate-500">
+              连接目标 {{ status?.settings.communication.client.serverHost }}:{{
+                status?.settings.communication.client.serverPort
+              }}
+            </p>
             <p
               v-if="kind === 'server' && status?.targets.server.running"
               class="mt-2 text-sm text-slate-500"
@@ -127,17 +132,17 @@
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-40 bg-slate-950/30" />
       <DialogContent
-        class="workbench-dialog max-w-xl"
+        class="workbench-dialog max-h-[calc(100dvh-2rem)] max-w-xl overflow-y-auto"
         @escape-key-down="preventBusyClose"
         @interact-outside="preventBusyClose"
       >
-        <AppLoading v-if="busy && pending === 'refresh'" label="正在读取路径设置…" overlay />
-        <DialogTitle class="text-lg font-semibold">路径设置</DialogTitle>
+        <AppLoading v-if="busy && pending === 'refresh'" label="正在读取启动设置…" overlay />
+        <DialogTitle class="text-lg font-semibold">启动设置</DialogTitle>
         <DialogDescription class="mt-1 text-sm text-slate-500">
-          路径相对于工作台所在目录。
+          设置程序位置和游戏通信端口，通信配置在下次启动游戏时生效。
         </DialogDescription>
 
-        <form v-if="status" class="mt-5" @submit.prevent="savePaths">
+        <form v-if="status" class="mt-5" novalidate @submit.prevent="saveSettings">
           <fieldset :disabled="busy" class="grid min-w-0 gap-5">
             <div v-for="kind in kinds" :key="kind">
               <label :for="`launch-${kind}`" class="text-sm font-medium">
@@ -175,29 +180,153 @@
               </label>
               <input
                 id="server-config-path"
-                v-model="draft.server_config_path"
+                v-model="draft.serverConfigPath"
                 type="text"
                 spellcheck="false"
                 autocomplete="off"
-                :aria-invalid="Boolean(errors.server_config_path)"
+                :aria-invalid="Boolean(errors.serverConfigPath)"
                 aria-describedby="server-config-path-help"
                 :class="[
                   'mt-2 w-full rounded-md border px-3 py-2 font-mono text-sm',
-                  errors.server_config_path ? 'border-red-600' : 'border-slate-300',
+                  errors.serverConfigPath ? 'border-red-600' : 'border-slate-300',
                 ]"
-                @input="delete errors.server_config_path"
+                @input="delete errors.serverConfigPath"
               />
               <p
                 id="server-config-path-help"
-                :role="errors.server_config_path ? 'alert' : undefined"
+                :role="errors.serverConfigPath ? 'alert' : undefined"
                 :class="[
                   'mt-1 text-xs',
-                  errors.server_config_path ? 'text-red-600' : 'text-slate-500',
+                  errors.serverConfigPath ? 'text-red-600' : 'text-slate-500',
                 ]"
               >
                 {{ configPathHelp }}
               </p>
             </div>
+            <section class="border-t border-slate-200 pt-4" aria-labelledby="communication-title">
+              <h3 id="communication-title" class="text-sm font-semibold text-slate-900">
+                游戏通信
+              </h3>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="client-server-host" class="text-sm font-medium">
+                    客户端连接地址 <span class="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="client-server-host"
+                    v-model="draft.communication.client.serverHost"
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                    :aria-invalid="Boolean(errors['communication.client.serverHost'])"
+                    :aria-describedby="
+                      errors['communication.client.serverHost']
+                        ? 'client-server-host-help client-server-host-error'
+                        : 'client-server-host-help'
+                    "
+                    :class="inputClass(errors['communication.client.serverHost'])"
+                    @input="delete errors['communication.client.serverHost']"
+                  />
+                  <p id="client-server-host-help" class="mt-1 text-xs text-slate-500">
+                    客户端连接服务端时使用，例如 localhost 或服务器 IP。
+                  </p>
+                  <p
+                    v-if="errors['communication.client.serverHost']"
+                    id="client-server-host-error"
+                    role="alert"
+                    class="mt-1 text-xs text-red-600"
+                  >
+                    {{ errors["communication.client.serverHost"] }}
+                  </p>
+                </div>
+                <div>
+                  <label for="client-server-port" class="text-sm font-medium">
+                    客户端连接端口 <span class="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="client-server-port"
+                    v-model.number="draft.communication.client.serverPort"
+                    type="number"
+                    min="1025"
+                    max="65535"
+                    step="1"
+                    :aria-invalid="Boolean(errors['communication.client.serverPort'])"
+                    :aria-describedby="
+                      errors['communication.client.serverPort']
+                        ? 'client-server-port-error'
+                        : undefined
+                    "
+                    :class="inputClass(errors['communication.client.serverPort'])"
+                    @input="delete errors['communication.client.serverPort']"
+                  />
+                  <p
+                    v-if="errors['communication.client.serverPort']"
+                    id="client-server-port-error"
+                    role="alert"
+                    class="mt-1 text-xs text-red-600"
+                  >
+                    {{ errors["communication.client.serverPort"] }}
+                  </p>
+                </div>
+                <div>
+                  <label for="server-client-port" class="text-sm font-medium">
+                    服务端玩家端口 <span class="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="server-client-port"
+                    v-model.number="draft.communication.server.playerPort"
+                    type="number"
+                    min="1025"
+                    max="65535"
+                    step="1"
+                    :aria-invalid="Boolean(errors['communication.server.playerPort'])"
+                    :aria-describedby="
+                      errors['communication.server.playerPort']
+                        ? 'server-client-port-error'
+                        : undefined
+                    "
+                    :class="inputClass(errors['communication.server.playerPort'])"
+                    @input="delete errors['communication.server.playerPort']"
+                  />
+                  <p class="mt-1 text-xs text-slate-500">应与客户端连接端口一致。</p>
+                  <p
+                    v-if="errors['communication.server.playerPort']"
+                    id="server-client-port-error"
+                    role="alert"
+                    class="mt-1 text-xs text-red-600"
+                  >
+                    {{ errors["communication.server.playerPort"] }}
+                  </p>
+                </div>
+                <div>
+                  <label for="server-peer-port" class="text-sm font-medium">
+                    服务端节点端口 <span class="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="server-peer-port"
+                    v-model.number="draft.communication.server.peerPort"
+                    type="number"
+                    min="1025"
+                    max="65535"
+                    step="1"
+                    :aria-invalid="Boolean(errors['communication.server.peerPort'])"
+                    :aria-describedby="
+                      errors['communication.server.peerPort'] ? 'server-peer-port-error' : undefined
+                    "
+                    :class="inputClass(errors['communication.server.peerPort'])"
+                    @input="delete errors['communication.server.peerPort']"
+                  />
+                  <p
+                    v-if="errors['communication.server.peerPort']"
+                    id="server-peer-port-error"
+                    role="alert"
+                    class="mt-1 text-xs text-red-600"
+                  >
+                    {{ errors["communication.server.peerPort"] }}
+                  </p>
+                </div>
+              </div>
+            </section>
           </fieldset>
 
           <div class="mt-5 rounded-md bg-slate-50 px-3 py-2.5">
@@ -247,7 +376,7 @@
                 <AppLoading
                   v-if="pending === 'paths'"
                   compact
-                  label="正在保存路径…"
+                  label="正在保存设置…"
                   class="text-current"
                 />
                 <Save v-else class="size-4 shrink-0" aria-hidden="true" />
@@ -279,6 +408,7 @@
   import {
     validateLaunchPaths,
     type GameKind,
+    type LaunchField,
     type LaunchPaths,
     type LaunchSettingsResult,
     type LaunchStatus,
@@ -292,7 +422,7 @@
   const toasts = useToastsStore();
   const kinds = ["client", "server"] as const;
   const labels = { client: "客户端", server: "服务端" };
-  const fields = { client: "client_path", server: "server_path" } as const;
+  const fields = { client: "clientPath", server: "serverPath" } as const;
   const status = ref<LaunchStatus | null>(null);
   const desktop = ref(false);
   const busy = ref(false);
@@ -300,24 +430,38 @@
   const logKind = ref<GameKind | null>(null);
   const logText = ref("");
   const pending = ref<GameKind | "refresh" | "paths" | null>(null);
-  const draft = reactive<LaunchPaths>({ client_path: "", server_path: "", server_config_path: "" });
-  const errors = ref<Partial<Record<keyof LaunchPaths, string>>>({});
+  const draft = reactive<LaunchPaths>({
+    clientPath: "",
+    serverPath: "",
+    serverConfigPath: "",
+    communication: {
+      client: { serverHost: "localhost", serverPort: 7000 },
+      server: { playerPort: 7000, peerPort: 8000 },
+    },
+  });
+  const errors = ref<Partial<Record<LaunchField, string>>>({});
   const configPathHelp = computed(
     () =>
-      errors.value.server_config_path ||
+      errors.value.serverConfigPath ||
       "填写包含 config/gameplay 的服务端目录，下次打开工作台生效。",
   );
   let generation = 0;
   let pollTimer: number | undefined;
   let polling = false;
   let pollFailed = false;
-  const dirty = computed(
-    () =>
-      status.value !== null &&
-      (Object.keys(draft) as (keyof LaunchPaths)[]).some(
-        (field) => draft[field] !== status.value!.settings[field],
-      ),
-  );
+  const dirty = computed(() => {
+    const saved = status.value?.settings;
+    return (
+      saved !== undefined &&
+      (draft.clientPath !== saved.clientPath ||
+        draft.serverPath !== saved.serverPath ||
+        draft.serverConfigPath !== saved.serverConfigPath ||
+        draft.communication.client.serverHost !== saved.communication.client.serverHost ||
+        draft.communication.client.serverPort !== saved.communication.client.serverPort ||
+        draft.communication.server.playerPort !== saved.communication.server.playerPort ||
+        draft.communication.server.peerPort !== saved.communication.server.peerPort)
+    );
+  });
   const normalized = (path: string) =>
     path.replaceAll("\\", "/").replace(/\/+$/u, "").toLowerCase();
   const serverMismatch = computed(
@@ -328,10 +472,13 @@
   );
   const serverListenLabel = computed(() => {
     const listening = status.value?.targets.server.listening;
-    if (listening === true) return "玩家端口 7000 已监听";
-    if (listening === false) return "玩家端口 7000 尚未监听";
+    const port = status.value?.targets.server.player_port;
+    if (listening === true) return `玩家端口 ${port} 已监听`;
+    if (listening === false) return `玩家端口 ${port} 尚未监听`;
     return "玩家端口监听状态未知";
   });
+  const inputClass = (error?: string) =>
+    `mt-2 w-full rounded-md border px-3 py-2 text-sm ${error ? "border-red-600" : "border-slate-300"}`;
 
   async function showLog(kind: GameKind): Promise<void> {
     try {
@@ -351,9 +498,13 @@
   }
   function resetDraft(): void {
     if (!status.value) return;
-    draft.client_path = status.value.settings.client_path;
-    draft.server_path = status.value.settings.server_path;
-    draft.server_config_path = status.value.settings.server_config_path;
+    draft.clientPath = status.value.settings.clientPath;
+    draft.serverPath = status.value.settings.serverPath;
+    draft.serverConfigPath = status.value.settings.serverConfigPath;
+    draft.communication.client.serverHost = status.value.settings.communication.client.serverHost;
+    draft.communication.client.serverPort = status.value.settings.communication.client.serverPort;
+    draft.communication.server.playerPort = status.value.settings.communication.server.playerPort;
+    draft.communication.server.peerPort = status.value.settings.communication.server.peerPort;
     errors.value = {};
   }
   function setSettingsOpen(open: boolean): void {
@@ -376,7 +527,8 @@
     if (busy.value) return;
     desktop.value = isDesktopApp();
     if (!desktop.value) return;
-    if (settingsOpen.value && dirty.value && !window.confirm("放弃路径修改并重新读取？")) return;
+    if (settingsOpen.value && dirty.value && !window.confirm("放弃启动设置修改并重新读取？"))
+      return;
     const current = ++generation;
     busy.value = true;
     pending.value = "refresh";
@@ -393,7 +545,7 @@
     }
   }
 
-  async function savePaths(): Promise<void> {
+  async function saveSettings(): Promise<void> {
     if (busy.value || !status.value) return;
     errors.value = validateLaunchPaths(draft);
     if (Object.keys(errors.value).length) return;
@@ -402,23 +554,28 @@
     pending.value = "paths";
     try {
       const result = await getDesktopBridge().save_game_launch_paths(
-        draft.client_path,
-        draft.server_path,
+        draft.clientPath,
+        draft.serverPath,
         status.value.revision,
-        draft.server_config_path,
+        draft.serverConfigPath,
+        draft.communication,
       );
       if (current !== generation) return;
       for (const issue of result.issues ?? []) {
         if (
-          issue.path === "client_path" ||
-          issue.path === "server_path" ||
-          issue.path === "server_config_path"
+          issue.path === "clientPath" ||
+          issue.path === "serverPath" ||
+          issue.path === "serverConfigPath" ||
+          issue.path === "communication.client.serverHost" ||
+          issue.path === "communication.client.serverPort" ||
+          issue.path === "communication.server.playerPort" ||
+          issue.path === "communication.server.peerPort"
         )
-          errors.value[issue.path] = issue.message;
+          errors.value[issue.path as LaunchField] = issue.message;
       }
       accept(result, true);
       settingsOpen.value = false;
-      toasts.show("路径已保存", "success");
+      toasts.show("启动设置已保存", "success");
     } catch (error) {
       if (current === generation && !Object.keys(errors.value).length) report(error);
     } finally {

@@ -129,6 +129,10 @@ cd install/client
 
 默认玩家端口为 7000，节点端口为 8000；自定义端口时同步修改服务端 `--client-port` 与客户端 `--server-port`。登录、选角与进图流程见[启动与协议](runtime-and-protocol.md)。
 
+也可直接打开 `install/workbench/Mir2xWorkbench.exe`，在「启动设置」中保存客户端连接地址、连接端口和服务端玩家/节点端口，然后点击启动按钮。配置读写于工作台旁的 `game-launch.json`，使用嵌套 camelCase JSON，详见[工作台启动配置](../../tools/gameplay-workbench/README.md#启动客户端与服务端)，无需手动传入参数。
+
+若日志显示 Winsock 10013（`bind: An attempt was made to access a socket in a way forbidden by its access permissions`），即使端口未被其他程序监听，也可能属于 Windows 保留端口范围。可用 `netsh interface ipv4 show excludedportrange protocol=tcp` 核对，在「启动设置」中选择未被占用或保留的端口，并同步修改客户端连接端口与服务端玩家端口。
+
 ## 制品与存档的区别
 
 新程序在 `install/`，从 Release 下载并解压的程序位于各自的解压目录，是独立的安装目录。修改源码不会自动更新下载目录。

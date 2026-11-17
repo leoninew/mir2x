@@ -14,7 +14,7 @@
             @click="launchPanel?.openSettings()"
           >
             <Settings2 class="size-4 shrink-0" aria-hidden="true" />
-            路径设置
+            启动设置
           </button>
           <span
             v-if="isConfigPage(page)"

@@ -69,17 +69,28 @@ class DesktopApi:
             return {"success": False, "message": str(error)}
 
     def save_game_launch_paths(
-        self, client_path: str, server_path: str, revision: str, server_config_path: str
+        self,
+        client_path: str,
+        server_path: str,
+        revision: str,
+        server_config_path: str,
+        communication: dict[str, object],
     ) -> dict[str, object]:
         if not self._is_trusted_page():
             return {"success": False, "message": "当前页面未获桌面桥接授权"}
         try:
             return {
                 "success": True,
-                "data": self._launcher.save(client_path, server_path, revision, server_config_path),
+                "data": self._launcher.save(
+                    client_path,
+                    server_path,
+                    revision,
+                    server_config_path,
+                    communication,
+                ),
             }
         except ValueError as error:
-            return {"success": False, "message": "请修正启动路径", "issues": issues_for(error)}
+            return {"success": False, "message": "请修正启动设置", "issues": issues_for(error)}
         except (LaunchError, OSError) as error:
             return {"success": False, "message": str(error)}
 
@@ -249,7 +260,6 @@ class LocalApiServer:
         if application_root is not None:
             launcher = GameLauncher(application_root)
             try:
-                launcher.initialize(settings.gameplay.root)
                 self.workspace.bind(launcher.server_config_root())
             except (LaunchError, OSError, ValueError, GameplayError):
                 logger.warning("Unable to load configured gameplay directory", exc_info=True)

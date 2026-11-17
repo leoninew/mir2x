@@ -142,6 +142,30 @@ def test_game_stop_bridge_requires_a_trusted_page(monkeypatch: pytest.MonkeyPatc
     stop.assert_called_once()
 
 
+def test_game_settings_bridge_saves_nested_config_and_reports_field_errors(tmp_path: Path) -> None:
+    api = DesktopApi(application_root=tmp_path)
+    window = FakeWindow()
+    api._bind_window(window, window.url)
+    communication: dict[str, object] = {
+        "client": {"serverHost": "127.0.0.1", "serverPort": 7500},
+        "server": {"playerPort": 7500, "peerPort": 8000},
+    }
+    result = api.save_game_launch_paths(
+        "client.exe", "server.exe", "missing", "server", communication
+    )
+    assert result["success"] is True
+    saved = api._launcher.status()
+    assert saved["settings"]["communication"] == communication  # type: ignore[index]
+
+    communication["server"] = {"playerPort": 0, "peerPort": 8000}
+    invalid = api.save_game_launch_paths(
+        "client.exe", "server.exe", str(saved["revision"]), "server", communication
+    )
+    assert invalid["success"] is False
+    assert invalid["issues"][0]["path"] == "communication.server.playerPort"  # type: ignore[index]
+    assert api._launcher.status() == saved
+
+
 def test_game_stop_bridge_reports_native_stop_failures(monkeypatch: pytest.MonkeyPatch) -> None:
     api = DesktopApi()
     stop = Mock(side_effect=LaunchError("无法停止 client 进程"))

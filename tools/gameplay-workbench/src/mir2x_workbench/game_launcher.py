@@ -24,20 +24,45 @@ type GameKind = Literal["client", "server"]
 KINDS: tuple[GameKind, ...] = ("client", "server")
 type ManagedProcess = subprocess.Popen[bytes] | psutil.Process
 PSUTIL_PROCESS_TYPE = psutil.Process
-SERVER_PORT = 7000
 LOG_TAIL_BYTES = 64 * 1024
 PROCESS_STATE_SCHEMA = 1
+ListenPort = Annotated[StrictInt, Field(ge=1025, le=65535)]
 
 
 class LaunchError(Exception):
     pass
 
 
+class ClientCommunication(Model):
+    server_host: str = Field(default="localhost", alias="serverHost")
+    server_port: ListenPort = Field(default=7000, alias="serverPort")
+
+    @field_validator("server_host")
+    @classmethod
+    def valid_server_host(cls, value: str) -> str:
+        if not value.strip() or value != value.strip() or any(ord(c) < 32 for c in value):
+            raise ValueError("请输入有效的服务端地址")
+        return value
+
+
+class ServerCommunication(Model):
+    player_port: ListenPort = Field(default=7000, alias="playerPort")
+    peer_port: ListenPort = Field(default=8000, alias="peerPort")
+
+
+class CommunicationSettings(Model):
+    client: ClientCommunication = Field(default_factory=ClientCommunication)
+    server: ServerCommunication = Field(default_factory=ServerCommunication)
+
+
 class LaunchPaths(Model):
-    schema_version: Annotated[StrictInt, Field(ge=1, le=1)] = 1
-    client_path: str = "../client/client.exe"
-    server_path: str = "../server/server.exe"
-    server_config_path: str = "../server"
+    schema_version: Annotated[StrictInt, Field(ge=2, le=2)] = Field(
+        default=2, alias="schemaVersion"
+    )
+    client_path: str = Field(default="../client/client.exe", alias="clientPath")
+    server_path: str = Field(default="../server/server.exe", alias="serverPath")
+    server_config_path: str = Field(default="../server", alias="serverConfigPath")
+    communication: CommunicationSettings = Field(default_factory=CommunicationSettings)
 
     @field_validator("client_path", "server_path", "server_config_path")
     @classmethod
@@ -200,18 +225,6 @@ class GameLauncher:
         self._process_records.pop(kind, None)
         self._write_process_registry()
 
-    def initialize(self, legacy_server_root: Path | None = None) -> None:
-        """Upgrade local preferences once, preserving existing executable paths."""
-        with self._lock:
-            paths, revision, error, _ = self._read()
-            if error:
-                raise LaunchError(error)
-            if "server_config_path" not in paths.model_fields_set:
-                relative = paths.server_config_path
-                if legacy_server_root is not None:
-                    relative = os.path.relpath(legacy_server_root, self.root).replace("\\", "/")
-                self.save(paths.client_path, paths.server_path, revision, relative)
-
     def server_config_root(self) -> Path:
         paths, _, error, _ = self._read()
         if error:
@@ -229,7 +242,7 @@ class GameLauncher:
         try:
             return LaunchPaths.model_validate(load_json(raw)), revision, None, raw
         except ValueError:
-            return LaunchPaths(), revision, "启动配置格式错误，请重新保存路径", raw
+            return LaunchPaths(), revision, "启动配置格式错误，请重新保存启动设置", raw
 
     def _executable(self, paths: LaunchPaths, kind: GameKind) -> Path:
         relative = paths.client_path if kind == "client" else paths.server_path
@@ -251,23 +264,38 @@ class GameLauncher:
             raise LaunchError(f"无法读取游戏日志：{error}") from error
 
     @staticmethod
-    def _server_listening(process: ManagedProcess) -> bool | None:
+    def _server_listener(process: ManagedProcess) -> tuple[int | None, bool | None]:
         try:
             if isinstance(process, PSUTIL_PROCESS_TYPE):
                 if not process.is_running():
-                    return None
+                    return None, None
             elif process.poll() is not None:
-                return None
-            connections = psutil.Process(process.pid).net_connections(kind="tcp")
-            listening = any(
-                connection.status == psutil.CONN_LISTEN
-                and connection.laddr
-                and connection.laddr.port == SERVER_PORT
-                for connection in connections
+                return None, None
+            inspected = psutil.Process(process.pid)
+            port = next(
+                (
+                    int(argument.removeprefix("--client-port="))
+                    for argument in inspected.cmdline()[1:]
+                    if argument.startswith("--client-port=")
+                ),
+                7000,
             )
-            return listening if GameLauncher._is_running(process) else None
-        except (psutil.Error, OSError):
-            return None
+            connections = inspected.net_connections(kind="tcp")
+            local = [
+                connection
+                for connection in connections
+                if connection.laddr and connection.laddr.port == port
+            ]
+            listening = (
+                True
+                if any(connection.status == psutil.CONN_LISTEN for connection in local)
+                else None
+                if any(connection.status == psutil.CONN_NONE for connection in local)
+                else False
+            )
+            return (port, listening) if GameLauncher._is_running(process) else (None, None)
+        except (psutil.Error, OSError, ValueError):
+            return None, None
 
     def status(self) -> dict[str, object]:
         with self._lock:
@@ -312,6 +340,11 @@ class GameLauncher:
                     ]
                     if missing:
                         warning = "缺少 " + "、".join(missing)
+                player_port, listening = (
+                    self._server_listener(process)
+                    if kind == "server" and running and process is not None
+                    else (None, None)
+                )
                 targets[kind] = {
                     "executable": str(executable),
                     "working_directory": str(executable.parent),
@@ -331,11 +364,8 @@ class GameLauncher:
                     "warning": warning,
                     "ownership": ownership,
                     "ownership_warning": ownership_warning,
-                    "listening": (
-                        self._server_listening(process)
-                        if kind == "server" and running and process is not None
-                        else None
-                    ),
+                    "player_port": player_port,
+                    "listening": listening,
                 }
             if state_changed:
                 try:
@@ -344,7 +374,7 @@ class GameLauncher:
                     self._process_state_error = str(state_error)
             return {
                 "base_directory": str(self.root),
-                "settings": paths.model_dump(),
+                "settings": paths.model_dump(by_alias=True),
                 "revision": revision,
                 "settings_error": error,
                 "process_state_error": self._process_state_error,
@@ -357,23 +387,31 @@ class GameLauncher:
         server_path: str,
         revision: str,
         server_config_path: str | None = None,
+        communication: dict[str, object] | None = None,
     ) -> dict[str, object]:
         with self._lock:
             previous, current, error, old_raw = self._read()
             if revision != current:
                 raise LaunchError("启动配置已被外部修改，请刷新后重新编辑")
-            paths = LaunchPaths(
-                client_path=client_path,
-                server_path=server_path,
-                server_config_path=(
-                    previous.server_config_path
-                    if server_config_path is None
-                    else server_config_path
-                ),
+            paths = LaunchPaths.model_validate(
+                {
+                    "clientPath": client_path,
+                    "serverPath": server_path,
+                    "serverConfigPath": (
+                        previous.server_config_path
+                        if server_config_path is None
+                        else server_config_path
+                    ),
+                    "communication": (
+                        previous.communication.model_dump(by_alias=True)
+                        if communication is None
+                        else communication
+                    ),
+                }
             )
-            content = (json.dumps(paths.model_dump(), ensure_ascii=False, indent=2) + "\n").encode(
-                "utf-8"
-            )
+            content = (
+                json.dumps(paths.model_dump(by_alias=True), ensure_ascii=False, indent=2) + "\n"
+            ).encode("utf-8")
             temporary: str | None = None
             try:
                 if error and old_raw is not None:
@@ -390,7 +428,7 @@ class GameLauncher:
                 os.replace(temporary, self.preferences)
                 temporary = None
             except OSError as save_error:
-                raise LaunchError("无法保存启动路径，原配置保持不变") from save_error
+                raise LaunchError("无法保存启动设置，原配置保持不变") from save_error
             finally:
                 if temporary is not None:
                     with suppress(OSError):
@@ -406,7 +444,7 @@ class GameLauncher:
                 raise LaunchError(self._process_state_error)
             paths, current, error, _ = self._read()
             if revision != current:
-                raise LaunchError("启动路径已变化，请刷新后再启动")
+                raise LaunchError("启动配置已变化，请刷新后再启动")
             if error:
                 raise LaunchError(error)
             child = self._children.get(game)
@@ -425,6 +463,18 @@ class GameLauncher:
             executable = self._executable(paths, game)
             if not executable.is_file():
                 raise LaunchError(f"程序不存在：{executable}；请修改相对路径并保存")
+            arguments = (
+                [
+                    f"--server-ip={paths.communication.client.server_host}",
+                    f"--server-port={paths.communication.client.server_port}",
+                ]
+                if game == "client"
+                else [
+                    f"--client-port={paths.communication.server.player_port}",
+                    f"--peer-port={paths.communication.server.peer_port}",
+                    "--auto-launch",
+                ]
+            )
             try:
                 log_dir = self.root / "logs"
                 log_dir.mkdir(parents=True, exist_ok=True)
@@ -434,7 +484,7 @@ class GameLauncher:
                     )
                     output.flush()
                     child = subprocess.Popen(
-                        [str(executable), *(["--auto-launch"] if game == "server" else [])],
+                        [str(executable), *arguments],
                         cwd=executable.parent,
                         shell=False,
                         stdin=subprocess.DEVNULL,

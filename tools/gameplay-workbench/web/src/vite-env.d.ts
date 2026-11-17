@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { LaunchSettingsResult } from "@/services/gameLauncher";
+import type { GameCommunication, LaunchSettingsResult } from "@/services/gameLauncher";
 
 interface DesktopResult {
   success: boolean;
@@ -14,6 +14,7 @@ interface PyWebViewAPI {
     serverPath: string,
     revision: string,
     serverConfigPath: string,
+    communication: GameCommunication,
   ): Promise<LaunchSettingsResult>;
   launch_game(kind: string, revision: string): Promise<DesktopResult & { pid?: number }>;
   get_game_log(kind: string): Promise<DesktopResult & { data?: string }>;

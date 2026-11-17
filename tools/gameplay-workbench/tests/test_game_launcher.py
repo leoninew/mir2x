@@ -17,43 +17,67 @@ def test_relative_paths_are_persisted_and_resolved_from_workbench(tmp_path: Path
     saved = launcher.save(r"..\游戏 空格\客户端.exe", "../server/server.exe", "missing")
     assert GameLauncher(tmp_path).status() == saved
     assert saved["settings"] == {
-        "schema_version": 1,
-        "client_path": r"..\游戏 空格\客户端.exe",
-        "server_path": "../server/server.exe",
-        "server_config_path": "../server",
+        "schemaVersion": 2,
+        "clientPath": r"..\游戏 空格\客户端.exe",
+        "serverPath": "../server/server.exe",
+        "serverConfigPath": "../server",
+        "communication": {
+            "client": {"serverHost": "localhost", "serverPort": 7000},
+            "server": {"playerPort": 7000, "peerPort": 8000},
+        },
     }
     assert saved["targets"]["client"]["executable"] == str(  # type: ignore[index]
         (tmp_path.parent / "游戏 空格/客户端.exe").resolve()
     )
 
 
-def test_existing_paths_gain_config_directory_and_keep_user_edits(tmp_path: Path) -> None:
+def test_camel_case_paths_load_and_keep_user_edits(tmp_path: Path) -> None:
     preferences = tmp_path / "game-launch.json"
     preferences.write_text(
         json.dumps(
             {
-                "schema_version": 1,
-                "client_path": "custom/client.exe",
-                "server_path": "custom/server.exe",
+                "schemaVersion": 2,
+                "clientPath": "custom/client.exe",
+                "serverPath": "custom/server.exe",
+                "serverConfigPath": "../previous-server",
             }
         ),
         encoding="utf-8",
     )
     launcher = GameLauncher(tmp_path)
-    launcher.initialize(tmp_path.parent / "previous-server")
-    migrated = launcher.status()
-    assert migrated["settings"] == {
-        "schema_version": 1,
-        "client_path": "custom/client.exe",
-        "server_path": "custom/server.exe",
-        "server_config_path": "../previous-server",
+    loaded = launcher.status()
+    assert loaded["settings"] == {
+        "schemaVersion": 2,
+        "clientPath": "custom/client.exe",
+        "serverPath": "custom/server.exe",
+        "serverConfigPath": "../previous-server",
+        "communication": {
+            "client": {"serverHost": "localhost", "serverPort": 7000},
+            "server": {"playerPort": 7000, "peerPort": 8000},
+        },
     }
     launcher.save(
-        "custom/client.exe", "custom/server.exe", str(migrated["revision"]), "../chosen-server"
+        "custom/client.exe", "custom/server.exe", str(loaded["revision"]), "../chosen-server"
     )
     reopened = GameLauncher(tmp_path)
-    reopened.initialize(tmp_path.parent / "previous-server")
     assert reopened.server_config_root() == (tmp_path.parent / "chosen-server").resolve()
+
+
+def test_snake_case_launch_configuration_is_not_accepted(tmp_path: Path) -> None:
+    (tmp_path / "game-launch.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "client_path": "client/client.exe",
+                "server_path": "server/server.exe",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status = GameLauncher(tmp_path).status()
+
+    assert status["settings_error"] == "启动配置格式错误，请重新保存启动设置"
 
 
 @pytest.mark.parametrize("kind", ["client", "server"])
@@ -63,7 +87,15 @@ def test_normal_launch_uses_saved_executable_and_its_own_working_directory(
     executable = tmp_path / f"{kind}.exe"
     executable.touch()
     launcher = GameLauncher(tmp_path)
-    saved = launcher.save("client.exe", "server.exe", "missing")
+    saved = launcher.save(
+        "client.exe",
+        "server.exe",
+        "missing",
+        communication={
+            "client": {"serverHost": "192.0.2.10", "serverPort": 7520},
+            "server": {"playerPort": 7520, "peerPort": 8100},
+        },
+    )
     child = Mock(pid=1234)
     child.poll.return_value = None
     popen = Mock(return_value=child)
@@ -72,10 +104,16 @@ def test_normal_launch_uses_saved_executable_and_its_own_working_directory(
     process.exe.return_value = str(executable.resolve())
     process.create_time.return_value = 1234.5
     process.net_connections.return_value = []
+    process.cmdline.return_value = [str(executable), "--client-port=7520"]
     monkeypatch.setattr("mir2x_workbench.game_launcher.psutil.Process", Mock(return_value=process))
     assert launcher.launch(kind, str(saved["revision"]))["pid"] == 1234
     args, kwargs = popen.call_args
-    assert args == ([str(executable.resolve()), *(["--auto-launch"] if kind == "server" else [])],)
+    expected_arguments = (
+        ["--server-ip=192.0.2.10", "--server-port=7520"]
+        if kind == "client"
+        else ["--client-port=7520", "--peer-port=8100", "--auto-launch"]
+    )
+    assert args == ([str(executable.resolve()), *expected_arguments],)
     assert kwargs["cwd"] == executable.parent.resolve()
     assert kwargs["shell"] is False
     assert kwargs["stdin"] == subprocess.DEVNULL
@@ -99,15 +137,92 @@ def test_server_status_reports_own_listening_port(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     launcher = GameLauncher(tmp_path)
+    launcher.save(
+        "client.exe",
+        "server.exe",
+        "missing",
+        communication={
+            "client": {"serverHost": "localhost", "serverPort": 7000},
+            "server": {"playerPort": 7520, "peerPort": 8000},
+        },
+    )
     child = Mock(pid=1234)
     child.poll.return_value = None
     launcher._children["server"] = child
-    connection = Mock(status="LISTEN", laddr=Mock(port=7000))
+    connection = Mock(status="LISTEN", laddr=Mock(port=7520))
     monkeypatch.setattr(
         "mir2x_workbench.game_launcher.psutil.Process",
-        lambda pid: Mock(net_connections=Mock(return_value=[connection])),
+        lambda pid: Mock(
+            cmdline=Mock(return_value=["server.exe", "--client-port=7520"]),
+            net_connections=Mock(return_value=[connection]),
+        ),
     )
     assert launcher.status()["targets"]["server"]["listening"] is True  # type: ignore[index]
+    saved = launcher.status()
+    launcher.save(
+        "client.exe",
+        "server.exe",
+        str(saved["revision"]),
+        communication={
+            "client": {"serverHost": "localhost", "serverPort": 7530},
+            "server": {"playerPort": 7530, "peerPort": 8000},
+        },
+    )
+    target = launcher.status()["targets"]["server"]  # type: ignore[index]
+    assert target["listening"] is True
+    assert target["player_port"] == 7520
+    connection.status = psutil.CONN_NONE
+    assert launcher.status()["targets"]["server"]["listening"] is None  # type: ignore[index]
+
+
+def test_game_communication_settings_are_persisted(tmp_path: Path) -> None:
+    launcher = GameLauncher(tmp_path)
+    saved = launcher.save(
+        "client.exe",
+        "server.exe",
+        "missing",
+        communication={
+            "client": {"serverHost": "192.0.2.10", "serverPort": 7520},
+            "server": {"playerPort": 7520, "peerPort": 8100},
+        },
+    )
+
+    assert saved["settings"]["communication"]["client"]["serverHost"] == "192.0.2.10"  # type: ignore[index]
+    assert saved["settings"]["communication"]["client"]["serverPort"] == 7520  # type: ignore[index]
+    assert saved["settings"]["communication"]["server"]["playerPort"] == 7520  # type: ignore[index]
+    assert saved["settings"]["communication"]["server"]["peerPort"] == 8100  # type: ignore[index]
+    assert GameLauncher(tmp_path).status()["settings"] == saved["settings"]
+
+
+@pytest.mark.parametrize("port", [0, 1024, 65536, 7500.5, "7500", True])
+def test_game_communication_ports_must_be_user_listen_ports(tmp_path: Path, port: object) -> None:
+    launcher = GameLauncher(tmp_path)
+
+    with pytest.raises(ValueError):
+        launcher.save(
+            "client.exe",
+            "server.exe",
+            "missing",
+            communication={
+                "client": {"serverHost": "localhost", "serverPort": port},
+                "server": {"playerPort": 7000, "peerPort": 8000},
+            },
+        )
+
+
+def test_game_communication_host_must_not_be_blank(tmp_path: Path) -> None:
+    launcher = GameLauncher(tmp_path)
+
+    with pytest.raises(ValueError):
+        launcher.save(
+            "client.exe",
+            "server.exe",
+            "missing",
+            communication={
+                "client": {"serverHost": "  ", "serverPort": 7000},
+                "server": {"playerPort": 7000, "peerPort": 8000},
+            },
+        )
 
 
 @pytest.mark.parametrize("kind", ["client", "server"])

@@ -18,7 +18,7 @@ Windows 需要 WebView2 Runtime；开发需要 Python 3.12+、uv、Node.js 22+�
 
 正式入口：仓库主安装目录中的 `install/workbench/Mir2xWorkbench.exe`。工作台与同级 `client/`、`server/` 一起交付；工作台自身的 `_internal/` 目录需要保留。
 
-打开后按 `game-launch.json` 的 `server_config_path` 自动加载玩法配置，预置 `../server`，无需每次选择目录。相对路径以 EXE 所在目录解析；可以在「路径设置」中修改，下次打开工作台生效，也可临时选择其他 **server 文件夹**。升级安装保留已有配置。三个视图分别管理经验全表、单怪物掉落文件、单地图刷怪文件；搜索不会重排底层数组。身份/名称及未消费的 cratio 只读；历史未生效记录保留原始来源。
+打开后按 `game-launch.json` 的 `serverConfigPath` 自动加载玩法配置，预置 `../server`，无需每次选择目录。相对路径以 EXE 所在目录解析；可以在「启动设置」中修改，下次打开工作台生效，也可临时选择其他 **server 文件夹**。升级安装保留已有配置。三个视图分别管理经验全表、单怪物掉落文件、单地图刷怪文件；搜索不会重排底层数组。身份/名称及未消费的 cratio 只读；历史未生效记录保留原始来源。
 
 整数错误显示在对应字段；保存前可查看变更。保存包含字段/引用校验、旧内容备份、同目录原子替换。外部修改、目录切换或元数据版本变化会拒绝旧请求，并保留草稿，可下载后人工比较或重新读取。切换文件会在本次窗口内保留草稿；退出前请保存或下载，草稿不持久化。
 
@@ -26,7 +26,7 @@ Windows 需要 WebView2 Runtime；开发需要 Python 3.12+、uv、Node.js 22+�
 
 ## 启动客户端与服务端
 
-主页面提供客户端/服务端启动按钮；在「路径设置」中修改相对路径并保存。路径基准是 **Mir2xWorkbench.exe 所在目录**，开发模式以工作台项目目录为基准。默认布局沿用主程序的 install：
+主页面提供客户端/服务端启动按钮；在「启动设置」中修改相对路径、客户端连接地址和端口、服务端监听端口并保存，无需手动填写命令行参数。路径基准是 **Mir2xWorkbench.exe 所在目录**，开发模式以工作台项目目录为基准。默认布局沿用主程序的 install：
 
 ```text
 install/
@@ -35,22 +35,26 @@ install/
   server/server.exe
 ```
 
-本地配置保存在 EXE 旁的 `game-launch.json`，也可以自行修改文件后在「路径设置」中重新读取：
+本地配置保存在 EXE 旁的 `game-launch.json`，也可以自行修改文件后在「启动设置」中重新读取：
 
 ```json
 {
-  "schema_version": 1,
-  "client_path": "../client/client.exe",
-  "server_path": "../server/server.exe",
-  "server_config_path": "../server"
+  "schemaVersion": 2,
+  "clientPath": "../client/client.exe",
+  "serverPath": "../server/server.exe",
+  "serverConfigPath": "../server",
+  "communication": {
+    "client": { "serverHost": "localhost", "serverPort": 7000 },
+    "server": { "playerPort": 7000, "peerPort": 8000 }
+  }
 }
 ```
 
-三个路径均支持 `..`、中文、空格及 Windows 反斜杠。client_path/server_path 填写相对 `.exe` 路径，不附命令行参数；server_config_path 填写包含 `config/gameplay` 的服务端目录，可与启动程序目录分别设置。每个进程以自己的程序目录作为工作目录。程序或配套资源不会被自动复制、安装或构建。程序缺失时不能启动；配套资源缺失会显示提示，请自行准备完整运行目录。
+路径均支持 `..`、中文、空格及 Windows 反斜杠。`clientPath`/`serverPath` 填写相对 `.exe` 路径；`serverConfigPath` 填写包含 `config/gameplay` 的服务端目录，可与启动程序目录分别设置。`communication` 下配置客户端连接的服务端地址和端口，以及服务端玩家端口、节点端口；Workbench 据此传入启动参数，端口范围为 1025–65535。预置的玩家端口为 7000，客户端连接端口同为 7000，节点端口为 8000；客户端连接端口应与服务端玩家端口一致。通信配置在下次启动对应游戏进程时生效；修改配置不会改变正在运行的进程。每个进程以自己的程序目录作为工作目录。程序或配套资源不会被自动复制、安装或构建。程序缺失时不能启动；配套资源缺失会显示提示，请自行准备完整运行目录。
 
-旧 `game-launch.json` 会在打开桌面应用时补充 server_config_path，保留已有启动路径；仅首次迁移读取旧 gameplay.root（若存在）。此后桌面配置目录只使用 JSON 中的值，不再由 YAML 或环境变量覆盖。首次安装使用仓库 `config/game-launch.json` 预置文件，已有本地 JSON 不被安装覆盖。配置目录不可用时仍可打开工作台修改路径。
+`game-launch.json` 使用 camelCase 键名和 schemaVersion 2；旧格式不做兼容，需按上例更新本地配置。此后桌面配置目录只使用 JSON 中的值，不再由 YAML 或环境变量覆盖。首次安装使用仓库 `config/game-launch.json` 预置文件，已有本地 JSON 不被安装覆盖。配置目录不可用时仍可打开工作台修改路径和通信配置。
 
-启动使用磁盘配置；未保存的玩法草稿会先提醒，配置管理目录与待启动服务端目录不同时也会提示。工作台以 `--auto-launch` 启动服务端；Windows 不弹控制台，原游戏窗口仍会显示。运行页区分进程运行和受管理服务端的 7000 端口监听，监听不代表地图和任务已全部就绪。标准输出及错误追加到工作台 `logs/game-client.log`、`logs/game-server.log`，可在运行页查看日志尾部；游戏自身日志仍由游戏管理。
+启动使用磁盘配置；未保存的玩法草稿会先提醒，配置管理目录与待启动服务端目录不同时也会提示。工作台从 `communication` 设置生成客户端地址、客户端连接端口、服务端玩家端口和节点端口参数，并以 `--auto-launch` 启动服务端；Windows 不弹控制台，原游戏窗口仍会显示。运行页按运行进程实际启动的玩家端口显示监听状态，保存新端口后仍监测当前进程的端口；监听不代表地图和任务已全部就绪。标准输出及错误追加到工作台 `logs/game-client.log`、`logs/game-server.log`，可在运行页查看日志尾部；游戏自身日志仍由游戏管理。
 
 工作台把自己启动的进程身份保存到独立的 `game-processes.json`，运行页自动更新状态。关闭工作台不会结束游戏；重新打开时核对 PID、实际程序路径和创建时间，匹配后恢复运行状态与停止按钮。已退出或身份不符的记录自动清理，无法验证身份时显示状态未知并禁用控制。升级前未留下记录的进程和外部启动的进程不会被自动接管，不保证多个工作台同时管理进程。启动、停止与启动路径保存仅走受信桌面桥接，浏览器模式不支持，没有 HTTP 进程控制接口。本地路径配置、进程记录及无效文件修复备份不进入版本控制或发行包，升级安装保留已有文件。
 
@@ -83,7 +87,7 @@ uv build
 cmake --build build --target workbench
 ```
 
-该目标构建完成后自动安装到 `install/workbench/`，无需再手动执行安装命令。开发模式 `.env.dev` 预设源码服务端相对路径 `../../server`。
+该目标构建完成后自动安装到 `install/workbench/`，无需再手动执行安装命令。源码桌面模式也从项目目录旁的 `game-launch.json` 读取启动设置；管理源码玩法配置时，可在「启动设置」中把 `serverConfigPath` 保存为 `../../server`。独立运行的 Web API 仍使用 `.env.dev` 中的玩法目录设置。
 
 正式 `build.py` 同样支持 `--target workbench`（沿用主构建的其他参数）；安装目标使用该树的 `CMAKE_INSTALL_PREFIX`，默认仓库 `install/`。未构建工作台时完整安装明确跳过它，显式安装 `--component workbench` 缺包会报错。
 

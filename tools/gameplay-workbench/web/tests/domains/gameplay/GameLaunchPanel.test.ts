@@ -8,6 +8,7 @@ import { useToastsStore } from "@/stores/toasts";
 
 const native = vi.hoisted(() => ({
   get_game_launch_status: vi.fn(),
+  save_game_launch_paths: vi.fn(),
   launch_game: vi.fn(),
   stop_game: vi.fn(),
 }));
@@ -18,11 +19,15 @@ vi.mock("@/services/desktopBridge", () => ({
 }));
 
 enableAutoUnmount(afterEach);
+let mountTarget: HTMLDivElement;
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  mountTarget = document.createElement("div");
+  document.body.append(mountTarget);
 });
 afterEach(() => {
+  mountTarget.remove();
   vi.useRealTimers();
   vi.resetAllMocks();
   vi.restoreAllMocks();
@@ -38,6 +43,7 @@ function launchStatus(running?: GameKind): LaunchStatus {
     exit_code: null,
     launched_executable: kind === running ? `D:/app/install/${kind}/${kind}.exe` : null,
     warning: "",
+    player_port: null,
     listening: null,
     ownership: kind === running ? "managed" : null,
     ownership_warning: null,
@@ -45,10 +51,14 @@ function launchStatus(running?: GameKind): LaunchStatus {
   return {
     base_directory: "D:/app/install/workbench",
     settings: {
-      schema_version: 1,
-      client_path: "../client/client.exe",
-      server_path: "../server/server.exe",
-      server_config_path: "../server",
+      schemaVersion: 2,
+      clientPath: "../client/client.exe",
+      serverPath: "../server/server.exe",
+      serverConfigPath: "../server",
+      communication: {
+        client: { serverHost: "localhost", serverPort: 7000 },
+        server: { playerPort: 7000, peerPort: 8000 },
+      },
     },
     revision: "revision",
     settings_error: null,
@@ -60,6 +70,92 @@ function launchStatus(running?: GameKind): LaunchStatus {
 const props = { gameplayDirty: false, gameplayBusy: false, workspaceRoot: null };
 
 describe("game process controls", () => {
+  it("reloads unchanged settings without a discard prompt", async () => {
+    native.get_game_launch_status.mockResolvedValue({ success: true, data: launchStatus() });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const wrapper = mount(GameLaunchPanel, {
+      props,
+      attachTo: mountTarget,
+      global: { stubs: { DialogPortal: { template: "<slot />" } } },
+    });
+    await flushPromises();
+    wrapper.vm.openSettings();
+    await flushPromises();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "重新读取")!
+      .trigger("click");
+    await flushPromises();
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(native.get_game_launch_status).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows communication field errors before saving", async () => {
+    native.get_game_launch_status.mockResolvedValue({ success: true, data: launchStatus() });
+    const wrapper = mount(GameLaunchPanel, {
+      props,
+      attachTo: mountTarget,
+      global: { stubs: { DialogPortal: { template: "<slot />" } } },
+    });
+    await flushPromises();
+    wrapper.vm.openSettings();
+    await flushPromises();
+
+    await wrapper.get("#client-server-host").setValue("  ");
+    await wrapper.get("#client-server-port").setValue("1024");
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get("#client-server-host").attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get("#client-server-host-error").text()).toBe("请输入有效的服务端地址");
+    expect(wrapper.get("#client-server-port-error").text()).toBe("端口范围为 1025–65535");
+    expect(native.save_game_launch_paths).not.toHaveBeenCalled();
+  });
+
+  it("saves communication settings for client and server launches", async () => {
+    const updated = launchStatus();
+    updated.settings.communication.client.serverHost = "192.0.2.10";
+    updated.settings.communication.client.serverPort = 7520;
+    updated.settings.communication.server.playerPort = 7520;
+    updated.settings.communication.server.peerPort = 8100;
+    updated.targets.server.running = true;
+    updated.targets.server.pid = 1234;
+    updated.targets.server.player_port = 7520;
+    updated.targets.server.listening = true;
+    updated.targets.server.ownership = "managed";
+    native.get_game_launch_status.mockResolvedValue({ success: true, data: launchStatus() });
+    native.save_game_launch_paths.mockResolvedValue({ success: true, data: updated });
+    const wrapper = mount(GameLaunchPanel, {
+      props,
+      attachTo: mountTarget,
+      global: { stubs: { DialogPortal: { template: "<slot />" } } },
+    });
+    await flushPromises();
+    wrapper.vm.openSettings();
+    await flushPromises();
+
+    await wrapper.get("#client-server-host").setValue("192.0.2.10");
+    await wrapper.get("#client-server-port").setValue("7520");
+    await wrapper.get("#server-client-port").setValue("7520");
+    await wrapper.get("#server-peer-port").setValue("8100");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(native.save_game_launch_paths).toHaveBeenCalledWith(
+      "../client/client.exe",
+      "../server/server.exe",
+      "revision",
+      "../server",
+      {
+        client: { serverHost: "192.0.2.10", serverPort: 7520 },
+        server: { playerPort: 7520, peerPort: 8100 },
+      },
+    );
+    expect(wrapper.findAll("article")[0].text()).toContain("连接目标 192.0.2.10:7520");
+    expect(wrapper.findAll("article")[1].text()).toContain("玩家端口 7520 已监听");
+  });
+
   it.each([
     ["client", "客户端"],
     ["server", "服务端"],

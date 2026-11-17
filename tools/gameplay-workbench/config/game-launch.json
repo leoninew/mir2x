@@ -1,6 +1,16 @@
 {
-  "schema_version": 1,
-  "client_path": "../client/client.exe",
-  "server_path": "../server/server.exe",
-  "server_config_path": "../server"
+  "schemaVersion": 2,
+  "clientPath": "../client/client.exe",
+  "serverPath": "../server/server.exe",
+  "serverConfigPath": "../server",
+  "communication": {
+    "client": {
+      "serverHost": "localhost",
+      "serverPort": 7000
+    },
+    "server": {
+      "playerPort": 7000,
+      "peerPort": 8000
+    }
+  }
 }
